@@ -193,6 +193,7 @@ typedef struct {
 	uint32_t doi;			/* DOI for label */
 	caddr32_t label;		/* label associated with zone */
 	int flags;
+	zoneid_t zoneid;		/* requested zoneid */
 } zone_def32;
 #endif
 typedef struct {
@@ -209,6 +210,7 @@ typedef struct {
 	uint32_t doi;			/* DOI for label */
 	const bslabel_t *label;		/* label associated with zone */
 	int flags;
+	zoneid_t zoneid;		/* requested zoneid */
 } zone_def;
 
 /* extended error information */

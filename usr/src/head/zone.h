@@ -60,7 +60,7 @@ extern int zone_get_id(const char *, zoneid_t *);
 /* System call API */
 extern zoneid_t	zone_create(const char *, const char *,
     const struct priv_set *, const char *, size_t, const char *, size_t, int *,
-    int, int, const bslabel_t *, int);
+    int, int, const bslabel_t *, int, zoneid_t);
 extern int	zone_boot(zoneid_t);
 extern int	zone_destroy(zoneid_t);
 extern ssize_t	zone_getattr(zoneid_t, int, void *, size_t);
