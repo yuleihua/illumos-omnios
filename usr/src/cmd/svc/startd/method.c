@@ -989,7 +989,8 @@ method_run(restarter_inst_t **instp, int type, int *exit_code)
 			goto contract_out;
 		}
 
-		if (!WIFEXITED(ret_status)) {
+		if (!WIFEXITED(ret_status) &&
+		    WEXITSTATUS(ret_status) != SMF_EXIT_NODAEMON) {
 			/*
 			 * If method didn't exit itself (it was killed by an
 			 * external entity, etc.), consider the entire
@@ -1018,7 +1019,7 @@ method_run(restarter_inst_t **instp, int type, int *exit_code)
 		}
 
 		*exit_code = WEXITSTATUS(ret_status);
-		if (*exit_code != 0) {
+		if (*exit_code != 0 && *exit_code != SMF_EXIT_NODAEMON) {
 			log_error(LOG_WARNING,
 			    "%s: Method \"%s\" failed with exit status %d.\n",
 			    inst->ri_i.i_fmri, method, WEXITSTATUS(ret_status));
@@ -1027,6 +1028,7 @@ method_run(restarter_inst_t **instp, int type, int *exit_code)
 		log_instance(inst, B_TRUE, "Method \"%s\" exited with status "
 		    "%d.", mname, *exit_code);
 
+		/* Note: we will take this path for SMF_EXIT_NODAEMON */
 		if (*exit_code != 0)
 			goto contract_out;
 
@@ -1073,7 +1075,10 @@ assured_kill:
 	}
 
 contract_out:
-	/* Abandon contracts for transient methods & methods that fail. */
+	/*
+	 * Abandon contracts for transient methods, methods that exit with
+	 * SMF_EXIT_NODAEMON & methods that fail.
+	 */
 	transient = method_is_transient(inst, type);
 	if ((transient || *exit_code != 0 || result != 0) &&
 	    (restarter_is_kill_method(method) < 0))
@@ -1171,7 +1176,7 @@ retry:
 
 	r = method_run(&inst, info->sf_method_type, &exit_code);
 
-	if (r == 0 && exit_code == 0) {
+	if (r == 0 && (exit_code == 0 || exit_code == SMF_EXIT_NODAEMON)) {
 		/* Success! */
 		assert(inst->ri_i.i_next_state != RESTARTER_STATE_NONE);
 
@@ -1189,6 +1194,12 @@ retry:
 			else
 				method_remove_contract(inst, B_TRUE, B_TRUE);
 		}
+
+		/*
+		 * For methods that exit with SMF_EXIT_NODAEMON, we already
+		 * called method_remove_contract in method_run.
+		 */
+
 		/*
 		 * We don't care whether the handle was rebound because this is
 		 * the last thing we do with it.
