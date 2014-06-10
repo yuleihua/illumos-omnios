@@ -1486,6 +1486,11 @@ $(OBJS_DIR)/%.o:		$(UTSBASE)/common/io/vioblk/%.c
 $(OBJS_DIR)/%.o:		$(UTSBASE)/common/io/vioif/%.c
 	$(COMPILE.c) -o $@ $<
 	$(CTFCONVERT_O)
+
+$(OBJS_DIR)/%.o:		$(COMMONBASE)/idspace/%.c
+	$(COMPILE.c) -o $@ $<
+	$(CTFCONVERT_O)
+
 #
 # krtld must refer to its own bzero/bcopy until the kernel is fully linked
 #
@@ -2777,4 +2782,7 @@ $(LINTS_DIR)/%.ln:		$(UTSBASE)/common/io/skd/%.c
 	@($(LHEAD) $(LINT.c) $< $(LTAIL))
 
 $(LINTS_DIR)/%.ln:		$(COMMONBASE)/fsreparse/%.c
+	@($(LHEAD) $(LINT.c) $< $(LTAIL))
+
+$(LINTS_DIR)/%.ln:		$(COMMONBASE)/idspace/%.c
 	@($(LHEAD) $(LINT.c) $< $(LTAIL))
