@@ -25,9 +25,9 @@ include $(SRC)/cmd/perl/Makefile.targ
 
 .KEEP_STATE:
 
-all: $(PERLEXT) $(PERLMOD)
+all: $(PERLEXT) $(PERLMOD) $(PERLEXT64)
 
-install: $(ROOTPERLEXT) $(ROOTPERLMOD)
+install: $(ROOTPERLEXT) $(ROOTPERLMOD) $(ROOTPERLEXT64) $(ROOTPERLMOD64)
 
 clean clobber:
-	$(RM) -r $(MACH)
+	$(RM) -r $(MACH) $(MACH64)
