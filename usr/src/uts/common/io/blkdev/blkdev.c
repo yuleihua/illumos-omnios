@@ -1305,7 +1305,6 @@ bd_sched(bd_t *bd)
 		rv = xi->i_func(bd->d_private, &xi->i_public);
 		if (rv != 0) {
 			bp = xi->i_bp;
-			bd_xfer_free(xi);
 			bioerror(bp, rv);
 			biodone(bp);
 
@@ -1313,6 +1312,7 @@ bd_sched(bd_t *bd)
 			bd->d_qactive--;
 			kstat_runq_exit(bd->d_kiop);
 			list_remove(&bd->d_runq, xi);
+			bd_xfer_free(xi);
 		} else {
 			mutex_enter(&bd->d_iomutex);
 		}
