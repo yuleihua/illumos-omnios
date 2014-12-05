@@ -346,6 +346,7 @@ file path=usr/lib/$(ARCH64)/libads.so.1
 file path=usr/lib/$(ARCH64)/libadutils.so.1
 file path=usr/lib/$(ARCH64)/libast.so.1
 file path=usr/lib/$(ARCH64)/libbsdmalloc.so.1
+file path=usr/lib/$(ARCH64)/libbunyan.so.1
 file path=usr/lib/$(ARCH64)/libcfgadm.so.1
 file path=usr/lib/$(ARCH64)/libcmd.so.1
 file path=usr/lib/$(ARCH64)/libcommputil.so.1
@@ -422,6 +423,7 @@ file path=usr/lib/libads.so.1
 file path=usr/lib/libadutils.so.1
 file path=usr/lib/libast.so.1
 file path=usr/lib/libbsdmalloc.so.1
+file path=usr/lib/libbunyan.so.1
 $(i386_ONLY)file path=usr/lib/libc/libc_hwcap1.so.1 reboot-needed=true
 $(i386_ONLY)file path=usr/lib/libc/libc_hwcap2.so.1 reboot-needed=true
 $(i386_ONLY)file path=usr/lib/libc/libc_hwcap3.so.1 reboot-needed=true
