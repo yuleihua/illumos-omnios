@@ -2102,6 +2102,7 @@ udp_optname(private_t *pri, long val)
 	case UDP_EXCLBIND:		return ("UDP_EXCLBIND");
 	case UDP_RCVHDR:		return ("UDP_RCVHDR");
 	case UDP_NAT_T_ENDPOINT:	return ("UDP_NAT_T_ENDPOINT");
+	case UDP_SRCPORT_HASH:		return ("UDP_SRCPORT_HASH");
 	case UDP_SND_TO_CONNECTED:	return ("UDP_SND_TO_CONNECTED");
 
 	default:			(void) snprintf(pri->code_buf,
