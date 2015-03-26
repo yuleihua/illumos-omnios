@@ -22,6 +22,7 @@
 /*
  * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014 by Delphix. All rights reserved.
+ * Copyright 2015 Joyent, Inc.
  */
 
 #include <sys/types.h>
@@ -1729,8 +1730,6 @@ htable_walk(
 	}
 
 	while (va < eaddr && va >= *vaddr) {
-		ASSERT(!IN_VA_HOLE(va));
-
 		/*
 		 *  Find lowest table with any entry for given address.
 		 */
@@ -1739,6 +1738,7 @@ htable_walk(
 			if (ht != NULL) {
 				pte = htable_scan(ht, &va, eaddr);
 				if (PTE_ISPAGE(pte, l)) {
+					VERIFY(!IN_VA_HOLE(va));
 					*vaddr = va;
 					*htp = ht;
 					return (pte);
