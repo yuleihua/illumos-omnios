@@ -765,6 +765,8 @@ extern boolean_t libzfs_fru_compare(libzfs_handle_t *, const char *,
 extern boolean_t libzfs_fru_notself(libzfs_handle_t *, const char *);
 extern int zpool_fru_set(zpool_handle_t *, uint64_t, const char *);
 
+extern int zfs_get_hole_count(const char *, uint64_t *, uint64_t *);
+
 #ifdef	__cplusplus
 }
 #endif
