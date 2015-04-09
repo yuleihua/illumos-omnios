@@ -39,7 +39,8 @@ MANFILES= 	arp.7p		\
 	 	sip.7p		\
 	 	slp.7p		\
 	 	tcp.7p		\
-	 	udp.7p
+	 	udp.7p		\
+		vxlan.7p
 
 MANLINKS=	AH.7p		\
 		ARP.7p		\
@@ -51,6 +52,7 @@ MANLINKS=	AH.7p		\
 		SCTP.7p		\
 		TCP.7p		\
 		UDP.7p		\
+		VXLAN.7p	\
 	 	if.7p
 
 ARP.7p		:= LINKSRC = arp.7p
@@ -74,6 +76,8 @@ SCTP.7p 	:= LINKSRC = sctp.7p
 TCP.7p		:= LINKSRC = tcp.7p
 
 UDP.7p		:= LINKSRC = udp.7p
+
+VXLAN.7p	:= LINKSRC = vxlan.7p
 
 .KEEP_STATE:
 
