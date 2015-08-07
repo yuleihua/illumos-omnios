@@ -22,6 +22,8 @@
 /*
  * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012 Milan Jurik. All rights reserved.
+ * Copyright 2015 Nexenta Systems, Inc.  All rights reserved.
+ * Copyright 2015 Joyent, Inc.
  */
 
 #include <alloca.h>
@@ -1162,7 +1164,8 @@ ses_create_disk(ses_enum_data_t *sdp, tnode_t *pnode, nvlist_t *props)
 	    status != SES_ESC_CRITICAL &&
 	    status != SES_ESC_NONCRITICAL &&
 	    status != SES_ESC_UNRECOVERABLE &&
-	    status != SES_ESC_NO_ACCESS)
+	    status != SES_ESC_NO_ACCESS &&
+	    status != SES_ESC_UNKNOWN)
 		return (0);
 
 	topo_mod_dprintf(mod, "found attached disk");
