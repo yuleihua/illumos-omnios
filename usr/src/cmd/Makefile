@@ -434,6 +434,7 @@ COMMON_SUBDIRS=		\
 	users		\
 	utmp_update	\
 	utmpd		\
+	uuidgen		\
 	valtools	\
 	vgrind		\
 	vi		\
