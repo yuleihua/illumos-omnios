@@ -250,5 +250,6 @@ export PERL_PKGVERS=
 # To build IPS packages for the version you wish to update, ONNV_BUILDNUM must
 # match the version you're on.  Find this in /etc/release, and lose the 'r'.
 
-# Current bloody is r151015, so use '151015'.
-export ONNV_BUILDNUM=151015
+# Current release is r151016, so use '151016'.  If you are building archives to
+# use on a different OmniOS release, adjust accordingly to match that release.
+export ONNV_BUILDNUM=151016
