@@ -250,11 +250,21 @@ dls_promisc(dld_str_t *dsp, uint32_t new_flags)
 {
 	int err = 0;
 	uint32_t old_flags = dsp->ds_promisc;
+	uint32_t new_type = new_flags &
+	    ~(DLS_PROMISC_RX_ONLY | DLS_PROMISC_FIXUPS);
 	mac_client_promisc_type_t mptype = MAC_CLIENT_PROMISC_ALL;
 
 	ASSERT(MAC_PERIM_HELD(dsp->ds_mh));
 	ASSERT(!(new_flags & ~(DLS_PROMISC_SAP | DLS_PROMISC_MULTI |
-	    DLS_PROMISC_PHYS)));
+	    DLS_PROMISC_PHYS | DLS_PROMISC_RX_ONLY | DLS_PROMISC_FIXUPS)));
+
+	/*
+	 * Asking us just to turn on DLS_PROMISC_RX_ONLY and DLS_PROMISC_FIXUPS
+	 * is not valid.
+	 */
+	if ((new_flags & ~(DLS_PROMISC_RX_ONLY | DLS_PROMISC_FIXUPS)) == 0 &&
+	    new_flags != 0)
+		return (EINVAL);
 
 	/*
 	 * If the user has only requested DLS_PROMISC_MULTI then we need to make
@@ -263,6 +273,25 @@ dls_promisc(dld_str_t *dsp, uint32_t new_flags)
 	if (new_flags == DLS_PROMISC_MULTI)
 		mptype = MAC_CLIENT_PROMISC_MULTI;
 
+	/*
+	 * Look at new flags and figure out the correct mac promisc flags.
+	 * If we've only requested DLS_PROMISC_SAP and not _MULTI or _PHYS,
+	 * don't turn on physical promisc mode.
+	 */
+	if (new_flags & DLS_PROMISC_RX_ONLY)
+		mac_flags |= MAC_PROMISC_FLAGS_NO_TX_LOOP;
+	if (new_flags & DLS_PROMISC_FIXUPS)
+		mac_flags |= MAC_PROMISC_FLAGS_DO_FIXUPS;
+	if (new_type == DLS_PROMISC_SAP)
+		mac_flags |= MAC_PROMISC_FLAGS_NO_PHYS;
+
+	/*
+	 * There are three cases we care about here with respect to MAC. Going
+	 * from nothing to something, something to nothing, something to
+	 * something where we need to change how we're getting stuff from mac.
+	 * In the last case, as long as they're not equal, we need to assume
+	 * something has changed and do something about it.
+	 */
 	if (dsp->ds_promisc == 0 && new_flags != 0) {
 		/*
 		 * If only DLS_PROMISC_SAP, we don't turn on the
