@@ -250,5 +250,5 @@ export PERL_PKGVERS=
 # To build IPS packages for the version you wish to update, ONNV_BUILDNUM must
 # match the version you're on.  Find this in /etc/release, and lose the 'r'.
 
-# Current bloody is r151017, so use '151017'.
-export ONNV_BUILDNUM=151017
+# Current release is r151018, so use '151018'.
+export ONNV_BUILDNUM=151018
