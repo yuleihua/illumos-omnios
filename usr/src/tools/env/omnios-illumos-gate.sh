@@ -21,7 +21,7 @@
 # Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # Copyright 2015 Nexenta Systems, Inc.  All rights reserved.
 # Copyright 2012 Joshua M. Clulow <josh@sysmgr.org>
-# Copyright 2016, OmniTI Computer Consulting, Inc. All rights reserved.
+# Copyright 2017, OmniTI Computer Consulting, Inc. All rights reserved.
 #
 
 # Configuration variables for the runtime environment of the nightly
@@ -247,5 +247,5 @@ export PERL_PKGVERS=
 # To build IPS packages for the version you wish to update, ONNV_BUILDNUM must
 # match the version you're on.  Find this in /etc/release, and lose the 'r'.
 
-# Current bloody is r151021, so use '151021'.
-export ONNV_BUILDNUM=151021
+# Current release is r151022, so use '151022'.
+export ONNV_BUILDNUM=151022
