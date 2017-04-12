@@ -113,6 +113,7 @@
 #include <sys/sysmacros.h>
 #include <sys/sdt.h>
 #include <sys/procfs.h>
+#include <sys/eventfd.h>
 
 #include <sys/lx_brand.h>
 #include <sys/lx_syscalls.h>
@@ -527,24 +528,19 @@ lx_io_worker(void *a)
 			/* Update the eventfd if necessary */
 			if (do_resfd) {
 				vnode_t *vp = resfp->f_vnode;
-				struct uio auio;
-				struct iovec aiov;
 				uint64_t val = 1;
-
-				aiov.iov_base = (caddr_t)&val;
-				aiov.iov_len = sizeof (val);
-				auio.uio_iov = &aiov;
-				auio.uio_iovcnt = 1;
-				auio.uio_loffset = 0;
-				auio.uio_offset = 0;
-				auio.uio_resid = sizeof (val);
-				auio.uio_segflg = UIO_SYSSPACE;
-				auio.uio_fmode = FWRITE | FNONBLOCK;
 
 				set_active_fd(resfd);
 
-				(void) VOP_WRITE(vp, &auio, FWRITE,
-				    resfp->f_cred, NULL);
+				/*
+				 * Eventfd notifications from AIO are special
+				 * in that they are not expected to block.
+				 * This interface allows the eventfd value to
+				 * reach (but not cross) the overflow value.
+				 */
+				(void) VOP_IOCTL(vp, EVENTFDIOC_POST,
+				    (intptr_t)&val, FKIOCTL, resfp->f_cred,
+				    NULL, NULL);
 
 				releasef(resfd);
 			}
@@ -871,7 +867,7 @@ lx_io_submit(lx_aio_context_t cid, const long nr, uintptr_t **bpp)
 
 		/* Validate fd */
 		if ((fp = getf(cb.lxiocb_fd)) == NULL) {
-			err = EINVAL;
+			err = EBADF;
 			break;
 		}
 
@@ -1156,6 +1152,16 @@ lx_io_cancel(lx_aio_context_t cid, lx_iocb_t *iocbp, lx_io_event_t *result)
 	lx_io_ctx_t *cp;
 	lx_io_elem_t *ep;
 	lx_io_event_t ev;
+	uint32_t buf;
+
+	/*
+	 * The Linux io_cancel copies in a field from the iocb in order to
+	 * locate the matching kernel-internal structure.  To appease the LTP
+	 * test case which exercises this, a similar copy is performed here.
+	 */
+	if (copyin(iocbp, &buf, sizeof (buf)) != 0) {
+		return (set_errno(EFAULT));
+	}
 
 	if ((cp = lx_io_cp_hold(cid)) == NULL)
 		return (set_errno(EINVAL));
