@@ -21,12 +21,24 @@
 #include <sys/mman.h>
 #include <sys/debug.h>
 #include <sys/sysmacros.h>
+#include <sys/policy.h>
+#include <sys/lx_brand.h>
+#include <vm/as.h>
 
 /* From uts/common/os/grow.c */
 extern int mprotect(caddr_t, size_t, int);
 /* From uts/common/syscall/memcntl.c */
 extern int memcntl(caddr_t, size_t, int, caddr_t, int, int);
 
+/*
+ * After Linux 2.6.8, an unprivileged process can lock memory up to its
+ * RLIMIT_MEMLOCK resource limit.
+ *
+ * Within memcntl() it assumes we have PRIV_PROC_LOCK_MEMORY, or the check in
+ * secpolicy_lock_memory() will fail when we attempt to lock memory. Thus,
+ * to support the Linux semantics, we bypass memcntl() and perform the locking
+ * operations directly.
+ */
 
 #define	LX_MADV_NORMAL		0
 #define	LX_MADV_RANDOM		1
@@ -52,9 +64,14 @@ extern int memcntl(caddr_t, size_t, int, caddr_t, int, int);
 /* For convenience */
 #define	LX_PROT_GROWMASK	(LX_PROT_GROWSUP|LX_PROT_GROWSDOWN)
 
+/* From lx_rlimit.c */
+extern void lx_get_rctl(char *, struct rlimit64 *);
+
 static int
 lx_mlock_common(int op, uintptr_t addr, size_t len)
 {
+	int err;
+	struct as *as = curproc->p_as;
 	const uintptr_t align_addr = addr & (uintptr_t)PAGEMASK;
 	const size_t align_len = P2ROUNDUP(len + (addr & PAGEOFFSET), PAGESIZE);
 
@@ -66,12 +83,31 @@ lx_mlock_common(int op, uintptr_t addr, size_t len)
 		return (set_errno(EINVAL));
 	}
 
-	return (memcntl((caddr_t)align_addr, align_len, op, 0, 0, 0));
+	err = as_ctl(as, (caddr_t)align_addr, align_len, op, 0, 0, NULL, 0);
+	if (err == EAGAIN)
+		err = ENOMEM;
+	return (err == 0 ? 0 : set_errno(err));
 }
 
 int
 lx_mlock(uintptr_t addr, size_t len)
 {
+	int err;
+
+	/*
+	 * If the the caller is not privileged and either the limit is 0, or
+	 * the kernel version is earlier than 2.6.9, then fail with EPERM. See
+	 * LTP mlock2.c.
+	 */
+	if ((err = secpolicy_lock_memory(CRED())) != 0) {
+		struct rlimit64 rlim64;
+
+		lx_get_rctl("process.max-locked-memory", &rlim64);
+		if (rlim64.rlim_cur == 0 ||
+		    lx_kern_release_cmp(curzone, "2.6.9") < 0)
+			return (set_errno(err));
+	}
+
 	return (lx_mlock_common(MC_LOCK, addr, len));
 }
 
@@ -84,13 +120,45 @@ lx_munlock(uintptr_t addr, size_t len)
 int
 lx_mlockall(int flags)
 {
-	return (memcntl(0, 0, MC_LOCKAS, (caddr_t)(uintptr_t)flags, 0, 0));
+	int err;
+	struct as *as = curproc->p_as;
+
+	/*
+	 * If the the caller is not privileged and either the limit is 0, or
+	 * the kernel version is earlier than 2.6.9, then fail with EPERM. See
+	 * LTP mlockall2.c.
+	 */
+	if ((err = secpolicy_lock_memory(CRED())) != 0) {
+		struct rlimit64 rlim64;
+
+		lx_get_rctl("process.max-locked-memory", &rlim64);
+		if (rlim64.rlim_cur == 0 ||
+		    lx_kern_release_cmp(curzone, "2.6.9") < 0)
+			return (set_errno(err));
+	}
+
+	if ((flags & ~(MCL_FUTURE | MCL_CURRENT)) || flags == 0)
+		return (set_errno(EINVAL));
+
+	err = as_ctl(as, 0, 0, MC_LOCKAS, 0, (uintptr_t)flags, NULL, 0);
+	if (err == EAGAIN)
+		err = ENOMEM;
+	return (err == 0 ? 0 : set_errno(err));
 }
 
 int
 lx_munlockall(void)
 {
-	return (memcntl(0, 0, MC_UNLOCKAS, 0, 0, 0));
+	int err;
+	struct as *as = curproc->p_as;
+
+	if (lx_kern_release_cmp(curzone, "2.6.9") < 0) {
+		if ((err = secpolicy_lock_memory(CRED())) != 0)
+			return (set_errno(err));
+	}
+
+	err = as_ctl(as, 0, 0, MC_UNLOCKAS, 0, 0, NULL, 0);
+	return (err == 0 ? 0 : set_errno(err));
 }
 
 int
