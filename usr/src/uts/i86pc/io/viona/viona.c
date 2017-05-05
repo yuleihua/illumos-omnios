@@ -243,7 +243,7 @@
 #define	VIONA_NAME		"Virtio Network Accelerator"
 #define	VIONA_CTL_MINOR		0
 #define	VIONA_CLI_NAME		"viona"		/* MAC client name */
-#define VIONA_MAX_HDRS_LEN	(sizeof (struct ether_vlan_header) + \
+#define	VIONA_MAX_HDRS_LEN	(sizeof (struct ether_vlan_header) + \
 	IP_MAX_HDR_LENGTH + TCP_MAX_HDR_LENGTH)
 
 #define	VTNET_MAXSEGS		32
