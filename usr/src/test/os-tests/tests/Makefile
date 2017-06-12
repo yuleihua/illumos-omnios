@@ -11,9 +11,9 @@
 
 #
 # Copyright (c) 2012 by Delphix. All rights reserved.
-# Copyright 2016 Joyent, Inc.
+# Copyright 2017 Joyent, Inc.
 #
 
-SUBDIRS = poll secflags sigqueue spoof-ras sdevfs timer file-locking
+SUBDIRS = poll secflags sigqueue spoof-ras sdevfs timer file-locking pf_key
 
 include $(SRC)/test/Makefile.com
