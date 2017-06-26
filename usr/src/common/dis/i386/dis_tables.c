@@ -21,7 +21,7 @@
  */
 /*
  * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2016 Joyent, Inc.
+ * Copyright 2017 Joyent, Inc.
  */
 
 /*
@@ -85,6 +85,7 @@ typedef struct	instable {
 	uint_t		it_stackop:1;		/* push/pop stack operation */
 	uint_t		it_vexwoxmm:1;		/* VEX instructions that don't use XMM/YMM */
 	uint_t		it_avxsuf:1;		/* AVX suffix required */
+	uint_t		it_vexopmask:1;		/* VEX inst. that use opmask */
 } instable_t;
 
 /*
@@ -226,6 +227,9 @@ enum {
 	VEX_MR,         /* VEX  mod_rm                         -> mod_reg */
 	VEX_RRI,        /* VEX  mod_reg, mod_rm                -> implicit(eflags/r32) */
 	VEX_RX,         /* VEX  mod_reg                        -> mod_rm */
+	VEX_KRR,        /* VEX  mod_rm                         -> mod_reg */
+	VEX_KMR,        /* VEX  mod_reg                        -> mod_rm */
+	VEX_KRM,        /* VEX  mod_rm                         -> mod_reg */
 	VEX_RR,         /* VEX  mod_rm                         -> mod_reg */
 	VEX_RRi,        /* VEX  mod_rm, imm8                   -> mod_reg */
 	VEX_RM,         /* VEX  mod_reg                        -> mod_rm */
@@ -238,7 +242,10 @@ enum {
 	SVM,		/* AMD SVM instructions */
 	BLS,		/* BLSR, BLSMSK, BLSI */
 	FMA,		/* FMA instructions, all VEX_RMrX */
-	ADX		/* ADX instructions, support REX.w, mod_rm->mod_reg */
+	ADX,		/* ADX instructions, support REX.w, mod_rm->mod_reg */
+	EVEX_RX,        /* EVEX  mod_reg                      -> mod_rm */
+	EVEX_MX,        /* EVEX  mod_rm                       -> mod_reg */
+	EVEX_RMrX	/* EVEX  EVEX.vvvv, mod_rm            -> mod_reg */
 };
 
 /*
@@ -284,6 +291,7 @@ enum {
  *   "y" - means the operand size is always 64 bits in 64 bit mode
  *   "p" - means push/pop stack operation
  *   "vr" - means VEX instruction that operates on normal registers, not fpu
+ *   "vo" - means VEX instruction that operates on opmask registers, not fpu
  */
 
 #if defined(DIS_TEXT) && defined(DIS_MEM)
@@ -297,6 +305,8 @@ enum {
 #define	TNSZ(name, amode, sz)	{TERM, amode, name, 0, sz, 0, 0, 0, 0}
 #define	TNSZy(name, amode, sz)	{TERM, amode, name, 0, sz, 0, 1, 0, 0}
 #define	TNSZvr(name, amode, sz)	{TERM, amode, name, 0, sz, 0, 0, 0, 0, 1}
+#define	TSavo(name, amode)	{TERM, amode, name, 1,  0, 0, 0, 0, 0, 0, 1, 1}
+#define	TSvo(name, amode)	{TERM, amode, name, 1,  0, 0, 0, 0, 0, 0, 0, 1}
 #define	TS(name, amode)		{TERM, amode, name, 1, 0, 0, 0, 0, 0}
 #define	TSx(name, amode)	{TERM, amode, name, 1, 0, 1, 0, 0, 0}
 #define	TSy(name, amode)	{TERM, amode, name, 1, 0, 0, 1, 0, 0}
@@ -317,6 +327,7 @@ enum {
 #define	TNSZ(name, amode, sz)	{TERM, amode, name, 0, 0, 0, 0, 0}
 #define	TNSZy(name, amode, sz)	{TERM, amode, name, 0, 0, 1, 0, 0}
 #define	TNSZvr(name, amode, sz)	{TERM, amode, name, 0, 0, 0, 0, 0, 1}
+#define	TSvo(name, amode)	{TERM, amode, name, 1, 0, 0, 0, 0, 0, 0, 1}
 #define	TS(name, amode)		{TERM, amode, name, 1, 0, 0, 0, 0}
 #define	TSx(name, amode)	{TERM, amode, name, 1, 1, 0, 0, 0}
 #define	TSy(name, amode)	{TERM, amode, name, 1, 0, 1, 0, 0}
@@ -337,6 +348,7 @@ enum {
 #define	TNSZ(name, amode, sz)	{TERM, amode, sz, 0, 0, 0, 0}
 #define	TNSZy(name, amode, sz)	{TERM, amode, sz, 0, 1, 0, 0}
 #define	TNSZvr(name, amode, sz)	{TERM, amode, sz, 0, 0, 0, 0, 1}
+#define	TSvo(name, amode)	{TERM, amode,  0, 0, 0, 0, 0, 0, 0, 1}
 #define	TS(name, amode)		{TERM, amode,  0, 0, 0, 0, 0}
 #define	TSx(name, amode)	{TERM, amode,  0, 1, 0, 0, 0}
 #define	TSy(name, amode)	{TERM, amode,  0, 0, 1, 0, 0}
@@ -357,6 +369,7 @@ enum {
 #define	TNSZ(name, amode, sz)	{TERM, amode,  0, 0, 0, 0}
 #define	TNSZy(name, amode, sz)	{TERM, amode,  0, 1, 0, 0}
 #define	TNSZvr(name, amode, sz)	{TERM, amode,  0, 0, 0, 0, 1}
+#define	TSvo(name, amode)	{TERM, amode,  0, 0, 0, 0, 0, 0, 1}
 #define	TS(name, amode)		{TERM, amode,  0, 0, 0, 0}
 #define	TSx(name, amode)	{TERM, amode,  1, 0, 0, 0}
 #define	TSy(name, amode)	{TERM, amode,  0, 1, 0, 0}
@@ -466,14 +479,41 @@ const char *const dis_MMREG[16] = {
 	"%mm0", "%mm1", "%mm2", "%mm3", "%mm4", "%mm5", "%mm6", "%mm7"
 };
 
-const char *const dis_XMMREG[16] = {
-    "%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4", "%xmm5", "%xmm6", "%xmm7",
-    "%xmm8", "%xmm9", "%xmm10", "%xmm11", "%xmm12", "%xmm13", "%xmm14", "%xmm15"
+const char *const dis_XMMREG[32] = {
+    "%xmm0", "%xmm1", "%xmm2", "%xmm3",
+    "%xmm4", "%xmm5", "%xmm6", "%xmm7",
+    "%xmm8", "%xmm9", "%xmm10", "%xmm11",
+    "%xmm12", "%xmm13", "%xmm14", "%xmm15",
+    "%xmm16", "%xmm17", "%xmm18", "%xmm19",
+    "%xmm20", "%xmm21", "%xmm22", "%xmm23",
+    "%xmm24", "%xmm25", "%xmm26", "%xmm27",
+    "%xmm28", "%xmm29", "%xmm30", "%xmm31",
 };
 
-const char *const dis_YMMREG[16] = {
-    "%ymm0", "%ymm1", "%ymm2", "%ymm3", "%ymm4", "%ymm5", "%ymm6", "%ymm7",
-    "%ymm8", "%ymm9", "%ymm10", "%ymm11", "%ymm12", "%ymm13", "%ymm14", "%ymm15"
+const char *const dis_YMMREG[32] = {
+    "%ymm0", "%ymm1", "%ymm2", "%ymm3",
+    "%ymm4", "%ymm5", "%ymm6", "%ymm7",
+    "%ymm8", "%ymm9", "%ymm10", "%ymm11",
+    "%ymm12", "%ymm13", "%ymm14", "%ymm15",
+    "%ymm16", "%ymm17", "%ymm18", "%ymm19",
+    "%ymm20", "%ymm21", "%ymm22", "%ymm23",
+    "%ymm24", "%ymm25", "%ymm26", "%ymm27",
+    "%ymm28", "%ymm29", "%ymm30", "%ymm31",
+};
+
+const char *const dis_ZMMREG[32] = {
+    "%zmm0", "%zmm1", "%zmm2", "%zmm3",
+    "%zmm4", "%zmm5", "%zmm6", "%zmm7",
+    "%zmm8", "%zmm9", "%zmm10", "%zmm11",
+    "%zmm12", "%zmm13", "%zmm14", "%zmm15",
+    "%zmm16", "%zmm17", "%zmm18", "%zmm19",
+    "%zmm20", "%zmm21", "%zmm22", "%zmm23",
+    "%zmm24", "%zmm25", "%zmm26", "%zmm27",
+    "%zmm28", "%zmm29", "%zmm30", "%zmm31",
+};
+
+const char *const dis_KOPMASKREG[8] = {
+    "%k0", "%k1", "%k2", "%k3", "%k4", "%k5", "%k6", "%k7"
 };
 
 const char *const dis_SEGREG[16] = {
@@ -559,8 +599,8 @@ const instable_t dis_op0FBA[8] = {
 
 const instable_t dis_op0FC7[8] = {
 
-/*  [0]  */	INVALID,		TNS("cmpxchg8b",M),	INVALID,		INVALID,
-/*  [4]  */	INVALID,		INVALID,		TNS("vmptrld",MG9),	TNS("vmptrst",MG9),
+/*  [0]  */	INVALID,		TNS("cmpxchg8b",M),	INVALID,		TNS("xrstors",MG9),
+/*  [4]  */	TNS("xsavec",MG9),	TNS("xsaves",MG9),		TNS("vmptrld",MG9),	TNS("vmptrst",MG9),
 };
 
 /*
@@ -753,9 +793,9 @@ const instable_t dis_opAVX660F[256] = {
 /*  [38]  */	INVALID,		INVALID,		INVALID,		INVALID,
 /*  [3C]  */	INVALID,		INVALID,		INVALID,		INVALID,
 
-/*  [40]  */	INVALID,		INVALID,		INVALID,		INVALID,
-/*  [44]  */	INVALID,		INVALID,		INVALID,		INVALID,
-/*  [48]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [40]  */	INVALID,		TSvo("kand",VEX_RMX),	TSvo("kandn",VEX_RMX),		INVALID,
+/*  [44]  */	TSvo("knot",VEX_MX),	TSvo("kor",VEX_RMX),	TSvo("kxnor",VEX_RMX),		TSvo("kxor",VEX_RMX),
+/*  [48]  */	INVALID,		INVALID,		TSvo("kadd",VEX_RMX),		TSvo("kunpck",VEX_RMX),
 /*  [4C]  */	INVALID,		INVALID,		INVALID,		INVALID,
 
 /*  [50]  */	TNS("vmovmskpd",VEX_MR),	TNSZ("vsqrtpd",VEX_MX,16),	INVALID,		INVALID,
@@ -778,9 +818,9 @@ const instable_t dis_opAVX660F[256] = {
 /*  [88]  */	INVALID,		INVALID,		INVALID,		INVALID,
 /*  [8C]  */	INVALID,		INVALID,		INVALID,		INVALID,
 
-/*  [90]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [90]  */	TSvo("kmov",VEX_KRM),	TSvo("kmov",VEX_KMR),	TSvo("kmov",VEX_KRR),		TSvo("kmov",VEX_MR),
 /*  [94]  */	INVALID,		INVALID,		INVALID,		INVALID,
-/*  [98]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [98]  */	TSvo("kortest",VEX_MX),	TSvo("ktest",VEX_MX),	INVALID,		INVALID,
 /*  [9C]  */	INVALID,		INVALID,		INVALID,		INVALID,
 
 /*  [A0]  */	INVALID,		INVALID,		INVALID,		INVALID,
@@ -945,7 +985,7 @@ const instable_t dis_opAVXF20F[256] = {
 /*  [88]  */	INVALID,		INVALID,		INVALID,		INVALID,
 /*  [0C]  */	INVALID,		INVALID,		INVALID,		INVALID,
 
-/*  [90]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [90]  */	INVALID,		INVALID,		TSvo("kmov",VEX_KRR),		TSvo("kmov",VEX_MR),
 /*  [94]  */	INVALID,		INVALID,		INVALID,		INVALID,
 /*  [98]  */	INVALID,		INVALID,		INVALID,		INVALID,
 /*  [9C]  */	INVALID,		INVALID,		INVALID,		INVALID,
@@ -1392,6 +1432,92 @@ const instable_t dis_opAVXF30F[256] = {
 /*  [F8]  */	INVALID,		INVALID,		INVALID,		INVALID,
 /*  [FC]  */	INVALID,		INVALID,		INVALID,		INVALID,
 };
+
+/*
+ * Table for instructions with an EVEX prefix.
+ */
+const instable_t dis_opAVX62[256] = {
+/*  [00]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [04]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [08]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [0C]  */	INVALID,		INVALID,		INVALID,		INVALID,
+
+/*  [10]  */	TNS("vmovup",EVEX_MX),	TNS("vmovup",EVEX_RX),	INVALID,		INVALID,
+/*  [14]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [18]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [1C]  */	INVALID,		INVALID,		INVALID,		INVALID,
+
+/*  [20]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [24]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [28]  */	TNS("vmovap",EVEX_MX),	TNS("vmovap",EVEX_RX),	INVALID,		INVALID,
+/*  [2C]  */	INVALID,		INVALID,		INVALID,		INVALID,
+
+/*  [30]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [34]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [38]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [3C]  */	INVALID,		INVALID,		INVALID,		INVALID,
+
+/*  [40]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [44]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [48]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [4C]  */	INVALID,		INVALID,		INVALID,		INVALID,
+
+/*  [50]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [54]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [58]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [5C]  */	INVALID,		INVALID,		INVALID,		INVALID,
+
+/*  [60]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [64]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [68]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [6C]  */	INVALID,		INVALID,		INVALID,		TNS("vmovdq",EVEX_MX),
+
+/*  [70]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [74]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [78]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [7C]  */	INVALID,		INVALID,		INVALID,		TNS("vmovdq",EVEX_RX),
+
+/*  [80]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [84]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [88]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [0C]  */	INVALID,		INVALID,		INVALID,		INVALID,
+
+/*  [90]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [94]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [98]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [9C]  */	INVALID,		INVALID,		INVALID,		INVALID,
+
+/*  [A0]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [A4]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [A8]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [AC]  */	INVALID,		INVALID,		INVALID,		INVALID,
+
+/*  [B0]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [B4]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [B8]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [BC]  */	INVALID,		INVALID,		INVALID,		INVALID,
+
+/*  [C0]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [C4]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [C8]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [CC]  */	INVALID,		INVALID,		INVALID,		INVALID,
+
+/*  [D0]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [D4]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [D8]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [DC]  */	INVALID,		INVALID,		INVALID,		INVALID,
+
+/*  [E0]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [E4]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [E8]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [EC]  */	INVALID,		INVALID,		INVALID,		INVALID,
+
+/*  [F0]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [F4]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [F8]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [FC]  */	INVALID,		INVALID,		INVALID,		INVALID,
+};
+
 /*
  * The following two tables are used to encode crc32 and movbe
  * since they share the same opcodes.
@@ -1675,7 +1801,7 @@ const instable_t dis_opAVX660F3A[256] = {
 /*  [28]  */	INVALID,		INVALID,		INVALID,		INVALID,
 /*  [2C]  */	INVALID,		INVALID,		INVALID,		INVALID,
 
-/*  [30]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [30]  */	TSvo("kshiftr",VEX_MXI),	TSvo("kshiftr",VEX_MXI),	TSvo("kshiftl",VEX_MXI),	TSvo("kshiftl",VEX_MXI),
 /*  [34]  */	INVALID,		INVALID,		INVALID,		INVALID,
 /*  [38]  */	TNSZ("vinserti128",VEX_RMRX,16),TNSZ("vextracti128",VEX_RIM,16),INVALID,		INVALID,
 /*  [3C]  */	INVALID,		INVALID,		INVALID,		INVALID,
@@ -1859,9 +1985,9 @@ const instable_t dis_opAVX0F[16][16] = {
 /*  [38]  */	INVALID,		INVALID,		INVALID,		INVALID,
 /*  [3C]  */	INVALID,		INVALID,		INVALID,		INVALID,
 }, {
-/*  [40]  */	INVALID,		INVALID,		INVALID,		INVALID,
-/*  [44]  */	INVALID,		INVALID,		INVALID,		INVALID,
-/*  [48]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [40]  */	INVALID,		TSvo("kand",VEX_RMX),	TSvo("kandn",VEX_RMX),		INVALID,
+/*  [44]  */	TSvo("knot",VEX_MX),	TSvo("kor",VEX_RMX),	TSvo("kxnor",VEX_RMX),		TSvo("kxor",VEX_RMX),
+/*  [48]  */	INVALID,		INVALID,		TSvo("kadd",VEX_RMX),		TSvo("kunpck",VEX_RMX),
 /*  [4C]  */	INVALID,		INVALID,		INVALID,		INVALID,
 }, {
 /*  [50]  */	TNS("vmovmskps",VEX_MR),	TNSZ("vsqrtps",VEX_MX,16),	TNSZ("vrsqrtps",VEX_MX,16),TNSZ("vrcpps",VEX_MX,16),
@@ -1884,9 +2010,9 @@ const instable_t dis_opAVX0F[16][16] = {
 /*  [88]  */	INVALID,		INVALID,		INVALID,		INVALID,
 /*  [8C]  */	INVALID,		INVALID,		INVALID,		INVALID,
 }, {
-/*  [90]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [90]  */	TSvo("kmov",VEX_KRM),	TSvo("kmov",VEX_KMR),	TSvo("kmov",VEX_KRR),		TSvo("kmov",VEX_MR),
 /*  [94]  */	INVALID,		INVALID,		INVALID,		INVALID,
-/*  [98]  */	INVALID,		INVALID,		INVALID,		INVALID,
+/*  [98]  */	TSvo("kortest",VEX_MX),	TSvo("ktest",VEX_MX),	INVALID,		INVALID,
 /*  [9C]  */	INVALID,		INVALID,		INVALID,		INVALID,
 }, {
 /*  [A0]  */	INVALID,		INVALID,		INVALID,		INVALID,
@@ -2196,7 +2322,7 @@ const instable_t dis_distable[16][16] = {
 /* [5,8] */	TSp("pop",R),		TSp("pop",R),		TSp("pop",R),		TSp("pop",R),
 /* [5,C] */	TSp("pop",R),		TSp("pop",R),		TSp("pop",R),		TSp("pop",R),
 }, {
-/* [6,0] */	TSZx("pusha",IMPLMEM,28),TSZx("popa",IMPLMEM,28), TSx("bound",MR),	TNS("arpl",RMw),
+/* [6,0] */	TSZx("pusha",IMPLMEM,28),TSZx("popa",IMPLMEM,28), TSx("bound",RM),	TNS("arpl",RMw),
 /* [6,4] */	TNS("%fs:",OVERRIDE),	TNS("%gs:",OVERRIDE),	TNS("data16",DM),	TNS("addr16",AM),
 /* [6,8] */	TSp("push",I),		TS("imul",IMUL),	TSp("push",Ib),	TS("imul",IMUL),
 /* [6,C] */	TNSZ("insb",IMPLMEM,1),	TSZ("ins",IMPLMEM,4),	TNSZ("outsb",IMPLMEM,1),TSZ("outs",IMPLMEM,4),
@@ -2271,16 +2397,25 @@ const instable_t dis_distable[16][16] = {
 #define	REX_B 0x01	/* extends ModRM r_m, SIB base, or opcode reg */
 
 /*
- * These are the individual fields of a VEX prefix.
+ * These are the individual fields of a VEX/EVEX prefix.
  */
 #define	VEX_R 0x08	/* REX.R in 1's complement form */
 #define	VEX_X 0x04	/* REX.X in 1's complement form */
 #define	VEX_B 0x02	/* REX.B in 1's complement form */
+
+/* Additional EVEX prefix definitions */
+#define	EVEX_R 0x01	/* REX.R' in 1's complement form */
+#define	EVEX_OPREG_MASK 0x7 /* bit mask for selecting opmask register number */
+#define	EVEX_ZERO_MASK 0x80 /* bit mask for selecting zeroing */
+
 /* Vector Length, 0: scalar or 128-bit vector, 1: 256-bit vector */
 #define	VEX_L 0x04
+/* Vector Length, 0: scalar or 128-bit vector, 1: 256-bit vector, 2: 512-bit */
+#define	EVEX_L 0x06	/* bit mask for EVEX.L'L vector length/RC */
 #define	VEX_W 0x08	/* opcode specific, use like REX.W */
 #define	VEX_m 0x1F	/* VEX m-mmmm field */
-#define	VEX_v 0x78	/* VEX register specifier */
+#define	EVEX_m 0x3	/* EVEX mm field */
+#define	VEX_v 0x78	/* VEX/EVEX register specifier */
 #define	VEX_p 0x03	/* VEX pp field, opcode extension */
 
 /* VEX m-mmmm field, only used by three bytes prefix */
@@ -2320,6 +2455,8 @@ static int isize64[] = {1, 2, 4, 8};
 #define	TEST_OPND	7	/* "value" used to indicate a test reg */
 #define	WORD_OPND	8	/* w-bit value indicating word size reg */
 #define	YMM_OPND	9	/* "value" used to indicate a ymm reg */
+#define	KOPMASK_OPND	10	/* "value" used to indicate an opmask reg */
+#define	ZMM_OPND	11	/* "value" used to indicate a zmm reg */
 
 /*
  * The AVX2 gather instructions are a bit of a mess. While there's a pattern,
@@ -2497,6 +2634,155 @@ dtrace_vex_adjust(uint_t vex_byte1, uint_t mode, uint_t *reg, uint_t *r_m)
 }
 
 /*
+ * Adjust the instruction mnemonic with the appropriate suffix.
+ */
+/* ARGSUSED */
+static void
+dtrace_evex_mnem_adjust(dis86_t *x, instable_t *dp, uint_t vex_W,
+    uint_t evex_byte2)
+{
+#ifdef DIS_TEXT
+	if (dp == &dis_opAVX62[0x7f] ||		/* vmovdq */
+	    dp == &dis_opAVX62[0x6f]) {
+		/* Aligned or Unaligned? */
+		if ((evex_byte2 & 0x3) == 0x01) {
+			(void) strlcat(x->d86_mnem, "a", OPLEN);
+			(void) strlcat(x->d86_mnem, vex_W != 0 ? "64" : "32",
+			    OPLEN);
+		} else {
+			(void) strlcat(x->d86_mnem, "u", OPLEN);
+			switch (evex_byte2 & 0x81) {
+			case 0x0:
+				(void) strlcat(x->d86_mnem, "32", OPLEN);
+				break;
+			case 0x1:
+				(void) strlcat(x->d86_mnem, "8", OPLEN);
+				break;
+			case 0x80:
+				(void) strlcat(x->d86_mnem, "64", OPLEN);
+				break;
+			case 0x81:
+				(void) strlcat(x->d86_mnem, "16", OPLEN);
+				break;
+			}
+		}
+
+	} else {
+		(void) strlcat(x->d86_mnem, vex_W != 0 ? "d" : "s", OPLEN);
+	}
+#endif
+}
+
+/*
+ * The following three functions adjust the register selection based on any
+ * EVEX prefix bits present. See Intel 64 and IA-32 Architectures Software
+ * Developer’s Manual Volume 2 (IASDv2), section 2.6.1 Table 2-30 and
+ * section 2.6.2 Table 2-31.
+ */
+static void
+dtrace_evex_adjust_reg(uint_t evex_byte1, uint_t *reg)
+{
+	if (reg != NULL) {
+		if ((VEX_R & evex_byte1) == 0) {
+			*reg += 8;
+		}
+		if ((EVEX_R & evex_byte1) == 0) {
+			*reg += 16;
+		}
+	}
+}
+
+static void
+dtrace_evex_adjust_rm(uint_t evex_byte1, uint_t *r_m)
+{
+	if (r_m != NULL) {
+		if ((VEX_B & evex_byte1) == 0) {
+			*r_m += 8;
+		}
+		if ((VEX_X & evex_byte1) == 0) {
+			*r_m += 16;
+		}
+	}
+}
+
+/*
+ * Use evex_L to set wbit. See IASDv2 Section 2.6.10 and Table 2-36.
+ */
+static void
+dtrace_evex_adjust_reg_name(uint_t evex_L, uint_t *wbitp)
+{
+	switch (evex_L) {
+	case 0x0:
+		*wbitp = XMM_OPND;
+		break;
+	case 0x1:
+		*wbitp = YMM_OPND;
+		break;
+	case 0x2:
+		*wbitp = ZMM_OPND;
+		break;
+	}
+}
+
+/*
+ * Adjust operand value for disp8*N immediate. See IASDv2 Section 2.6.5.
+ * This currently only handles a subset of the possibilities.
+ */
+static void
+dtrace_evex_adjust_disp8_n(dis86_t *x, int opindex, uint_t L, uint_t modrm)
+{
+	d86opnd_t *opnd = &x->d86_opnd[opindex];
+
+	if (x->d86_error)
+		return;
+
+	/* Check disp8 bit in the ModR/M byte */
+	if ((modrm & 0x80) == 0x80)
+		return;
+
+	/* use evex_L to adjust the value */
+	switch (L) {
+	case 0x0:
+		opnd->d86_value *= 16;
+		break;
+	case 0x1:
+		opnd->d86_value *= 32;
+		break;
+	case 0x2:
+		opnd->d86_value *= 64;
+		break;
+	}
+}
+
+/*
+ * Adjust target for opmask and zeroing. See IASDv2 Section 2.6.1 Table 2-30.
+ */
+/* ARGSUSED */
+static void
+dtrace_evex_adjust_z_opmask(dis86_t *x, uint_t evex_byte3)
+{
+#ifdef DIS_TEXT
+	char *opnd = x->d86_opnd[1].d86_opnd;
+	int opmask_reg = evex_byte3 & EVEX_OPREG_MASK;
+#endif
+	if (x->d86_error)
+		return;
+
+#ifdef DIS_TEXT
+	if (opmask_reg != 0) {
+		/* Append the opmask register to operand 1 */
+		(void) strlcat(opnd, "{", OPLEN);
+		(void) strlcat(opnd, dis_KOPMASKREG[opmask_reg], OPLEN);
+		(void) strlcat(opnd, "}", OPLEN);
+	}
+	if ((evex_byte3 & EVEX_ZERO_MASK) != 0) {
+		/* Append the 'zeroing' modifier to operand 1 */
+		(void) strlcat(opnd, "{z}", OPLEN);
+	}
+#endif /* DIS_TEXT */
+}
+
+/*
  * Get an immediate operand of the given size, with sign extension.
  */
 static void
@@ -2524,6 +2810,7 @@ dtrace_imm_opnd(dis86_t *x, int wbit, int size, int opindex)
 	case MM_OPND:
 	case XMM_OPND:
 	case YMM_OPND:
+	case ZMM_OPND:
 	case SEG_OPND:
 	case CONTROL_OPND:
 	case DEBUG_OPND:
@@ -2636,6 +2923,12 @@ dtrace_get_operand(dis86_t *x, uint_t mode, uint_t r_m, int wbit, int opindex)
 			break;
 		case YMM_OPND:
 			(void) strlcat(opnd, dis_YMMREG[r_m], OPLEN);
+			break;
+		case ZMM_OPND:
+			(void) strlcat(opnd, dis_ZMMREG[r_m], OPLEN);
+			break;
+		case KOPMASK_OPND:
+			(void) strlcat(opnd, dis_KOPMASKREG[r_m], OPLEN);
 			break;
 		case SEG_OPND:
 			(void) strlcat(opnd, dis_SEGREG[r_m], OPLEN);
@@ -2774,10 +3067,13 @@ dtrace_get_operand(dis86_t *x, uint_t mode, uint_t r_m, int wbit, int opindex)
 			regs = (char **)dis_REG64;
 
 		if (x->d86_vsib != 0) {
-			if (wbit == YMM_OPND) /* NOTE this is not addr_size! */
+			if (wbit == YMM_OPND) { /* NOTE this is not addr_size */
 				bregs = (char **)dis_YMMREG;
-			else
+			} else if (wbit == XMM_OPND) {
 				bregs = (char **)dis_XMMREG;
+			} else {
+				bregs = (char **)dis_ZMMREG;
+			}
 			sf = dis_vscale_factor;
 		} else {
 			bregs = regs;
@@ -2912,6 +3208,8 @@ dtrace_disx86(dis86_t *x, uint_t cpu_mode)
 	uint_t opcode5;		/* low nibble of 2nd byte */
 	uint_t opcode6;		/* high nibble of 3rd byte */
 	uint_t opcode7;		/* low nibble of 3rd byte */
+	uint_t opcode8;		/* high nibble of 4th byte */
+	uint_t opcode9;		/* low nibble of 4th byte */
 	uint_t opcode_bytes = 1;
 
 	/*
@@ -2938,6 +3236,13 @@ dtrace_disx86(dis86_t *x, uint_t cpu_mode)
 	uint_t vex_byte1 = 0;
 
 	/*
+	 * EVEX prefix byte 1 includes vex.r, vex.x, vex.b and evex.r.
+	 */
+	uint_t evex_byte1 = 0;
+	uint_t evex_byte2 = 0;
+	uint_t evex_byte3 = 0;
+
+	/*
 	 * For 32-bit mode, it should prefetch the next byte to
 	 * distinguish between AVX and les/lds
 	 */
@@ -2951,6 +3256,8 @@ dtrace_disx86(dis86_t *x, uint_t cpu_mode)
 	uint_t vex_B = 1;
 	uint_t vex_W = 0;
 	uint_t vex_L;
+	uint_t evex_L;
+	uint_t evex_modrm;
 	dis_gather_regs_t *vreg;
 
 #ifdef	DIS_TEXT
@@ -3078,6 +3385,75 @@ dtrace_disx86(dis86_t *x, uint_t cpu_mode)
 			opcode4 = ((reg << 3) | r_m) & 0x0F;
 		}
 	}
+
+	/*
+	 * The EVEX prefix and "bound" instruction share the same first byte.
+	 * "bound" is only valid for 32-bit. For 64-bit this byte begins the
+	 * EVEX prefix and the 2nd byte must have bits 2 & 3 set to 0.
+	 */
+	if (opcode1 == 0x6 && opcode2 == 0x2) {
+		/*
+		 * An EVEX prefix is 4 bytes long, get the next 3 bytes.
+		 */
+		if (dtrace_get_opcode(x, &opcode4, &opcode5) != 0)
+			goto error;
+
+		if (addr_size == SIZE32 && (opcode4 & 0xf) == 0) {
+			/*
+			 * Upper bits in 2nd byte == 0 is 'bound' instn.
+			 *
+			 * We've already read the byte so perform the
+			 * equivalent of dtrace_get_modrm on the byte and set
+			 * the flag to indicate we've already read it.
+			 */
+			char b = (opcode4 << 4) | opcode5;
+
+			r_m = b & 0x7;
+			reg = (b >> 3) & 0x7;
+			mode = (b >> 6) & 0x3;
+			vex_prefetch = 1;
+			goto not_avx512;
+		}
+
+		/* check for correct bits being 0 in 2nd byte */
+		if ((opcode5 & 0xc) != 0)
+			goto error;
+
+		if (dtrace_get_opcode(x, &opcode6, &opcode7) != 0)
+			goto error;
+		/* check for correct bit being 1 in 3rd byte */
+		if ((opcode7 & 0x4) == 0)
+			goto error;
+
+		if (dtrace_get_opcode(x, &opcode8, &opcode9) != 0)
+			goto error;
+
+		/* Reuse opcode1 & opcode2 to get the real opcode now */
+		if (dtrace_get_opcode(x, &opcode1, &opcode2) != 0)
+			goto error;
+
+		/*
+		 * We only use the high nibble from the 2nd byte of the prefix
+		 * and save it in the low bits of evex_byte1. This is because
+		 * two of the bits in opcode5 are constant 0 (checked above),
+		 * and the other two bits are captured in vex_m. Also, the VEX
+		 * constants we check in evex_byte1 are against the low bits.
+		 */
+		evex_byte1 = opcode4;
+		evex_byte2 = (opcode6 << 4) | opcode7;
+		evex_byte3 = (opcode8 << 4) | opcode9;
+
+		vex_m = opcode5 & EVEX_m;
+		vex_v = (((opcode6 << 4) | opcode7) & VEX_v) >> 3;
+		vex_W = (opcode6 & VEX_W) >> 3;
+		vex_p = opcode7 & VEX_p;
+
+		/* Currently only 3 valid values for evex L'L: 00, 01, 10 */
+		evex_L = (opcode8 & EVEX_L) >> 1;
+
+		dp = (instable_t *)&dis_opAVX62[(opcode1 << 4) | opcode2];
+	}
+not_avx512:
 
 	if (vex_prefix == VEX_2bytes) {
 		if (!vex_prefetch) {
@@ -3212,11 +3588,14 @@ dtrace_disx86(dis86_t *x, uint_t cpu_mode)
 	if (vex_prefix) {
 		if (dp->it_vexwoxmm) {
 			wbit = LONG_OPND;
+		} else if (dp->it_vexopmask) {
+			wbit = KOPMASK_OPND;
 		} else {
-			if (vex_L)
+			if (vex_L) {
 				wbit = YMM_OPND;
-			else
+			} else {
 				wbit = XMM_OPND;
+			}
 		}
 	}
 
@@ -3576,6 +3955,12 @@ dtrace_disx86(dis86_t *x, uint_t cpu_mode)
 			opnd_size_prefix = 0;
 			if (opnd_size == SIZE16)
 				opnd_size = SIZE32;
+		} else if (reg == 4 || reg == 5) {
+			/*
+			 * We have xsavec (4) or xsaves (5), so rewrite.
+			 */
+			dp = (instable_t *)&dis_op0FC7[reg];
+			break;
 		}
 		break;
 
@@ -3660,6 +4045,46 @@ dtrace_disx86(dis86_t *x, uint_t cpu_mode)
 		if (dp->it_avxsuf && dp->it_suffix) {
 			(void) strlcat(x->d86_mnem, vex_W != 0 ? "q" : "d",
 			    OPLEN);
+		} else if (dp->it_vexopmask && dp->it_suffix) {
+			/* opmask instructions */
+
+			if (opcode1 == 4 && opcode2 == 0xb) {
+				/* It's a kunpck. */
+				if (vex_prefix == VEX_2bytes) {
+					(void) strlcat(x->d86_mnem,
+					    vex_p == 0 ? "wd" : "bw", OPLEN);
+				} else {
+					/* vex_prefix == VEX_3bytes */
+					(void) strlcat(x->d86_mnem,
+					    "dq", OPLEN);
+				}
+			} else if (opcode1 == 3) {
+				/* It's a kshift[l|r]. */
+				if (vex_W == 0) {
+					(void) strlcat(x->d86_mnem,
+					    opcode2 == 2 ||
+					    opcode2 == 0 ?
+					    "b" : "d", OPLEN);
+				} else {
+					/* W == 1 */
+					(void) strlcat(x->d86_mnem,
+					    opcode2 == 3 || opcode2 == 1 ?
+					    "q" : "w", OPLEN);
+				}
+			} else {
+				/* if (vex_prefix == VEX_2bytes) { */
+				if ((cpu_mode == SIZE64 && opnd_size == 2) ||
+				    vex_prefix == VEX_2bytes) {
+					(void) strlcat(x->d86_mnem,
+					    vex_p == 0 ? "w" :
+					    vex_p == 1 ? "b" : "d",
+					    OPLEN);
+				} else {
+					/* vex_prefix == VEX_3bytes */
+					(void) strlcat(x->d86_mnem,
+					    vex_p == 1 ? "d" : "q", OPLEN);
+				}
+			}
 		} else if (dp->it_suffix) {
 			char *types[] = {"", "w", "l", "q"};
 			if (opcode_bytes == 2 && opcode4 == 4) {
@@ -3676,7 +4101,8 @@ dtrace_disx86(dis86_t *x, uint_t cpu_mode)
 				 * To handle PINSRD and PEXTRD
 				 */
 				(void) strlcat(x->d86_mnem, "d", OPLEN);
-			} else {
+			} else if (dp != &dis_distable[0x6][0x2]) {
+				/* bound instructions (0x62) have no suffix */
 				(void) strlcat(x->d86_mnem, types[opnd_size],
 				    OPLEN);
 			}
@@ -4218,6 +4644,8 @@ just_mem:
 
 	case RM:
 	case RM_66r:
+		if (vex_prefetch)
+			x->d86_got_modrm = 1;
 		wbit = LONG_OPND;
 		STANDARD_MODRM(x, mode, reg, r_m, rex_prefix, wbit, 1);
 		break;
@@ -4768,7 +5196,8 @@ xmmprm:
 
 	case XMMFENCE:
 		/*
-		 * XRSTOR and LFENCE share the same opcode but differ in mode
+		 * XRSTOR, XSAVEOPT and LFENCE share the same opcode but
+		 * differ in mode and reg.
 		 */
 		dtrace_get_modrm(x, &mode, &reg, &r_m);
 
@@ -4784,7 +5213,13 @@ xmmprm:
 				goto error;
 		} else {
 #ifdef DIS_TEXT
-			(void) strncpy(x->d86_mnem, "xrstor", OPLEN);
+			if (reg == 5) {
+				(void) strncpy(x->d86_mnem, "xrstor", OPLEN);
+			} else if (reg == 6) {
+				(void) strncpy(x->d86_mnem, "xsaveopt", OPLEN);
+			} else {
+				goto error;
+			}
 #endif
 			dtrace_rex_adjust(rex_prefix, mode, &reg, &r_m);
 			dtrace_get_operand(x, mode, r_m, BYTE_OPND, 0);
@@ -5108,6 +5543,37 @@ L_VEX_MX:
 
 		break;
 
+	case VEX_KMR:
+		/* opmask: mod_rm := %k */
+		x->d86_numopnds = 2;
+		dtrace_get_modrm(x, &mode, &reg, &r_m);
+		dtrace_vex_adjust(vex_byte1, mode, &reg, &r_m);
+		dtrace_get_operand(x, mode, r_m, LONG_OPND, 1);
+		dtrace_get_operand(x, REG_ONLY, reg, wbit, 0);
+		break;
+
+	case VEX_KRM:
+		/* opmask: mod_reg := mod_rm */
+		x->d86_numopnds = 2;
+		dtrace_get_modrm(x, &mode, &reg, &r_m);
+		dtrace_vex_adjust(vex_byte1, mode, &reg, &r_m);
+		dtrace_get_operand(x, REG_ONLY, reg, wbit, 1);
+		if (mode == REG_ONLY) {
+			dtrace_get_operand(x, mode, r_m, KOPMASK_OPND, 0);
+		} else {
+			dtrace_get_operand(x, mode, r_m, LONG_OPND, 0);
+		}
+		break;
+
+	case VEX_KRR:
+		/* opmask: mod_reg := mod_rm */
+		x->d86_numopnds = 2;
+		dtrace_get_modrm(x, &mode, &reg, &r_m);
+		dtrace_vex_adjust(vex_byte1, mode, &reg, &r_m);
+		dtrace_get_operand(x, mode, reg, wbit, 1);
+		dtrace_get_operand(x, REG_ONLY, r_m, LONG_OPND, 0);
+		break;
+
 	case VEX_RRI:
 		/* implicit(eflags/r32) := op(ModR/M.reg, ModR/M.rm) */
 		x->d86_numopnds = 2;
@@ -5293,6 +5759,34 @@ L_VEX_RM:
 		dtrace_get_operand(x, mode, r_m, wbit, 0);
 		break;
 	}
+	case EVEX_MX:
+		/* ModR/M.reg := op(ModR/M.rm) */
+		x->d86_numopnds = 2;
+		dtrace_evex_mnem_adjust(x, dp, vex_W, evex_byte2);
+		dtrace_get_modrm(x, &mode, &reg, &r_m);
+		evex_modrm = x->d86_bytes[x->d86_len - 1] & 0xff;
+		dtrace_evex_adjust_reg(evex_byte1, &reg);
+		dtrace_evex_adjust_rm(evex_byte1, &r_m);
+		dtrace_evex_adjust_reg_name(evex_L, &wbit);
+		dtrace_get_operand(x, REG_ONLY, reg, wbit, 1);
+		dtrace_evex_adjust_z_opmask(x, evex_byte3);
+		dtrace_get_operand(x, mode, r_m, wbit, 0);
+		dtrace_evex_adjust_disp8_n(x, 0, evex_L, evex_modrm);
+		break;
+	case EVEX_RX:
+		/* ModR/M.rm := op(ModR/M.reg) */
+		x->d86_numopnds = 2;
+		dtrace_evex_mnem_adjust(x, dp, vex_W, evex_byte2);
+		dtrace_get_modrm(x, &mode, &reg, &r_m);
+		evex_modrm = x->d86_bytes[x->d86_len - 1] & 0xff;
+		dtrace_evex_adjust_reg(evex_byte1, &reg);
+		dtrace_evex_adjust_rm(evex_byte1, &r_m);
+		dtrace_evex_adjust_reg_name(evex_L, &wbit);
+		dtrace_get_operand(x, mode, r_m, wbit, 1);
+		dtrace_evex_adjust_disp8_n(x, 1, evex_L, evex_modrm);
+		dtrace_evex_adjust_z_opmask(x, evex_byte3);
+		dtrace_get_operand(x, REG_ONLY, reg, wbit, 0);
+		break;
 	/* an invalid op code */
 	case AM:
 	case DM:

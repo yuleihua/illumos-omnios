@@ -10,13 +10,20 @@
 #
 
 #
-# Copyright 2015 Nexenta Systems, Inc.  All rights reserved.
+# Copyright 2017 Nexenta Systems, Inc.
 #
 
 CMDDIR=		$(SRC)/cmd/mandoc
+LCDIR=		$(SRC)/lib/libc/port
 
 include		$(SRC)/tools/Makefile.tools
 include		$(CMDDIR)/Makefile.common
+
+OBJS +=		fts.o \
+		reallocarray.o \
+		strtonum.o
+
+CPPFLAGS +=	-I. -include fts.h
 
 .KEEP_STATE:
 
@@ -32,6 +39,9 @@ $(PROG):	$(OBJS)
 		$(POST_PROCESS)
 
 %.o:		$(CMDDIR)/%.c
+		$(COMPILE.c) -o $@ $<
+
+%.o:		$(LCDIR)/gen/%.c
 		$(COMPILE.c) -o $@ $<
 
 include		$(SRC)/tools/Makefile.targ

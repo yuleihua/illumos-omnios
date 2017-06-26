@@ -11,13 +11,19 @@
 
 #
 # Copyright 2014 Garrett D'Amore <garrett@damore.org>
-# Copyright 2016 Nexenta Systems, Inc.
+# Copyright 2017 Nexenta Systems, Inc.
 #
 
 PROG=		mandoc
 
 OBJS=		att.o		\
 		chars.o		\
+		dba.o		\
+		dba_array.o	\
+		dba_read.o	\
+		dba_write.o	\
+		dbm.o		\
+		dbm_map.o	\
 		eqn.o		\
 		eqn_html.o	\
 		eqn_term.o	\
@@ -34,6 +40,8 @@ OBJS=		att.o		\
 		mandoc.o	\
 		mandoc_aux.o	\
 		mandoc_ohash.o	\
+		mandocdb.o	\
+		mansearch.o	\
 		mdoc.o		\
 		mdoc_argv.o	\
 		mdoc_hash.o	\
@@ -61,9 +69,7 @@ OBJS=		att.o		\
 		term_ps.o	\
 		tree.o
 
-OBJS +=		compat_ohash.o		\
-		compat_reallocarray.o	\
-		compat_strtonum.o
+OBJS +=		compat_ohash.o
 
 CFLAGS +=	$(CC_VERBOSE)
 C99MODE =	$(C99_ENABLE)

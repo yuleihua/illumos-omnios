@@ -70,12 +70,10 @@ static int mrsas_tbolt_check_map_info(struct mrsas_instance *);
 static int mrsas_tbolt_sync_map_info(struct mrsas_instance *);
 static int mrsas_tbolt_prepare_pkt(struct scsa_cmd *);
 static int mrsas_tbolt_ioc_init(struct mrsas_instance *, dma_obj_t *);
-#ifdef PDSUPPORT
 static void mrsas_tbolt_get_pd_info(struct mrsas_instance *,
     struct mrsas_tbolt_pd_info *, int);
-#endif /* PDSUPPORT */
 
-static int debug_tbolt_fw_faults_after_ocr_g = 0;
+static int mrsas_debug_tbolt_fw_faults_after_ocr = 0;
 
 /*
  * destroy_mfi_mpi_frame_pool
@@ -1801,7 +1799,6 @@ mrsas_tbolt_build_cmd(struct mrsas_instance *instance, struct scsi_address *ap,
 			break;
 		}
 	} else { /* Physical */
-#ifdef PDSUPPORT
 		/* Pass-through command to physical drive */
 
 		/* Acquire SYNC MAP UPDATE lock */
@@ -1852,10 +1849,6 @@ mrsas_tbolt_build_cmd(struct mrsas_instance *instance, struct scsi_address *ap,
 
 		/* Release SYNC MAP UPDATE lock */
 		mutex_exit(&instance->sync_map_mtx);
-#else
-		/* If no PD support, return here. */
-		return (cmd);
-#endif
 	}
 
 	/* Set sense buffer physical address/length in scsi_io_request. */
@@ -2389,11 +2382,9 @@ tbolt_complete_cmd(struct mrsas_instance *instance,
 				if (acmd->islogical &&
 				    (status == MFI_STAT_OK)) {
 					display_scsi_inquiry((caddr_t)inq);
-#ifdef PDSUPPORT
 				} else if ((status == MFI_STAT_OK) &&
 				    inq->inq_dtype == DTYPE_DIRECT) {
 					display_scsi_inquiry((caddr_t)inq);
-#endif
 				} else {
 					/* for physical disk */
 					status = MFI_STAT_DEVICE_NOT_FOUND;
@@ -3204,73 +3195,64 @@ mrsas_tbolt_reset_ppc(struct mrsas_instance *instance)
 	uint32_t abs_state;
 	uint32_t i;
 
-	con_log(CL_ANN, (CE_NOTE,
-	    "mrsas_tbolt_reset_ppc entered"));
-
 	if (instance->deadadapter == 1) {
 		dev_err(instance->dip, CE_WARN, "mrsas_tbolt_reset_ppc: "
-		    "no more resets as HBA has been marked dead ");
+		    "no more resets as HBA has been marked dead");
 		return (DDI_FAILURE);
 	}
 
 	mutex_enter(&instance->ocr_flags_mtx);
 	instance->adapterresetinprogress = 1;
-	con_log(CL_ANN, (CE_NOTE, "mrsas_tbolt_reset_ppc:"
-	    "adpterresetinprogress flag set, time %llx", gethrtime()));
 	mutex_exit(&instance->ocr_flags_mtx);
 
 	instance->func_ptr->disable_intr(instance);
 
-	/* Add delay inorder to complete the ioctl & io cmds in-flight */
-	for (i = 0; i < 3000; i++) {
+	/* Add delay in order to complete the ioctl & io cmds in-flight */
+	for (i = 0; i < 3000; i++)
 		drv_usecwait(MILLISEC); /* wait for 1000 usecs */
-	}
 
 	instance->reply_read_index = 0;
 
 retry_reset:
-	con_log(CL_ANN, (CE_NOTE, "mrsas_tbolt_reset_ppc: "
-	    ":Resetting TBOLT "));
+	con_log(CL_ANN, (CE_NOTE, "mrsas_tbolt_reset_ppc: Resetting TBOLT"));
 
+	/* Flush */
+	WR_TBOLT_IB_WRITE_SEQ(0x0, instance);
+	/* Write magic number */
 	WR_TBOLT_IB_WRITE_SEQ(0xF, instance);
-	WR_TBOLT_IB_WRITE_SEQ(4, instance);
+	WR_TBOLT_IB_WRITE_SEQ(0x4, instance);
 	WR_TBOLT_IB_WRITE_SEQ(0xb, instance);
-	WR_TBOLT_IB_WRITE_SEQ(2, instance);
-	WR_TBOLT_IB_WRITE_SEQ(7, instance);
+	WR_TBOLT_IB_WRITE_SEQ(0x2, instance);
+	WR_TBOLT_IB_WRITE_SEQ(0x7, instance);
 	WR_TBOLT_IB_WRITE_SEQ(0xd, instance);
+
 	con_log(CL_ANN1, (CE_NOTE,
 	    "mrsas_tbolt_reset_ppc: magic number written "
 	    "to write sequence register"));
-	delay(100 * drv_usectohz(MILLISEC));
-	status = RD_TBOLT_HOST_DIAG(instance);
-	con_log(CL_ANN1, (CE_NOTE,
-	    "mrsas_tbolt_reset_ppc: READ HOSTDIAG SUCCESS "
-	    "to write sequence register"));
 
-	while (status & DIAG_TBOLT_RESET_ADAPTER) {
+	/* Wait for the diag write enable (DRWE) bit to be set */
+	retry = 0;
+	status = RD_TBOLT_HOST_DIAG(instance);
+	while (!(status & DIAG_WRITE_ENABLE)) {
 		delay(100 * drv_usectohz(MILLISEC));
 		status = RD_TBOLT_HOST_DIAG(instance);
-		if (retry++ == 100) {
+		if (retry++ >= 100) {
 			dev_err(instance->dip, CE_WARN,
-			    "mrsas_tbolt_reset_ppc:"
-			    "resetadapter bit is set already "
-			    "check retry count %d", retry);
+			    "%s(): timeout waiting for DRWE.", __func__);
 			return (DDI_FAILURE);
 		}
 	}
 
+	/* Send reset command */
 	WR_TBOLT_HOST_DIAG(status | DIAG_TBOLT_RESET_ADAPTER, instance);
 	delay(100 * drv_usectohz(MILLISEC));
 
-	ddi_rep_get8((instance)->regmap_handle, (uint8_t *)&status,
-	    (uint8_t *)((uintptr_t)(instance)->regmap +
-	    RESET_TBOLT_STATUS_OFF), 4, DDI_DEV_AUTOINCR);
-
+	/* Wait for reset bit to clear */
+	retry = 0;
+	status = RD_TBOLT_HOST_DIAG(instance);
 	while ((status & DIAG_TBOLT_RESET_ADAPTER)) {
 		delay(100 * drv_usectohz(MILLISEC));
-		ddi_rep_get8((instance)->regmap_handle, (uint8_t *)&status,
-		    (uint8_t *)((uintptr_t)(instance)->regmap +
-		    RESET_TBOLT_STATUS_OFF), 4, DDI_DEV_AUTOINCR);
+		status = RD_TBOLT_HOST_DIAG(instance);
 		if (retry++ == 100) {
 			/* Dont call kill adapter here */
 			/* RESET BIT ADAPTER is cleared by firmare */
@@ -3283,8 +3265,6 @@ retry_reset:
 
 	con_log(CL_ANN,
 	    (CE_NOTE, "mrsas_tbolt_reset_ppc: Adapter reset complete"));
-	con_log(CL_ANN, (CE_NOTE, "mrsas_tbolt_reset_ppc: "
-	    "Calling mfi_state_transition_to_ready"));
 
 	abs_state = instance->func_ptr->read_fw_status_reg(instance);
 	retry = 0;
@@ -3301,7 +3281,7 @@ retry_reset:
 
 	/* Mark HBA as bad, if FW is fault after 3 continuous resets */
 	if (mfi_state_transition_to_ready(instance) ||
-	    debug_tbolt_fw_faults_after_ocr_g == 1) {
+	    mrsas_debug_tbolt_fw_faults_after_ocr == 1) {
 		cur_abs_reg_val =
 		    instance->func_ptr->read_fw_status_reg(instance);
 		fw_state	= cur_abs_reg_val & MFI_STATE_MASK;
@@ -3309,7 +3289,7 @@ retry_reset:
 		con_log(CL_ANN1, (CE_NOTE,
 		    "mrsas_tbolt_reset_ppc :before fake: FW is not ready "
 		    "FW state = 0x%x", fw_state));
-		if (debug_tbolt_fw_faults_after_ocr_g == 1)
+		if (mrsas_debug_tbolt_fw_faults_after_ocr == 1)
 			fw_state = MFI_STATE_FAULT;
 
 		con_log(CL_ANN,
@@ -3345,53 +3325,33 @@ retry_reset:
 
 	mrsas_reset_reply_desc(instance);
 
-
-	con_log(CL_ANN1, (CE_NOTE, "mrsas_tbolt_reset_ppc: "
-	    "Calling mrsas_issue_init_mpi2"));
 	abs_state = mrsas_issue_init_mpi2(instance);
 	if (abs_state == (uint32_t)DDI_FAILURE) {
 		dev_err(instance->dip, CE_WARN, "mrsas_tbolt_reset_ppc: "
 		    "INIT failed Retrying Reset");
 		goto retry_reset;
 	}
-	con_log(CL_ANN1, (CE_NOTE, "mrsas_tbolt_reset_ppc: "
-	    "mrsas_issue_init_mpi2 Done"));
 
-	con_log(CL_ANN, (CE_NOTE, "mrsas_tbolt_reset_ppc: "
-	    "Calling mrsas_print_pending_cmd"));
 	(void) mrsas_print_pending_cmds(instance);
-	con_log(CL_ANN, (CE_NOTE, "mrsas_tbolt_reset_ppc: "
-	    "mrsas_print_pending_cmd done"));
 
 	instance->func_ptr->enable_intr(instance);
 	instance->fw_outstanding = 0;
 
-	con_log(CL_ANN1, (CE_NOTE, "mrsas_tbolt_reset_ppc: "
-	    "Calling mrsas_issue_pending_cmds"));
 	(void) mrsas_issue_pending_cmds(instance);
-	con_log(CL_ANN1, (CE_NOTE, "mrsas_tbolt_reset_ppc: "
-	"issue_pending_cmds done."));
-
-	con_log(CL_ANN1, (CE_NOTE, "mrsas_tbolt_reset_ppc: "
-	    "Calling aen registration"));
 
 	instance->aen_cmd->retry_count_for_ocr = 0;
 	instance->aen_cmd->drv_pkt_time = 0;
 
 	instance->func_ptr->issue_cmd(instance->aen_cmd, instance);
 
-	con_log(CL_ANN1, (CE_NOTE, "Unsetting adpresetinprogress flag."));
 	mutex_enter(&instance->ocr_flags_mtx);
 	instance->adapterresetinprogress = 0;
 	mutex_exit(&instance->ocr_flags_mtx);
-	con_log(CL_ANN1, (CE_NOTE, "mrsas_tbolt_reset_ppc: "
-	    "adpterresetinprogress flag unset"));
 
-	con_log(CL_ANN, (CE_NOTE, "mrsas_tbolt_reset_ppc done"));
+	dev_err(instance->dip, CE_NOTE, "TBOLT adapter reset successfully");
+
 	return (DDI_SUCCESS);
-
 }
-
 
 /*
  * mrsas_sync_map_info -	Returns FW's ld_map structure
@@ -3557,8 +3517,6 @@ abort_syncmap_cmd(struct mrsas_instance *instance,
 	return (ret);
 }
 
-
-#ifdef PDSUPPORT
 /*
  * Even though these functions were originally intended for 2208 only, it
  * turns out they're useful for "Skinny" support as well.  In a perfect world,
@@ -3715,4 +3673,3 @@ mrsas_tbolt_get_pd_info(struct mrsas_instance *instance,
 	else
 		mrsas_return_mfi_pkt(instance, cmd);
 }
-#endif

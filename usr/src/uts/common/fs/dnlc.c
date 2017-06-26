@@ -20,6 +20,7 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Joyent, Inc.
  * Copyright (c) 2017 by Delphix. All rights reserved.
  */
 
@@ -67,12 +68,12 @@
 /*
  * We want to be able to identify files that are referenced only by the DNLC.
  * When adding a reference from the DNLC, call VN_HOLD_DNLC instead of VN_HOLD,
- * since multiple DNLC references should only be counted once in v_count. This
- * file contains only two(2) calls to VN_HOLD, renamed VN_HOLD_CALLER in the
- * hope that no one will mistakenly add a VN_HOLD to this file. (Unfortunately
- * it is not possible to #undef VN_HOLD and retain VN_HOLD_CALLER. Ideally a
- * Makefile rule would grep uncommented C tokens to check that VN_HOLD is
- * referenced only once in this file, to define VN_HOLD_CALLER.)
+ * since multiple DNLC references should only be counted once in v_count. The
+ * VN_HOLD macro itself is aliased to VN_HOLD_CALLER in this file to help
+ * differentiate the behaviors.  (Unfortunately it is not possible to #undef
+ * VN_HOLD and retain VN_HOLD_CALLER. Ideally a Makefile rule would grep
+ * uncommented C tokens to check that VN_HOLD is referenced only once in this
+ * file, to define VN_HOLD_CALLER.)
  */
 #define	VN_HOLD_CALLER	VN_HOLD
 #define	VN_HOLD_DNLC(vp)	{	\
@@ -407,15 +408,9 @@ dnlc_init()
 
 	/*
 	 * Put a hold on the negative cache vnode so that it never goes away
-	 * (VOP_INACTIVE isn't called on it). The mutex_enter() isn't necessary
-	 * for correctness, but VN_HOLD_LOCKED() asserts that it's held, so
-	 * we oblige.
+	 * (VOP_INACTIVE isn't called on it).
 	 */
-	mutex_enter(&negative_cache_vnode.v_lock);
-	negative_cache_vnode.v_count = 0;
-	VN_HOLD_LOCKED(&negative_cache_vnode);
-	negative_cache_vnode.v_count_dnlc = 0;
-	mutex_exit(&negative_cache_vnode.v_lock);
+	vn_reinit(&negative_cache_vnode);
 
 	/*
 	 * Initialise kstats - both the old compatability raw kind and
@@ -640,7 +635,7 @@ dnlc_lookup(vnode_t *dp, const char *name)
 			 * put a hold on it.
 			 */
 			vp = ncp->vp;
-			VN_HOLD_CALLER(vp); /* VN_HOLD 1 of 2 in this file */
+			VN_HOLD_CALLER(vp);
 			mutex_exit(&hp->hash_lock);
 			ncstats.hits++;
 			ncs.ncs_hits.value.ui64++;
@@ -927,50 +922,6 @@ dnlc_fs_purge1(vnodeops_t *vop)
 	return (0);
 }
 
-/*
- * Perform a reverse lookup in the DNLC.  This will find the first occurrence of
- * the vnode.  If successful, it will return the vnode of the parent, and the
- * name of the entry in the given buffer.  If it cannot be found, or the buffer
- * is too small, then it will return NULL.  Note that this is a highly
- * inefficient function, since the DNLC is constructed solely for forward
- * lookups.
- */
-vnode_t *
-dnlc_reverse_lookup(vnode_t *vp, char *buf, size_t buflen)
-{
-	nc_hash_t *nch;
-	ncache_t *ncp;
-	vnode_t *pvp;
-
-	if (!doingcache)
-		return (NULL);
-
-	for (nch = nc_hash; nch < &nc_hash[nc_hashsz]; nch++) {
-		mutex_enter(&nch->hash_lock);
-		ncp = nch->hash_next;
-		while (ncp != (ncache_t *)nch) {
-			/*
-			 * We ignore '..' entries since it can create
-			 * confusion and infinite loops.
-			 */
-			if (ncp->vp == vp && !(ncp->namlen == 2 &&
-			    0 == bcmp(ncp->name, "..", 2)) &&
-			    ncp->namlen < buflen) {
-				bcopy(ncp->name, buf, ncp->namlen);
-				buf[ncp->namlen] = '\0';
-				pvp = ncp->dp;
-				/* VN_HOLD 2 of 2 in this file */
-				VN_HOLD_CALLER(pvp);
-				mutex_exit(&nch->hash_lock);
-				return (pvp);
-			}
-			ncp = ncp->hash_next;
-		}
-		mutex_exit(&nch->hash_lock);
-	}
-
-	return (NULL);
-}
 /*
  * Utility routine to search for a cache entry. Return the
  * ncache entry if found, NULL otherwise.
