@@ -161,7 +161,10 @@ export MULTI_PROTO="no"
 
 # VERSION for OmniOS uses the git ID of the repo. Don't use this if you aren't
 # using git for $GATE, or if $GATE isn't created yet.
-export VERSION=omnios-`cd $CODEMGR_WS; git branch | awk '{print $2}'`-`cd $CODEMGR_WS; git log --pretty=format:'%h' -n 1`
+
+ref=`cd $CODEMGR_WS; git symbolic-ref --quiet HEAD`
+commit=`cd $CODEMGR_WS; git log --pretty=format:'%h' -n 1`
+export VERSION=`echo omnios-${ref#refs/heads/}-$commit | tr '/' '-'`
 
 #
 # the RELEASE and RELEASE_DATE variables are set in Makefile.master;
