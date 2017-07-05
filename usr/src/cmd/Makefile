@@ -81,7 +81,6 @@ COMMON_SUBDIRS=		\
 	boot		\
 	busstat		\
 	cal		\
-	calendar	\
 	captoinfo	\
 	cat		\
 	cdrw		\
@@ -479,6 +478,7 @@ i386_SUBDIRS=		\
 	addbadsec	\
 	biosdev		\
 	diskscan	\
+	nvmeadm		\
 	rtc		\
 	ucodeadm	\
 	xvm
