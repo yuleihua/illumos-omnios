@@ -3664,6 +3664,24 @@ again:
 		assert(opt_zone == NULL || zids == NULL);
 
 		if (opt_zone == NULL) {
+			zone_status_t status;
+
+			if (zone_getattr(zids[zent], ZONE_ATTR_STATUS,
+			    &status, sizeof (status)) < 0 ||
+			    status != ZONE_IS_RUNNING) {
+				/*
+				 * If this zone is not running or we cannot
+				 * get its status, we do not want to attempt
+				 * to bind an SCF handle to it, lest we
+				 * accidentally interfere with a zone that
+				 * is not yet running by looking up a door
+				 * to its svc.configd (which could potentially
+				 * block a mount with an EBUSY).
+				 */
+				zent++;
+				goto nextzone;
+			}
+
 			if (getzonenamebyid(zids[zent++],
 			    zonename, sizeof (zonename)) < 0) {
 				uu_warn(gettext("could not get name for "
@@ -3690,14 +3708,12 @@ again:
 
 	if (scf_handle_bind(h) == -1) {
 		if (g_zonename != NULL) {
-			uu_warn(gettext("Could not bind to repository "
+			if (show_zones)
+				goto nextzone;
+
+			uu_die(gettext("Could not bind to repository "
 			    "server for zone %s: %s\n"), g_zonename,
 			    scf_strerror(scf_error()));
-
-			if (!show_zones)
-				return (UU_EXIT_FATAL);
-
-			goto nextzone;
 		}
 
 		uu_die(gettext("Could not bind to repository server: %s.  "
@@ -3756,7 +3772,7 @@ again:
 
 	if (opt_mode == 'L') {
 		if ((err = scf_walk_fmri(h, argc, argv, SCF_WALK_MULTIPLE,
-		    print_log, NULL, &exit_status, uu_warn)) != 0) {
+		    print_log, NULL, errarg, errfunc)) != 0) {
 			uu_warn(gettext("failed to iterate over "
 			    "instances: %s\n"), scf_strerror(err));
 			exit_status = UU_EXIT_FATAL;
