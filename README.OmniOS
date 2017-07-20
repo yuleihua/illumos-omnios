@@ -2,7 +2,7 @@ This README is new for OmniOS as of Stable release r151020 -- it is here
 because it keeps track of LX merges from OmniOS (a massive and continuing
 side-pull). LX-for-OmniOS-specific notes follow.
 
-Last illumos-joyent commit:  a752e24f3ca79ca5b9a9c035721c4cbfd7c8576f
+Last illumos-joyent commit:  2bcd0c2213ad2567e05837f2b5406447e005a44b
 
 LX zones can be installed using ZFS send streams (gzipped or uncompressed) from
 Joyent's images (-s /full/path/to/file), from ZFS datasets or snapshots
