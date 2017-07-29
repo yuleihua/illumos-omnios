@@ -144,7 +144,7 @@ install_h check:	FRC
 #
 # Work-around to disable acpica global crosscheck lint warnings
 #
-LGREP.intel =	grep -v 'intel/io/acpica'
+LGREP.intel =	egrep -v 'intel/io/acpica|iwn/if_iwn.c.*E_FUNC_RET_MAYBE_IGNORED2'
 
 #
 #	Full kernel lint target.

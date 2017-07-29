@@ -412,13 +412,6 @@ acct(int st)
 		return;
 	}
 
-	/*
-	 * The 'st' status value was traditionally masked this way by our
-	 * caller, but we now accept the unmasked value for brand handling.
-	 * Zones not using the brand hook mask the status here.
-	 */
-	st &= 0xff;
-
 	p = curproc;
 	ua = PTOU(p);
 	bcopy(ua->u_comm, ag->acctbuf.ac_comm, sizeof (ag->acctbuf.ac_comm));
@@ -435,7 +428,12 @@ acct(int st)
 	ag->acctbuf.ac_uid = crgetruid(cr);
 	ag->acctbuf.ac_gid = crgetrgid(cr);
 	(void) cmpldev(&ag->acctbuf.ac_tty, cttydev(p));
-	ag->acctbuf.ac_stat = st;
+	/*
+	 * The 'st' status value was traditionally masked this way by our
+	 * caller, but we now accept the unmasked value for brand handling.
+	 * Zones not using the brand hook mask the status here.
+	 */
+	ag->acctbuf.ac_stat = (char)(st & 0xff);
 	ag->acctbuf.ac_flag = (ua->u_acflag | AEXPND);
 
 	/*

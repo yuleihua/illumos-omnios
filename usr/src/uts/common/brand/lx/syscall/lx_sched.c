@@ -132,9 +132,7 @@ typedef struct lx_sched_attr {
 long
 lx_sched_yield(void)
 {
-	yield();
-
-	return (0);
+	return (yield());
 }
 
 static void
