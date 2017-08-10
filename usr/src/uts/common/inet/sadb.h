@@ -21,6 +21,7 @@
 /*
  * Copyright 2010 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
+ * Copyright (c) 2012 Nexenta Systems, Inc. All rights reserved.
  */
 
 #ifndef	_INET_SADB_H
@@ -567,15 +568,13 @@ typedef struct sadb_s
 } sadb_t;
 
 /*
- * A pair of SADB's (one for v4, one for v6), and related state (including
- * acquire callbacks).
+ * A pair of SADB's (one for v4, one for v6), and related state.
  */
 
 typedef struct sadbp_s
 {
 	uint32_t	s_satype;
 	uint32_t	*s_acquire_timeout;
-	void 		(*s_acqfn)(ipsacq_t *, mblk_t *, netstack_t *);
 	sadb_t		s_v4;
 	sadb_t		s_v6;
 	uint32_t	s_addflags;
@@ -772,7 +771,6 @@ void cbc_params_init(ipsa_t *, uchar_t *, uint_t, uchar_t *, ipsa_cm_mech_t *,
 
 void sadb_destroy_acquire(ipsacq_t *, netstack_t *);
 struct ipsec_stack;
-mblk_t *sadb_setup_acquire(ipsacq_t *, uint8_t, struct ipsec_stack *);
 ipsa_t *sadb_getspi(keysock_in_t *, uint32_t, int *, netstack_t *, uint_t);
 void sadb_in_acquire(sadb_msg_t *, sadbp_t *, queue_t *, netstack_t *);
 boolean_t sadb_replay_check(ipsa_t *, uint32_t);
@@ -915,9 +913,9 @@ extern void sadb_sens_from_label(sadb_sens_t *, int, ts_label_t *, int);
 			ipsec_stack_t *ipss;				\
 									\
 			ipss = assoc->ipsa_netstack->netstack_ipsec;	\
-			mutex_enter(&ipss->ipsec_alg_lock);		\
+			rw_enter(&ipss->ipsec_alg_lock, RW_READER);	\
 			(void) ipsec_create_ctx_tmpl(_sa, _type);	\
-			mutex_exit(&ipss->ipsec_alg_lock);		\
+			rw_exit(&ipss->ipsec_alg_lock);			\
 		}							\
 		mutex_exit(&assoc->ipsa_lock);				\
 		if ((_tmpl = (_sa)->_which) == IPSEC_CTX_TMPL_ALLOC)	\
