@@ -8,6 +8,7 @@ FORTH +=	brand-omnios.4th
 FORTH +=	check-password.4th
 FORTH +=	color.4th
 FORTH +=	delay.4th
+FORTH +=	efi.4th
 FORTH +=	frames.4th
 FORTH +=	loader.4th
 DEFFILES =	loader.conf
