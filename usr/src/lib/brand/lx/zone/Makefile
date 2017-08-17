@@ -64,7 +64,8 @@ clean:
 	-$(RM) $(PROGS)
 
 clobber: clean
-	-$(RM) $(ROOTXMLDOCS) $(ROOTPROGS) $(ROOTTEMPLATES)
+	-$(RM) $(ROOTXMLDOCS) $(ROOTPROGS) $(ROOTTEMPLATES) \
+	    $(POFILES) $(POFILE)
 
 FRC:
 
