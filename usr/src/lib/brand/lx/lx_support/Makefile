@@ -34,7 +34,7 @@ include $(SRC)/cmd/Makefile.cmd
 
 # override the install directory
 ROOTBIN =	$(ROOTBRANDDIR)
-CLOBBERFILES =	$(OBJS) $(ROOTPROGS)
+CLOBBERFILES =	$(OBJS) $(ROOTPROGS) $(OBJS:%=%.po)
 
 UTSBASE =	$(SRC)/uts
 
