@@ -271,24 +271,34 @@ smb_drv_ioctl(dev_t drv, int cmd, intptr_t argp, int flags, cred_t *cred,
 	    alloclen > sizeof (smb_ioc_svcenum_t) + SMB_IOC_DATA_SIZE)
 		return (EINVAL);
 
+	/*
+	 * Check version and length.
+	 *
+	 * Note that some ioctls (i.e. SMB_IOC_SVCENUM) have payload
+	 * data after the ioctl struct, in which case they specify a
+	 * length much larger than sizeof smb_ioc_t.  The theoretical
+	 * largest ioctl data is therefore the size of the union plus
+	 * the max size of the payload (which is SMB_IOC_DATA_SIZE).
+	 */
+	if (ioc_hdr.version != SMB_IOC_VERSION ||
+	    ioc_hdr.len < sizeof (ioc_hdr) ||
+	    ioc_hdr.len > (sizeof (*ioc) + SMB_IOC_DATA_SIZE))
+		return (EINVAL);
+
 	crc = ioc_hdr.crc;
 	ioc_hdr.crc = 0;
 	if (smb_crc_gen((uint8_t *)&ioc_hdr, sizeof (ioc_hdr)) != crc)
 		return (EINVAL);
 
 	/*
-	 * The libraries that use these ioctls are potentially inconsistent.
-	 * smb_ioc_t is a union, and the sub-fields are variably sized.
-	 * The additional wrinkle of SMB_IOC_SVCENUM and its after-ioctl
-	 * array makes size and boundary checking difficult.
-	 *
-	 * We distinguish between the allocation length, capped by either
-	 * sizeof (smb_ioc_t) or the largest-possible smb_ioc_svcenum_t &
-	 * data, and the length passed in via ioc_hdr.len.  We prevent
-	 * short-allocated ioctls (length less than expected data) AND
-	 * too-large ioctls this way.
+	 * Note that smb_ioc_t is a union, and callers set ioc_hdr.len
+	 * to the size of the actual union arm.  If some caller were to
+	 * set that size too small, we could end up passing under-sized
+	 * memory to one of the type-specific handler functions.  Avoid
+	 * that problem by allocating at least the size of the union,
+	 * (zeroed out) and then copy in the caller specified length.
 	 */
-	ASSERT(alloclen >= ioc_hdr.len);
+	alloclen = MAX(ioc_hdr.len, sizeof (*ioc));
 	ioc = kmem_zalloc(alloclen, KM_SLEEP);
 	if (ddi_copyin((void *)argp, ioc, ioc_hdr.len, flags)) {
 		kmem_free(ioc, alloclen);
