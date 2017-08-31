@@ -23,13 +23,14 @@
 #
 # Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
 # Copyright 2010, Richard Lowe
+# Copyright 2017 OmniOS Community Edition (OmniOSce) Association.
 #
 
 PATH=/usr/bin:/usr/sbin
 export PATH
 
-DEFAULTONURI="http://ipkg.sfbay/on-nightly"
-DEFAULTONPUB="on-nightly"
+DEFAULTONURI="https://pkg.omniosce.org/bloody/core"
+DEFAULTONPUB="omnios"
 
 usage()
 {
@@ -116,12 +117,12 @@ update_zone()
 	zone=$1
 
 	name=`echo $zone | cut -d: -f 2`
-	if [ $name = "global" ]; then
+	if [ "$name" = "global" ]; then
 		return
 	fi
 
 	brand=`echo $zone | cut -d: -f 6`
-	if [ $brand != "ipkg" && $brand != "lipkg" ]; then
+	if [ "$brand" != "ipkg" -a "$brand" != "lipkg" ]; then
 		return
 	fi
 
@@ -240,6 +241,8 @@ do_cmd beadm create $createargs $targetbe
 do_cmd beadm mount $targetbe $tmpdir
 update $tmpdir
 do_cmd beadm activate $targetbe
+do_cmd beadm unmount $targetbe
+rmdir $tmpdir
 
 if [ "$no_zones" != 1 ]; then
 	for zone in `do_cmd zoneadm -R $tmpdir list -cip`; do
