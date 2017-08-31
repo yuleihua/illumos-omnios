@@ -1008,7 +1008,7 @@ PKGARCHIVE=$(SRC)/../../packages/$(MACH)/nightly$(PKGARCHIVESUFFIX)
 # update an image to the resulting repositories, this must match the
 # publisher name provided to "pkg set-publisher."
 #
-PKGPUBLISHER_REDIST=	on-nightly
+PKGPUBLISHER_REDIST=	omnios
 PKGPUBLISHER_NONREDIST=	on-extra
 
 #	Default build rules which perform comment section post-processing.
