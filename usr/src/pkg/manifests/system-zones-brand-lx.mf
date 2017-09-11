@@ -22,7 +22,8 @@
 #
 # Copyright 2010 Sun Microsystems, Inc.  All rights reserved.
 # Use is subject to license terms.
-# Copyright 2015 Joyent, Inc.
+# Copyright 2017 Joyent, Inc.
+# Copyright 2017 ASS-Einrichtungssysteme GmbH
 #
 
 #
@@ -114,6 +115,7 @@ file path=usr/lib/brand/lx/lx_boot mode=0755
 file path=usr/lib/brand/lx/lx_boot_zone_busybox mode=0755
 file path=usr/lib/brand/lx/lx_boot_zone_debian mode=0755
 file path=usr/lib/brand/lx/lx_boot_zone_redhat mode=0755
+file path=usr/lib/brand/lx/lx_boot_zone_suse mode=0755
 file path=usr/lib/brand/lx/lx_boot_zone_ubuntu mode=0755
 file path=usr/lib/brand/lx/lx_install mode=0755
 file path=usr/lib/brand/lx/lx_librtld_db.so.1
