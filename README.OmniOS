@@ -13,22 +13,7 @@ are included at the end of this file.
 
 =======================================================================
 
-## https://github.com/omniosorg/illumos-omnios/pull/30
-
-Commits:
- > 8381 Convert ipsec_alg_lock from mutex to rwlock
- > 8554 Small ipsec_alginfo_t leak when zones shutdown
- > 8529 Extended and regular SADB_ACQUIREs should share address extensio..
- > 8541 pfiles does not properly identify PF_KEY or PF_POLICY
-
-Packages:
- > system/kernel
- > system/kernel/platform
- > system/test/ostest
- > system/extended-system-utilities
-
-Archive:
- > https://downloads.omniosce.org/pkg/ipsec-backport.p5p
+No current pending patches.
 
 =======================================================================
 
