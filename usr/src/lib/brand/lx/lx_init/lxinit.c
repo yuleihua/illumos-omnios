@@ -810,7 +810,7 @@ lxi_hook_postnet()
 		lxi_err("fork() failed: %s", strerror(errno));
 	}
 	if (pid == 0) {
-		char *const argv[] = { cmd, NULL };
+		char *argv[] = { cmd, NULL };
 		char *const envp[] = { NULL };
 
 		/* wire up stderr first, in case the hook wishes to use it */
@@ -819,7 +819,7 @@ lxi_hook_postnet()
 		}
 
 		/* child executes the hook */
-		execve(cmd, argv, envp);
+		(void) execve(cmd, (char *const *)argv, envp);
 
 		/*
 		 * Since this is running as root, access(2) is less strict than
@@ -836,7 +836,7 @@ lxi_hook_postnet()
 
 	/* Parent waits for the hook to complete */
 	while (wait(&status) != pid) {
-		/* EMPTY */;
+		;
 	}
 	if (WIFEXITED(status)) {
 		if (WEXITSTATUS(status) != 0) {
