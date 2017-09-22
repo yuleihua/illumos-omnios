@@ -261,14 +261,14 @@ smb_drv_ioctl(dev_t drv, int cmd, intptr_t argp, int flags, cred_t *cred,
 	uint32_t	crc;
 	boolean_t	copyout = B_FALSE;
 	int		rc = 0;
-	size_t		ioclen;
+	size_t		alloclen;
 
 	if (ddi_copyin((void *)argp, &ioc_hdr, sizeof (ioc_hdr), flags))
 		return (EFAULT);
 	/* SMB_IOC_SVCENUM can be quite large.  See libsmb's smb_kmod.c. */
-	ioclen = MAX(ioc_hdr.len, sizeof (*ioc));
+	alloclen = MAX(ioc_hdr.len, sizeof (*ioc));
 	if (ioc_hdr.version != SMB_IOC_VERSION ||
-	    ioclen > sizeof (smb_ioc_svcenum_t) + SMB_IOC_DATA_SIZE)
+	    alloclen > sizeof (smb_ioc_svcenum_t) + SMB_IOC_DATA_SIZE)
 		return (EINVAL);
 
 	crc = ioc_hdr.crc;
@@ -276,9 +276,22 @@ smb_drv_ioctl(dev_t drv, int cmd, intptr_t argp, int flags, cred_t *cred,
 	if (smb_crc_gen((uint8_t *)&ioc_hdr, sizeof (ioc_hdr)) != crc)
 		return (EINVAL);
 
-	ioc = kmem_zalloc(ioclen, KM_SLEEP);
-	if (ddi_copyin((void *)argp, ioc, ioclen, flags)) {
-		kmem_free(ioc, ioclen);
+	/*
+	 * The libraries that use these ioctls are potentially inconsistent.
+	 * smb_ioc_t is a union, and the sub-fields are variably sized.
+	 * The additional wrinkle of SMB_IOC_SVCENUM and its after-ioctl
+	 * array makes size and boundary checking difficult.
+	 *
+	 * We distinguish between the allocation length, capped by either
+	 * sizeof (smb_ioc_t) or the largest-possible smb_ioc_svcenum_t &
+	 * data, and the length passed in via ioc_hdr.len.  We prevent
+	 * short-allocated ioctls (length less than expected data) AND
+	 * too-large ioctls this way.
+	 */
+	ASSERT(alloclen >= ioc_hdr.len);
+	ioc = kmem_zalloc(alloclen, KM_SLEEP);
+	if (ddi_copyin((void *)argp, ioc, ioc_hdr.len, flags)) {
+		kmem_free(ioc, alloclen);
 		return (EFAULT);
 	}
 
@@ -331,10 +344,10 @@ smb_drv_ioctl(dev_t drv, int cmd, intptr_t argp, int flags, cred_t *cred,
 		break;
 	}
 	if ((rc == 0) && copyout) {
-		if (ddi_copyout(ioc, (void *)argp, ioclen, flags))
+		if (ddi_copyout(ioc, (void *)argp, ioc_hdr.len, flags))
 			rc = EFAULT;
 	}
-	kmem_free(ioc, ioclen);
+	kmem_free(ioc, alloclen);
 	return (rc);
 }
 
