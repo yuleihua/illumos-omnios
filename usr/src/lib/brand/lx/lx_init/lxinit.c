@@ -810,8 +810,9 @@ lxi_hook_postnet()
 		lxi_err("fork() failed: %s", strerror(errno));
 	}
 	if (pid == 0) {
-		char *argv[] = { cmd, NULL };
+		char *argv[] = { NULL, NULL };
 		char *const envp[] = { NULL };
+		argv[0] = cmd;
 
 		/* wire up stderr first, in case the hook wishes to use it */
 		if (dup2(1, 2) < 0) {
@@ -819,7 +820,7 @@ lxi_hook_postnet()
 		}
 
 		/* child executes the hook */
-		(void) execve(cmd, (char *const *)argv, envp);
+		(void) execve(cmd, argv, envp);
 
 		/*
 		 * Since this is running as root, access(2) is less strict than
