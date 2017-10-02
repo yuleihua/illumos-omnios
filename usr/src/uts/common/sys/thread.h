@@ -349,6 +349,8 @@ typedef struct _kthread {
 	kmutex_t	t_ctx_lock;	/* protects t_ctx in removectx() */
 	struct waitq	*t_waitq;	/* wait queue */
 	kmutex_t	t_wait_mutex;	/* used in CV wait functions */
+
+	char		*t_name;	/* thread name */
 } kthread_t;
 
 /*
@@ -599,9 +601,13 @@ extern disp_lock_t stop_lock;		/* lock protecting stopped threads */
 
 caddr_t	thread_stk_init(caddr_t);	/* init thread stack */
 
+void	thread_setname(kthread_t *, const char *);
+
 extern int default_binding_mode;
 
 #endif	/* _KERNEL */
+
+#define	THREAD_NAME_MAX	32	/* includes terminating NUL */
 
 /*
  * Macros to indicate that the thread holds resources that could be critical
