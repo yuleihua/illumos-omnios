@@ -241,13 +241,14 @@ do_cmd beadm create $createargs $targetbe
 do_cmd beadm mount $targetbe $tmpdir
 update $tmpdir
 do_cmd beadm activate $targetbe
-do_cmd beadm unmount $targetbe
-rmdir $tmpdir
 
 if [ "$no_zones" != 1 ]; then
 	for zone in `do_cmd zoneadm -R $tmpdir list -cip`; do
 		update_zone $zone
 	done
 fi
+
+do_cmd beadm unmount $targetbe
+rmdir $tmpdir
 
 exit 0
