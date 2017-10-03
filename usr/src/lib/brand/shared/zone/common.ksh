@@ -20,6 +20,7 @@
 #
 # Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
 # Copyright 2014, Joyent, Inc. All rights reserved.
+# Copyright 2017 OmniOS Community Edition (OmniOSce) Association.
 #
 
 #
@@ -1045,6 +1046,9 @@ f_sanity_hwcap=$(gettext \
 "The image was created with an incompatible libc.so.1 hwcap lofs mount.\n"\
 "       The zone will not boot on this platform.  See the zone's\n"\
 "       documentation for the recommended way to create the archive.")
+f_no_ds=$(gettext "No zonepath dataset; the zonepath must be a ZFS dataset.")
+f_nodataset=$(gettext "Error: there is no ZFS file system for the zone.")
+f_zfsdestroy=$(gettext "Error destroying ZFS file system %s.")
 
 m_analyse_archive=$(gettext "Analysing the archive")
 

@@ -35,8 +35,6 @@ install_fail=$(gettext  "*** Attach FAILED ***")
 
 f_n_unimpl=$(gettext "The -n option is not yet implemented.")
 f_zfs=$(gettext "Error creating a ZFS file system (%s) for the zone.")
-f_nodataset=$(gettext "Error: there is no ZFS file system for the zone.")
-f_zfsdestroy=$(gettext "Error destroying ZFS file system %s.")
 
 f_sanity_notzone=$(gettext "Error: this is a system image and not a zone image.")
 
