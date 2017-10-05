@@ -200,7 +200,7 @@ scf_get_msg(scf_msg_t msg)
 
 	case SCF_MSG_PATTERN_MULTIPARTIAL:
 		return (dgettext(TEXT_DOMAIN,
-		    "Partial FMRI '%s' matches multiple instances\n"));
+		    "Partial FMRI '%s' matches multiple instances:\n"));
 
 	default:
 		abort();
