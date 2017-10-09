@@ -23,14 +23,10 @@
 # Copyright 2004 Sun Microsystems, Inc.  All rights reserved.
 # Use is subject to license terms.
 #
-#ident	"%Z%%M%	%I%	%E% SMI"
+# ident	"%Z%%M%	%I%	%E% SMI"
+#
 
-CRTSRCS=        $(SRC)/lib/common/i386
-include		$(SRC)/cmd/sgs/0@0/Makefile.com
+include ../Makefile.com
+include ../../Makefile.lib.64
 
-.KEEP_STATE:
-
-include		$(SRC)/cmd/sgs/0@0/Makefile.targ
-
-install:	all $(ROOTDYNLIB)
-
+install:	$(ROOTOBJECTS64)

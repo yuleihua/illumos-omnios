@@ -24,20 +24,13 @@
  * Use is subject to license terms.
  */
 
-/*	Copyright (c) 1988 AT&T	*/
-/*	  All Rights Reserved  	*/
-
+#pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/types.h>
-#include <math.h>
-
 /*
- * variables which differ depending on the
- * compilation mode
- *
- * Strict ANSI mode
- * This file is linked into the a.out immediately following
- * the startup routine if the -Xc compilation mode is selected
+ * Setting thie value to 1 enables XPG4 mode for APIs
+ * which have differing runtime behaviour from XPG3 to XPG4.
+ * See usr/src/lib/libc/port/gen/xpg4.c for the default value.
  */
 
-const enum version _lib_version = strict_ansi;
+int __xpg4 = 1;

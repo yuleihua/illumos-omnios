@@ -20,26 +20,41 @@
  * CDDL HEADER END
  */
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All rights reserved.
- * Use is subject to license terms.
+ *	Copyright (c) 2001 by Sun Microsystems, Inc.
+ *	All rights reserved.
  */
-
-/*	Copyright (c) 1988 AT&T	*/
-/*	  All Rights Reserved  	*/
-
-
-#include <sys/types.h>
-#include <math.h>
 
 /*
- * variables which differ depending on the
- * compilation mode
+ * These crt*.o modules are provided as the bare minimum required
+ * from a crt*.o for inclusion in building low level system
+ * libraries.  The are only be to included in libraries which
+ * contain *no* C++ code and want to avoid the startup code
+ * that the C++ runtime has introduced into the crt*.o modules.
  *
- * C Issue 4.2 compatibility mode
- * This file is linked into the a.out by default if
- * no compilation mode was specified or if the -Xt option
- * was specified - the linking occurs if there is an unresolved
- * reference to _lib_version
+ * For further details - see bug#4433015
  */
+#pragma ident	"%Z%%M%	%I%	%E% SMI"
 
-const enum version _lib_version = c_issue_4;
+	.file		"crti.s"
+
+/*
+ * _init function prologue
+ */
+	.section	".init"
+	.global		_init
+	.type		_init, #function
+	.align	4
+
+_init:
+	save	%sp, -96, %sp
+
+/*
+ * _fini function prologue
+ */
+	.section	".fini"
+	.global		_fini
+	.type		_fini, #function
+	.align	4
+
+_fini:
+	save	%sp, -96, %sp

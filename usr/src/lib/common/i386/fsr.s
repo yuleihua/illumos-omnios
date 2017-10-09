@@ -24,12 +24,19 @@
  * Use is subject to license terms.
  */
 
-#include <sys/asm_linkage.h>
+	.ident	"%Z%%M%	%I%	%E% SMI"
 
 	.file	"fsr.s"
 
 	.section	.data
 	.align 4
+
+	.weak	__fsr_init_value
+
+__fsr_init_value_ptr:
+	.4byte	__fsr_init_value
+	.type   __fsr_init_value_ptr,@object
+	.size   __fsr_init_value_ptr,4
 
 /*
  * The following table maps trap enable bits in __fsr_init_value
@@ -87,20 +94,20 @@ trap_table:
 
 	.size	trap_table,32
 
-ENTRY_NP(__fsr)
+	.section	.text
+	.align	4
+
+	.globl	__fsr
+	.type	__fsr,@function
+__fsr:
 	pushl	%ebp
 	movl	%esp,%ebp
 	pushl	%edx
 	pushl	%ecx
-	pushl	%ebx
 	subl	$4,%esp
 
-	/* Setup PIC */
-	call	9f
-9:	popl	%ebx
-	addl	$_GLOBAL_OFFSET_TABLE_ + [. - 9b], %ebx
-
-	movl	8(%ebp), %ecx		/* the value set by CG is passed in */
+	lea	__fsr_init_value_ptr, %ecx
+	movl	(%ecx),%ecx		/* get the value set by CG */
 	shrl	$1,%ecx			/* get rid of fns bit */
 	cmpl	$0,%ecx			/* if remaining bits are zero */
 	je	3f			/*   there's nothing to do */
@@ -109,9 +116,7 @@ ENTRY_NP(__fsr)
 
 	movl	%ecx,%edx
 	andl	$0x1f,%edx		/* get the trap enable bits */
-	movl	trap_table@GOT(%ebx), %eax
-	addl	%eax,%edx
-	movb	(%edx),%al
+	movb	trap_table(%edx),%al
 	andb	%al,0(%esp)	/* unmask the corresponding exceptions */
 
 	testl	$0x200,%ecx		/* test denormal trap enable */
@@ -146,9 +151,9 @@ ENTRY_NP(__fsr)
 
 3:
 	addl	$4,%esp
-	popl	%ebx
 	popl	%ecx
 	popl	%edx
 	popl	%ebp
 	ret
-SET_SIZE(__fsr)
+
+	.size	__fsr,[.-__fsr]

@@ -20,15 +20,36 @@
  * CDDL HEADER END
  */
 /*
- * Copyright 2004 Sun Microsystems, Inc.  All rights reserved.
- * Use is subject to license terms.
+ * Copyright (c) 2001 by Sun Microsystems, Inc.
+ * All rights reserved.
  */
 
-#include <sys/types.h>
 /*
- * Setting thie value to 1 enables XPG4 mode for APIs
- * which have differing runtime behaviour from XPG3 to XPG4.
- * See usr/src/lib/libc/port/gen/xpg4.c for the default value.
+ * These crt*.o modules are provided as the bare minimum required
+ * from a crt*.o for inclusion in building low level system
+ * libraries.  The are only be to included in libraries which
+ * contain *no* C++ code and want to avoid the startup code
+ * that the C++ runtime has introduced into the crt*.o modules.
+ *
+ * For further details - see bug#4433015
  */
+	.ident	"%Z%%M%	%I%	%E% SMI"
+	.file	"crtn.s"
 
-int __xpg4 = 1;
+/*
+ * _init function epilogue
+ */
+	.section	.init,"ax"
+
+	popl	%ebx
+	leave
+	ret
+
+/*
+ * _fini function epilogue
+ */
+	.section	.fini,"ax"
+
+	popl	%ebx
+	leave
+	ret

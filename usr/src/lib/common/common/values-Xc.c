@@ -24,6 +24,8 @@
  * Use is subject to license terms.
  */
 
+#pragma ident	"%Z%%M%	%I%	%E% SMI"
+
 /*	Copyright (c) 1988 AT&T	*/
 /*	  All Rights Reserved  	*/
 
@@ -35,9 +37,9 @@
  * variables which differ depending on the
  * compilation mode
  *
- * ANSI conforming mode
+ * Strict ANSI mode
  * This file is linked into the a.out immediately following
- * the startup routine if the -Xa compilation mode is selected
+ * the startup routine if the -Xc compilation mode is selected
  */
 
-const enum version _lib_version = ansi_1;
+const enum version _lib_version = strict_ansi;
