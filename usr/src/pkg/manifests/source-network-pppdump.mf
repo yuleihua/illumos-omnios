@@ -24,6 +24,6 @@
 # Copyright 2011 Nexenta Systems, Inc. All rights reserved.
 #
 
-set name=pkg.fmri value=pkg:/source/network/pppdump@0.5.11,5.11-0.148
+set name=pkg.fmri value=pkg:/source/network/pppdump@$(PKGVERS)
 set name=pkg.obsolete value=true
 set name=variant.arch value=$(ARCH)
