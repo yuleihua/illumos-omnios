@@ -12,7 +12,7 @@
 # Copyright 2011, Richard Lowe.
 
 set name=pkg.fmri \
-    value=pkg:/consolidation/man/man-incorporation@0.5.11,5.11-0.148
+    value=pkg:/consolidation/man/man-incorporation@$(PKGVERS)
 set name=pkg.obsolete value=true
 # Don't incorporate, as we were one and that would get deeply confusing
 set name=org.opensolaris.noincorp value=true
