@@ -4884,7 +4884,7 @@ zone_create(const char *zone_name, const char *zone_root,
 	}
 
 	zone = kmem_zalloc(sizeof (zone_t), KM_SLEEP);
-	zoneid = zone->zone_id = id_alloc(zoneid_space);
+	zone->zone_id = zoneid;
 	zone->zone_did = zone_did;
 	zone->zone_status = ZONE_IS_UNINITIALIZED;
 	zone->zone_pool = pool_default;
