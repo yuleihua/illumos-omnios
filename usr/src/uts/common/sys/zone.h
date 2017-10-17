@@ -193,6 +193,7 @@ typedef struct {
 	uint32_t doi;			/* DOI for label */
 	caddr32_t label;		/* label associated with zone */
 	int flags;
+	zoneid_t zoneid;		/* requested zoneid */
 } zone_def32;
 #endif
 typedef struct {
@@ -209,6 +210,7 @@ typedef struct {
 	uint32_t doi;			/* DOI for label */
 	const bslabel_t *label;		/* label associated with zone */
 	int flags;
+	zoneid_t zoneid;		/* requested zoneid */
 } zone_def;
 
 /* extended error information */
@@ -504,6 +506,7 @@ typedef struct zone {
 	 */
 	list_node_t	zone_linkage;
 	zoneid_t	zone_id;	/* ID of zone */
+	zoneid_t	zone_did;	/* persistent debug ID of zone */
 	uint_t		zone_ref;	/* count of zone_hold()s on zone */
 	uint_t		zone_cred_ref;	/* count of zone_hold_cred()s on zone */
 	/*
