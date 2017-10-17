@@ -25,6 +25,7 @@
  * Use is subject to license terms.
  *
  * Portions Copyright 2009 Chad Mynhier
+ * Copyright 2017 Joyent, Inc.  All rights reserved.
  */
 
 #include <sys/types.h>

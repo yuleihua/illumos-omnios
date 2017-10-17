@@ -26,6 +26,7 @@
  * Use is subject to license terms.
  *
  * Portions Copyright 2009 Chad Mynhier
+ * Copyright 2017 Joyent, Inc.  All rights reserved.
  */
 
 #include <sys/types.h>
@@ -1493,6 +1494,9 @@ main(int argc, char **argv)
 			add_uid(&ruid_tbl, p);
 			while (p = strtok(NULL, ", "))
 				add_uid(&ruid_tbl, p);
+			break;
+		case 'V':
+			/* obsolete argument - accepted for compatability */
 			break;
 		case 'p':
 			fill_table(&pid_tbl, optarg, 'p');
