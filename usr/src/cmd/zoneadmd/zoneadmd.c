@@ -574,6 +574,9 @@ zone_ready(zlog_t *zlogp, zone_mnt_t mount_cmd, int zstate, zoneid_t zone_did)
 		goto bad;
 	}
 
+	if (zone_did == 0)
+		zone_did = zone_get_did(zone_name);
+
 	if ((zone_id = vplat_create(zlogp, mount_cmd, zone_did)) == -1) {
 		if ((err = zonecfg_destroy_snapshot(zone_name)) != Z_OK)
 			zerror(zlogp, B_FALSE, "destroying snapshot: %s",
@@ -1374,34 +1377,6 @@ audit_put_record(zlog_t *zlogp, ucred_t *uc, int return_val,
 	(void) adt_end_session(ah);
 }
 
-static zoneid_t
-getzone_did(char *zonename)
-{
-	int len;
-	FILE *fp;
-	char buf[256];
-	char pat[ZONENAME_MAX + 2];
-	int id = 1;
-
-	(void) snprintf(pat, sizeof (pat), "%s:", zonename);
-	len = strlen(pat);
-	if ((fp = fopen("/etc/zones/index", "r")) == NULL)
-		return (getpid());
-
-	while (fgets(buf, sizeof (buf), fp) != NULL) {
-		if (strncmp(buf, pat, len) == 0) {
-			fclose(fp);
-			return (id);
-		}
-
-		if (isalpha(buf[0]) && strncmp(buf, "global:", 7) != 0)
-			id++;
-	}
-
-	fclose(fp);
-	return (getpid());
-}
-
 /*
  * Log the exit time and status of the zone's init process into
  * {zonepath}/lastexited. If the zone shutdown normally, the exit status will
@@ -1563,9 +1538,6 @@ server(void *cookie, char *args, size_t alen, door_desc_t *dp,
 		zerror(&logsys, B_FALSE, "unable to determine state of zone");
 		goto out;
 	}
-
-	if (zone_did == 0)
-		zone_did = getzone_did(zone_name);
 
 	if (kernelcall) {
 		/*
