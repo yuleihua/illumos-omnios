@@ -80,6 +80,31 @@ zid2zone(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 	return (DCMD_OK);
 }
 
+static int
+zdid_lookup_cb(uintptr_t addr, const zone_t *zone, void *arg)
+{
+	zoneid_t zdid = *(uintptr_t *)arg;
+	if (zone->zone_did == zdid)
+		mdb_printf("%p\n", addr);
+
+	return (WALK_NEXT);
+}
+
+/*ARGSUSED*/
+int
+zdid2zone(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
+{
+	if (!(flags & DCMD_ADDRSPEC) || argc != 0)
+		return (DCMD_USAGE);
+
+	if (mdb_walk("zone", (mdb_walk_cb_t)zdid_lookup_cb, &addr) == -1) {
+		mdb_warn("failed to walk zone");
+		return (DCMD_ERR);
+	}
+
+	return (DCMD_OK);
+}
+
 int
 zoneprt(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 {

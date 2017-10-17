@@ -4362,6 +4362,8 @@ static const mdb_dcmd_t dcmds[] = {
 	/* from zone.c */
 	{ "zid2zone", ":", "find the zone_t with the given zone id",
 		zid2zone },
+	{ "zdid2zone", ":", "find the zone_t with the given zone debug id",
+		zdid2zone },
 	{ "zone", "?[-r [-v]]", "display kernel zone(s)", zoneprt },
 	{ "zsd", ":[-v] [zsd_key]", "display zone-specific-data entries for "
 	    "selected zones", zsd },
