@@ -342,18 +342,22 @@ zone, with colon- delimited fields. These fields are:
 .sp
 .in +2
 .nf
-zoneid:zonename:state:zonepath:uuid:brand:ip-type
+zoneid:zonename:state:zonepath:uuid:brand:ip-type:debugid
 .fi
 .in -2
 .sp
 
 If the \fBzonepath\fR contains embedded colons, they can be escaped by a
 backslash ("\:"), which is parsable by using the shell \fBread\fR(1) function
-with the environmental variable \fBIFS\fR. The \fIuuid\fR value is assigned by
-\fBlibuuid\fR(3LIB) when the zone is installed, and is useful for identifying
-the same zone when present (or renamed) on alternate boot environments. Any
-software that parses the output of the "\fBzoneadm list -p\fR" command must be
-able to handle any fields that may be added in the future.
+with the environmental variable \fBIFS\fR.
+The \fIuuid\fR value is assigned by \fBlibuuid\fR(3LIB) when the zone is
+installed, and is useful for identifying the same zone when present (or
+renamed) on alternate boot environments.
+The \fIdebugid\fR value is a constant numeric identifier which is attached
+to the zone and can be used by tools such as DTrace to track zones across
+reboots (currently unused).
+Any software that parses the output of the "\fBzoneadm list -p\fR" command must
+be able to handle any fields that may be added in the future.
 .sp
 The \fB-v\fR and \fB-p\fR options are mutually exclusive. If neither \fB-v\fR
 nor \fB-p\fR is used, just the zone name is listed.
