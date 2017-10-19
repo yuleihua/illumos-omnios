@@ -6289,6 +6289,7 @@ scf_multiple_match_error(scf_pattern_t *pattern, const char *format)
 	 * Note that strlen(format) includes the length of '%s', which
 	 * accounts for the terminating null byte.
 	 */
+	assert(strstr(format, "%s") != NULL);
 	len = strlen(format) + strlen(pattern->sp_arg);
 	for (match = pattern->sp_matches; match != NULL;
 	    match = match->sm_next)
@@ -6297,11 +6298,14 @@ scf_multiple_match_error(scf_pattern_t *pattern, const char *format)
 	if ((msg = malloc(len)) == NULL)
 		return (NULL);
 
-	off = snprintf(msg, len, format, pattern->sp_arg);
+	(void) snprintf(msg, len, format, pattern->sp_arg);
+	off = strlen(msg);
 	for (match = pattern->sp_matches; match != NULL;
-	    match = match->sm_next)
+	    match = match->sm_next) {
+		assert(off < len);
 		off += snprintf(msg + off, len - off, "\t%s\n",
 		    match->sm_key->sk_fmri);
+	}
 
 	return (msg);
 }
