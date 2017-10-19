@@ -25,8 +25,8 @@
  */
 
 /*
- * Copyright 2017 James S Blachly, MD <james.blachly@gmail.com>
  * Copyright 2017 Joyent, Inc.
+ * Copyright 2017 James S Blachly, MD <james.blachly@gmail.com>
  */
 
 /*
