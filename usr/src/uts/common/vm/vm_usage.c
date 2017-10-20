@@ -25,7 +25,7 @@
  */
 
 /*
- * Copyright 2016, Joyent, Inc.
+ * Copyright 2017, Joyent, Inc.
  */
 
 /*
@@ -118,7 +118,7 @@
  *	For accurate counting of map-shared and COW-shared pages.
  *
  *    - visited private anons (refcnt > 1) for each collective.
- *	(entity->vme_anon_hash)
+ *	(entity->vme_anon)
  *	For accurate counting of COW-shared pages.
  *
  * The common accounting structure is the vmu_entity_t, which represents
@@ -156,6 +156,7 @@
 #include <sys/vm_usage.h>
 #include <sys/zone.h>
 #include <sys/sunddi.h>
+#include <sys/sysmacros.h>
 #include <sys/avl.h>
 #include <vm/anon.h>
 #include <vm/as.h>
@@ -203,6 +204,14 @@ typedef struct vmu_object {
 } vmu_object_t;
 
 /*
+ * Node for tree of visited COW anons.
+ */
+typedef struct vmu_anon {
+	avl_node_t vma_node;
+	uintptr_t vma_addr;
+} vmu_anon_t;
+
+/*
  * Entity by which to count results.
  *
  * The entity structure keeps the current rss/swap counts for each entity
@@ -225,7 +234,7 @@ typedef struct vmu_entity {
 	struct vmu_entity *vme_next_calc;
 	mod_hash_t	*vme_vnode_hash; /* vnodes visited for entity */
 	mod_hash_t	*vme_amp_hash;	 /* shared amps visited for entity */
-	mod_hash_t	*vme_anon_hash;	 /* COW anons visited for entity */
+	avl_tree_t	vme_anon;	 /* COW anons visited for entity */
 	vmusage_t	vme_result;	 /* identifies entity and results */
 } vmu_entity_t;
 
@@ -328,6 +337,23 @@ bounds_cmp(const void *bnd1, const void *bnd2)
 }
 
 /*
+ * Comparison routine for our AVL tree of anon structures.
+ */
+static int
+vmu_anon_cmp(const void *lhs, const void *rhs)
+{
+	const vmu_anon_t *l = lhs, *r = rhs;
+
+	if (l->vma_addr == r->vma_addr)
+		return (0);
+
+	if (l->vma_addr < r->vma_addr)
+		return (-1);
+
+	return (1);
+}
+
+/*
  * Save a bound on the free list.
  */
 static void
@@ -367,13 +393,18 @@ static void
 vmu_free_entity(mod_hash_val_t val)
 {
 	vmu_entity_t *entity = (vmu_entity_t *)val;
+	vmu_anon_t *anon;
+	void *cookie = NULL;
 
 	if (entity->vme_vnode_hash != NULL)
 		i_mod_hash_clear_nosync(entity->vme_vnode_hash);
 	if (entity->vme_amp_hash != NULL)
 		i_mod_hash_clear_nosync(entity->vme_amp_hash);
-	if (entity->vme_anon_hash != NULL)
-		i_mod_hash_clear_nosync(entity->vme_anon_hash);
+
+	while ((anon = avl_destroy_nodes(&entity->vme_anon, &cookie)) != NULL)
+		kmem_free(anon, sizeof (vmu_anon_t));
+
+	avl_destroy(&entity->vme_anon);
 
 	entity->vme_next = vmu_data.vmu_free_entities;
 	vmu_data.vmu_free_entities = entity;
@@ -489,10 +520,10 @@ vmu_alloc_entity(id_t id, int type, id_t zoneid)
 		    "vmusage amp hash", VMUSAGE_HASH_SIZE, vmu_free_object,
 		    sizeof (struct anon_map));
 
-	if (entity->vme_anon_hash == NULL)
-		entity->vme_anon_hash = mod_hash_create_ptrhash(
-		    "vmusage anon hash", VMUSAGE_HASH_SIZE,
-		    mod_hash_null_valdtor, sizeof (struct anon));
+	VERIFY(avl_first(&entity->vme_anon) == NULL);
+
+	avl_create(&entity->vme_anon, vmu_anon_cmp, sizeof (struct vmu_anon),
+	    offsetof(struct vmu_anon, vma_node));
 
 	entity->vme_next = vmu_data.vmu_entities;
 	vmu_data.vmu_entities = entity;
@@ -618,21 +649,19 @@ vmu_find_insert_object(mod_hash_t *hash, caddr_t key, uint_t type)
 }
 
 static int
-vmu_find_insert_anon(mod_hash_t *hash, caddr_t key)
+vmu_find_insert_anon(vmu_entity_t *entity, void *key)
 {
-	int ret;
-	caddr_t val;
+	vmu_anon_t anon, *ap;
 
-	ret = i_mod_hash_find_nosync(hash, (mod_hash_key_t)key,
-	    (mod_hash_val_t *)&val);
+	anon.vma_addr = (uintptr_t)key;
 
-	if (ret == 0)
+	if (avl_find(&entity->vme_anon, &anon, NULL) != NULL)
 		return (0);
 
-	ret = i_mod_hash_insert_nosync(hash, (mod_hash_key_t)key,
-	    (mod_hash_val_t)key, (mod_hash_hndl_t)0);
+	ap = kmem_alloc(sizeof (vmu_anon_t), KM_SLEEP);
+	ap->vma_addr = (uintptr_t)key;
 
-	ASSERT(ret == 0);
+	avl_add(&entity->vme_anon, ap);
 
 	return (1);
 }
@@ -1344,8 +1373,7 @@ vmu_calculate_seg(vmu_entity_t *vmu_entities, struct seg *seg)
 				 * Track COW anons per entity so
 				 * they are not double counted.
 				 */
-				if (vmu_find_insert_anon(entity->vme_anon_hash,
-				    (caddr_t)ap) == 0)
+				if (vmu_find_insert_anon(entity, ap) == 0)
 					continue;
 
 				result->vmu_rss_all += (pgcnt << PAGESHIFT);
@@ -1620,8 +1648,7 @@ vmu_free_extra()
 			mod_hash_destroy_hash(te->vme_vnode_hash);
 		if (te->vme_amp_hash != NULL)
 			mod_hash_destroy_hash(te->vme_amp_hash);
-		if (te->vme_anon_hash != NULL)
-			mod_hash_destroy_hash(te->vme_anon_hash);
+		VERIFY(avl_first(&te->vme_anon) == NULL);
 		kmem_free(te, sizeof (vmu_entity_t));
 	}
 	while (vmu_data.vmu_free_zones != NULL) {
@@ -1642,13 +1669,42 @@ vmu_free_extra()
 
 extern kcondvar_t *pr_pid_cv;
 
+static void
+vmu_get_zone_rss(zoneid_t zid)
+{
+	vmu_zone_t *zone;
+	zone_t *zp;
+	int ret;
+	uint_t pgcnt;
+
+	if ((zp = zone_find_by_id(zid)) == NULL)
+		return;
+
+	ret = i_mod_hash_find_nosync(vmu_data.vmu_zones_hash,
+	    (mod_hash_key_t)(uintptr_t)zid, (mod_hash_val_t *)&zone);
+	if (ret != 0) {
+		zone = vmu_alloc_zone(zid);
+		ret = i_mod_hash_insert_nosync(vmu_data.vmu_zones_hash,
+		    (mod_hash_key_t)(uintptr_t)zid,
+		    (mod_hash_val_t)zone, (mod_hash_hndl_t)0);
+		ASSERT(ret == 0);
+	}
+
+	ASSERT(zid >= 0 && zid <= MAX_ZONEID);
+	pgcnt = zone_pcap_data[zid].zpcap_pg_cnt;
+	zone->vmz_zone->vme_result.vmu_rss_all = (size_t)ptob(pgcnt);
+	zone->vmz_zone->vme_result.vmu_swap_all = zp->zone_max_swap;
+
+	zone_rele(zp);
+}
+
 /*
  * Determine which entity types are relevant and allocate the hashes to
- * track them.  Then walk the process table and count rss and swap
- * for each process'es address space.  Address space object such as
- * vnodes, amps and anons are tracked per entity, so that they are
- * not double counted in the results.
- *
+ * track them.  First get the zone rss using the data we already have. Then,
+ * if necessary, walk the process table and count rss and swap for each
+ * process'es address space.  Address space object such as vnodes, amps and
+ * anons are tracked per entity, so that they are not double counted in the
+ * results.
  */
 static void
 vmu_calculate()
@@ -1656,6 +1712,7 @@ vmu_calculate()
 	int i = 0;
 	int ret;
 	proc_t *p;
+	uint_t	zone_flags = 0;
 
 	vmu_clear_calc();
 
@@ -1663,8 +1720,33 @@ vmu_calculate()
 		vmu_data.vmu_system = vmu_alloc_entity(0, VMUSAGE_SYSTEM,
 		    ALL_ZONES);
 
+	zone_flags = vmu_data.vmu_calc_flags & VMUSAGE_ZONE_FLAGS;
+	if (zone_flags != 0) {
+		/*
+		 * Use the accurate zone RSS data we already keep track of.
+		 */
+		int i;
+
+		for (i = 0; i <= MAX_ZONEID; i++) {
+			if (zone_pcap_data[i].zpcap_pg_cnt > 0) {
+				vmu_get_zone_rss(i);
+			}
+		}
+	}
+
+	/* If only neeeded zone data, we're done. */
+	if ((vmu_data.vmu_calc_flags & ~VMUSAGE_ZONE_FLAGS) == 0) {
+		return;
+	}
+
+	DTRACE_PROBE(vmu__calculate__all);
+	vmu_data.vmu_calc_flags &= ~VMUSAGE_ZONE_FLAGS;
+
 	/*
 	 * Walk process table and calculate rss of each proc.
+	 *
+	 * Since we already obtained all zone rss above, the following loop
+	 * executes with the VMUSAGE_ZONE_FLAGS cleared.
 	 *
 	 * Pidlock and p_lock cannot be held while doing the rss calculation.
 	 * This is because:
@@ -1720,6 +1802,12 @@ again:
 	mutex_exit(&pidlock);
 
 	vmu_free_extra();
+
+	/*
+	 * Restore any caller-supplied zone flags we blocked during
+	 * the process-table walk.
+	 */
+	vmu_data.vmu_calc_flags |= zone_flags;
 }
 
 /*
@@ -1761,28 +1849,6 @@ vmu_cache_rele(vmu_cache_t *cache)
 		kmem_free(cache->vmc_results, sizeof (vmusage_t) *
 		    cache->vmc_nresults);
 		kmem_free(cache, sizeof (vmu_cache_t));
-	}
-}
-
-/*
- * When new data is calculated, update the phys_mem rctl usage value in the
- * zones.
- */
-static void
-vmu_update_zone_rctls(vmu_cache_t *cache)
-{
-	vmusage_t	*rp;
-	size_t		i = 0;
-	zone_t		*zp;
-
-	for (rp = cache->vmc_results; i < cache->vmc_nresults; rp++, i++) {
-		if (rp->vmu_type == VMUSAGE_ZONE &&
-		    rp->vmu_zoneid != ALL_ZONES) {
-			if ((zp = zone_find_by_id(rp->vmu_zoneid)) != NULL) {
-			        zp->zone_phys_mem = rp->vmu_rss_all;
-			        zone_rele(zp);
-			}
-		}
 	}
 }
 
@@ -2085,8 +2151,6 @@ start:
 
 		mutex_exit(&vmu_data.vmu_lock);
 
-		/* update zone's phys. mem. rctl usage */
-		vmu_update_zone_rctls(cache);
 		/* copy cache */
 		ret = vmu_copyout_results(cache, buf, nres, flags_orig,
 		    req_zone_id, cpflg);

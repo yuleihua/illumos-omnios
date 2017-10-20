@@ -1,10 +1,11 @@
 '\" te
 .\" Copyright (c) 2013 Gary Mills
 .\" Copyright (c) 2006, 2009 Sun Microsystems, Inc. All Rights Reserved.
+.\" Copyright (c) 2017, Joyent, Inc. All Rights Reserved.
 .\" The contents of this file are subject to the terms of the Common Development and Distribution License (the "License").  You may not use this file except in compliance with the License. You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE or http://www.opensolaris.org/os/licensing.
 .\"  See the License for the specific language governing permissions and limitations under the License. When distributing Covered Code, include this CDDL HEADER in each file and include the License file at usr/src/OPENSOLARIS.LICENSE.  If applicable, add the following below this CDDL HEADER, with
 .\" the fields enclosed by brackets "[]" replaced with your own identifying information: Portions Copyright [yyyy] [name of copyright owner]
-.TH PRSTAT 1M "Nov 14, 2014"
+.TH PRSTAT 1M "Oct 13, 2017"
 .SH NAME
 prstat \- report active process statistics
 .SH SYNOPSIS
@@ -447,9 +448,11 @@ devices, in kilobytes (\fBK\fR), megabytes (\fBM\fR), or gigabytes (\fBG\fR).
 .RS 4n
 The resident set size of the process (\fBRSS\fR), in kilobytes (\fBK\fR),
 megabytes (\fBM\fR), or gigabytes (\fBG\fR). The RSS value is an estimate
-provided by \fBproc\fR(4) that might underestimate the actual resident set
-size. Users who want to get more accurate usage information for capacity
-planning should use the \fB-x\fR option to \fBpmap\fR(1) instead.
+provided by \fBproc\fR(4) that might underestimate the actual
+per-process resident set size, but is generally accurate for the aggregated
+resident set size. Users who want to get more accurate usage information for
+capacity planning should use the \fB-x\fR option to \fBpmap\fR(1) for
+per-process results instead.
 .RE
 
 .sp
