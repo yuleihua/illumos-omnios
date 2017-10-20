@@ -81,7 +81,7 @@ PRIVS_C = $(SRC)/uts/common/os/priv_const.c
 $(PRIVS_C): $(PRIVS_AWK) $(PRIVS_DEF)
 	$(AWK) -f $(PRIVS_AWK) < $(PRIVS_DEF) cfile=$@
 
-CLOBBERFILES += $(PRIVS_C)
+CLOBBERFILES = $(PRIVS_C)
 
 #
 # Prerequisites
