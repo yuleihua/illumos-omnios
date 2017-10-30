@@ -33,7 +33,7 @@ include ../Makefile.cmd
 
 ROOTCMDDIR=	$(ROOTLIB)/zones
 
-OBJS= zoneadmd.o zcons.o vplat.o mcap.o zfd.o
+OBJS= zoneadmd.o zcons.o vplat.o zfd.o
 SRCS = $(OBJS:.o=.c)
 POFILE=zoneadmd_all.po
 POFILES= $(OBJS:%.o=%.po)
@@ -45,7 +45,7 @@ CERRWARN += -_gcc=-Wno-uninitialized
 
 LDLIBS += -lsocket -lzonecfg -lnsl -ldevinfo -ldevice -lnvpair \
 	-lgen -lbsm -lcontract -lzfs -luuid -lbrand -ldladm -ltsnet -ltsol \
-	-linetutil -lscf -lproc
+	-linetutil -lscf
 XGETFLAGS += -a -x zoneadmd.xcl
 
 .KEEP_STATE:
