@@ -13,16 +13,7 @@ are included at the end of this file.
 
 =======================================================================
 
-## 8648 Fix range locking in ZIL commit codepath
-
-Commits:
- > 8648 Fix range locking in ZIL commit codepath
-
-Packages:
- > system/file-system/zfs
-
-Archive:
- > https://downloads.omniosce.org/pkg/8648-backport.p5p
+No current pending patches.
 
 =======================================================================
 
