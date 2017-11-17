@@ -1023,7 +1023,9 @@ out:
 	return (rval);
 }
 
+#ifndef lint
 #pragma GCC diagnostic ignored "-Wclobbered"
+#endif
 /*
  * During mremap we had to relocate the initial anonymous mapping to a new
  * location (a new anonymous mapping). Copy the user-level data from the first
