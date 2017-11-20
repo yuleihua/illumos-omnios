@@ -200,8 +200,10 @@ lx_prctl(int opt, uintptr_t data)
 		 * Linux.
 		 */
 		mutex_enter(&p->p_lock);
-		(void) strncpy(p->p_user.u_comm, t->t_name, MAXCOMLEN + 1);
-		(void) strncpy(p->p_user.u_psargs, t->t_name, PSARGSZ);
+		(void) strncpy(p->p_user.u_comm,
+		    t->t_name != NULL ? t->t_name : name, MAXCOMLEN + 1);
+		(void) strncpy(p->p_user.u_psargs,
+		    t->t_name != NULL ? t->t_name : name, PSARGSZ);
 		mutex_exit(&p->p_lock);
 		return (0);
 	}
