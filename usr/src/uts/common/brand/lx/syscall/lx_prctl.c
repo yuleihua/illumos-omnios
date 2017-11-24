@@ -191,6 +191,16 @@ lx_prctl(int opt, uintptr_t data)
 		}
 
 		/*
+		 * We are currently choosing to not allow an empty thread
+		 * name to clear p->p_user.u_comm and p->p_user.u_psargs.
+		 * This is a slight divergence from linux behavior (which
+		 * allows this) so that we can preserve the original command.
+		 */
+		if (strlen(name) == 0 || t->t_name == NULL) {
+			return (0);
+		}
+
+		/*
 		 * We explicitly use t->t_name here instead of name in case
 		 * a thread has come in between the above thread_setname()
 		 * call and the setting of u_comm/u_psargs below.  On Linux,
@@ -200,10 +210,8 @@ lx_prctl(int opt, uintptr_t data)
 		 * Linux.
 		 */
 		mutex_enter(&p->p_lock);
-		(void) strncpy(p->p_user.u_comm,
-		    t->t_name != NULL ? t->t_name : name, MAXCOMLEN + 1);
-		(void) strncpy(p->p_user.u_psargs,
-		    t->t_name != NULL ? t->t_name : name, PSARGSZ);
+		(void) strncpy(p->p_user.u_comm, t->t_name, MAXCOMLEN + 1);
+		(void) strncpy(p->p_user.u_psargs, t->t_name, PSARGSZ);
 		mutex_exit(&p->p_lock);
 		return (0);
 	}
