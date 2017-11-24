@@ -196,7 +196,7 @@ lx_prctl(int opt, uintptr_t data)
 		 * This is a slight divergence from linux behavior (which
 		 * allows this) so that we can preserve the original command.
 		 */
-		if (strlen(name) == 0) {
+		if (strlen(name) == 0 || t->t_name == NULL) {
 			return (0);
 		}
 
@@ -210,10 +210,8 @@ lx_prctl(int opt, uintptr_t data)
 		 * Linux.
 		 */
 		mutex_enter(&p->p_lock);
-		(void) strncpy(p->p_user.u_comm,
-		    t->t_name != NULL ? t->t_name : name, MAXCOMLEN + 1);
-		(void) strncpy(p->p_user.u_psargs,
-		    t->t_name != NULL ? t->t_name : name, PSARGSZ);
+		(void) strncpy(p->p_user.u_comm, t->t_name, MAXCOMLEN + 1);
+		(void) strncpy(p->p_user.u_psargs, t->t_name, PSARGSZ);
 		mutex_exit(&p->p_lock);
 		return (0);
 	}
