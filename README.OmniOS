@@ -1,6 +1,47 @@
-This README is new for OmniOS as of Stable release r151020 -- it is here
-because it keeps track of LX merges from OmniOS (a massive and continuing
-side-pull).
 
-Last illumos-joyent commit: 3df01e00bc5ef3f882d18e8188e4165831f8b694
+=======================================================================
+
+The following commits are merged into this branch but not yet published
+to the IPS repository.
+
+This file is used to track packages that need to be published as part
+of the next reboot-required update for this branch. Archives that fix
+specific problems or are generally useful will be advertised on the
+web page and other mediums so users are no expected to monitor this
+file. However, some brief notes on how to install a package archive
+are included at the end of this file.
+
+=======================================================================
+
+## zfs fixes
+
+Commits:
+ > 8909 8585 can cause a use-after-free kernel panic
+ > 8930 zfs_zinactive: do not remove the node if the filesystem is readonly
+
+Packages:
+ > system/file-system/zfs
+
+Archive:
+ > https://downloads.omniosce.org/pkg/8909_8930-backport_r24.p5p
+
+=======================================================================
+
+=============================
+Installing a package archive.
+=============================
+
+Unpublished updates are provided for download as an IPS package archive (.p5p)
+which can be added to the existing publisher as follows:
+
+# pkg set-publisher -g /path/to/downloaded.p5p omnios
+
+and then can be installed/upgraded in the usual way:
+
+# pkg list -u
+# pkg update
+
+and removed afterwards:
+
+# pkg set-publisher -G /path/to/downloaded.p5p omnios
 
