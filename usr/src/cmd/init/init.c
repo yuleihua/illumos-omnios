@@ -699,6 +699,9 @@ main(int argc, char *argv[])
 		console(B_FALSE,
 		    "Copyright (c) 1983, 2010, Oracle and/or its affiliates."
 		    " All rights reserved.\r\n");
+		console(B_FALSE,
+		    "Copyright (c) 2017-2018 OmniOS Community Edition "
+		    "(OmniOSce) Association.\r\n");
 	}
 
 	/*
