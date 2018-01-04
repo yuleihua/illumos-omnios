@@ -1168,8 +1168,6 @@ loop:
 		++pageout_sample_cnt;
 
 	} else if (pageout_new_spread == 0) {
-		uint_t i;
-
 		/*
 		 * We have run enough samples, set the spread.
 		 */
