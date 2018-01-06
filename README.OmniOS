@@ -13,17 +13,7 @@ are included at the end of this file.
 
 =======================================================================
 
-## zfs fixes
-
-Commits:
- > 8909 8585 can cause a use-after-free kernel panic
- > 8930 zfs_zinactive: do not remove the node if the filesystem is readonly
-
-Packages:
- > system/file-system/zfs
-
-Archive:
- > https://downloads.omniosce.org/pkg/8909_8930-backport_r24.p5p
+No current pending patches.
 
 =======================================================================
 
