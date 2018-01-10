@@ -2,6 +2,7 @@
 <!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
 <!--
  Copyright 2012 OmniTI Computer Consulting, Inc.  All rights reserved.
+ Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
  Use is subject to license terms.
 
  CDDL HEADER START
@@ -57,11 +58,11 @@
 	</dependency>
 
 	<dependent
-	  name='ibootsvc_single'
+	  name='ibootsvc_sysconfig'
 	  grouping='optional_all'
 	  restart_on='none'>
 		<service_fmri
-			value='svc:/milestone/single-user'/>
+			value='svc:/milestone/sysconfig'/>
 	</dependent>
 
 	<exec_method
