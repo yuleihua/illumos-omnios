@@ -21,16 +21,11 @@
 #
 #
 # Copyright 2012 OmniTI Computer Consulting, Inc.  All rights reserved.
+# Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
 #
 
 . /lib/svc/share/smf_include.sh
 . /lib/svc/share/initial_include.sh
-
-if [ /etc/svc/profile/site/sc_profile.xml -nt /etc/default/init ] ; then
-	# special case the profile that might have been dropped by the
-	# caiman installer
-	sc_profile_timezone /etc/svc/profile/site/sc_profile.xml
-fi
 
 if [ -e "/.initialboot" ]; then
 	SCRIPT=`/bin/mktemp`
@@ -39,14 +34,16 @@ if [ -e "/.initialboot" ]; then
 	echo ". /lib/svc/share/initial_include.sh" >> $SCRIPT
 	cat /.initialboot >> $SCRIPT
 	chmod 550 $SCRIPT
+	echo "Applying initial boot settings..." | tee /dev/msglog
 	$SCRIPT
 	rv=$?
 	if [ "$rv" != "$SMF_EXIT_OK" ]; then
 		exit $rv
 	fi
 	rm -f /.initialboot
+else
+	/usr/sbin/svcadm disable $SMF_FMRI
 fi
 
-/usr/sbin/svcadm disable $SMF_FMRI
 exit $SMF_EXIT_OK
 
