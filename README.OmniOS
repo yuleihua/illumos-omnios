@@ -13,7 +13,27 @@ are included at the end of this file.
 
 =======================================================================
 
-No current pending patches.
+## ZFS fix
+
+Commits:
+
+	8969 Cannot boot from RAIDZ with parity > 1
+
+Packages:
+
+	system/file-system/zfs
+
+## UDP fix
+
+	8653 Use after free in UDP socket close.
+
+Packages:
+
+	system/kernel
+
+Archive:
+
+	https://downloads.omniosce.org/pkg/8953-udp-backport_r24.p5p
 
 =======================================================================
 
