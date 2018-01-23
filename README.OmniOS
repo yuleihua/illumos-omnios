@@ -35,6 +35,18 @@ Archive:
 
 	https://downloads.omniosce.org/pkg/8953-udp-backport_r24.p5p
 
+
+## 8806 xattr_dir_inactive() releases used vnode with kernel panic
+
+Commits:
+ > 8806 xattr_dir_inactive() releases used vnode with kernel panic
+
+Packages:
+ > system/kernel
+
+Archive:
+ > https://downloads.omniosce.org/pkg/8806-backport_r24.p5p
+
 =======================================================================
 
 =============================
