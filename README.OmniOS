@@ -13,7 +13,16 @@ are included at the end of this file.
 
 =======================================================================
 
-No current pending patches.
+## 8806 xattr_dir_inactive() releases used vnode with kernel panic
+
+Commits:
+ > 8806 xattr_dir_inactive() releases used vnode with kernel panic
+
+Packages:
+ > system/kernel
+
+Archive:
+ > https://downloads.omniosce.org/pkg/8806-backport_r22.p5p
 
 =======================================================================
 
