@@ -78,29 +78,19 @@ driver name=lxautofs perms="lxautofs 0600 root sys"
 file path=etc/zones/SUNWlx.xml mode=0444
 file path=etc/zones/SUNWlx26.xml mode=0444
 file path=kernel/socketmod/$(ARCH64)/lx_netlink mode=0755
-file path=kernel/socketmod/lx_netlink mode=0755
 file path=usr/kernel/brand/$(ARCH64)/lx_brand group=sys mode=0755
-file path=usr/kernel/brand/lx_brand group=sys mode=0755
 file path=usr/kernel/drv/$(ARCH64)/inotify group=sys mode=0755
 file path=usr/kernel/drv/$(ARCH64)/lx_ptm group=sys mode=0755
 file path=usr/kernel/drv/$(ARCH64)/lx_systrace group=sys mode=0755
 file path=usr/kernel/drv/$(ARCH64)/lxautofs group=sys mode=0755
-file path=usr/kernel/drv/inotify group=sys mode=0755
 file path=usr/kernel/drv/inotify.conf group=sys
-file path=usr/kernel/drv/lx_ptm group=sys
 file path=usr/kernel/drv/lx_ptm.conf group=sys
-file path=usr/kernel/drv/lx_systrace group=sys
 file path=usr/kernel/drv/lx_systrace.conf group=sys
-file path=usr/kernel/drv/lxautofs group=sys mode=0755
 file path=usr/kernel/drv/lxautofs.conf group=sys
 file path=usr/kernel/fs/$(ARCH64)/lx_cgroup group=sys mode=0755
 file path=usr/kernel/fs/$(ARCH64)/lx_devfs group=sys mode=0755
 file path=usr/kernel/fs/$(ARCH64)/lx_proc group=sys mode=0755
 file path=usr/kernel/fs/$(ARCH64)/lx_sysfs group=sys mode=0755
-file path=usr/kernel/fs/lx_cgroup group=sys mode=0755
-file path=usr/kernel/fs/lx_devfs group=sys mode=0755
-file path=usr/kernel/fs/lx_proc group=sys mode=0755
-file path=usr/kernel/fs/lx_sysfs group=sys mode=0755
 file path=usr/lib/$(ARCH64)/lx_brand.so.1
 file path=usr/lib/brand/lx/$(ARCH64)/lx_librtld_db.so.1
 file path=usr/lib/brand/lx/$(ARCH64)/lx_vdso.so.1 mode=0755
@@ -132,11 +122,8 @@ file path=usr/share/man/man5/inotify.5
 file path=usr/share/man/man5/lx.5
 hardlink path=usr/kernel/dtrace/$(ARCH64)/lx_systrace \
     target=../../../kernel/drv/$(ARCH64)/lx_systrace
-hardlink path=usr/kernel/dtrace/lx_systrace \
-    target=../../kernel/drv/lx_systrace
 hardlink path=usr/kernel/fs/$(ARCH64)/lxautofs \
     target=../../../kernel/drv/$(ARCH64)/lxautofs
-hardlink path=usr/kernel/fs/lxautofs target=../../kernel/drv/lxautofs
 legacy pkg=SUNWlxr arch=$(ARCH) category=system \
     desc="Support for the 'lx' Brand" \
     hotline="Please contact your local service provider" \
