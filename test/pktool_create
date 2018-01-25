@@ -1,0 +1,33 @@
+#!/bin/sh
+
+certs=`pwd`/certs
+[ -d $certs ] && rm -rf "$certs"
+[ -d $certs ] || mkdir $certs
+
+#  gencert keystore=file
+#                 outcert=cert_filename
+#                 outkey=key_filename
+#                 serial=serial number hex string
+#                 [ -i ] | [subject=subject-DN]
+#                 [ altname=[critical:]SubjectAltName ]
+#                 [ keyusage=[critical:]usage,usage,...]
+#                 [ format=der|pem ]
+#                 [ keytype=rsa [hash=md5 | sha1 | sha256 | sha384 | sha512]]
+#                 [ keytype=dsa [hash=sha1 | sha256 ]]
+#                 [ keylen=key-size ]
+#                 [ eku=[critical:]EKU name,...]
+#                 [ lifetime=number-hour|number-day|number-year ]
+
+
+for type in rsa dsa; do
+	pktool gencert keystore=file \
+		outcert=$certs/$type-cert.pem \
+		outkey=$certs/$type-key.pem \
+		serial=1 \
+		subject="CN=illumos tester" \
+		format=pem \
+		keytype=$type \
+		keylen=2048 \
+		lifetime=1-year
+done
+
