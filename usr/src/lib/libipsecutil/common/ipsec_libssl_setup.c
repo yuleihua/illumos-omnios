@@ -59,6 +59,7 @@
 /*
  * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
+ * Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
  */
 
 /*
@@ -85,14 +86,32 @@ static X509_NAME *(*d2i_X509_NAME_fn)() = NULL;
 static int (*X509_NAME_print_ex_fp_fn)() = NULL;
 static char *(*ERR_get_error_fn)() = NULL;
 static char *(*ERR_error_string_fn)() = NULL;
+static void (*X509_NAME_free_fn)() = NULL;
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+
+/*
+ * Under OpenSSL 1.0, it was necessary to provide lock and thread
+ * management callbacks and to explicitly load resources such as error
+ * strings before use.
+ *
+ * As of version 1.1.0 OpenSSL will automatically allocate all resources that
+ * it needs so no explicit initialisation is required. Similarly it will also
+ * automatically deinitialise as required. For thread and lock management,
+ * OpenSSL 1.1 will detect and use pthreads without additional configuration.
+ *
+ * The following functions are no longer required if compiled against
+ * version 1.1 and the corresponding lock/thread management functions are
+ * also ifdefd out below.
+ */
+
+static void *(*OPENSSL_malloc_fn)() = NULL;
+static void (*OPENSSL_free_fn)() = NULL;
 static void (*SSL_load_error_strings_fn)() = NULL;
 static void (*ERR_free_strings_fn)() = NULL;
 static void (*CRYPTO_set_locking_callback_fn)() = NULL;
 static void (*CRYPTO_set_id_callback_fn)() = NULL;
-static void (*X509_NAME_free_fn)() = NULL;
 static int (*CRYPTO_num_locks_fn)() = NULL;
-static void *(*OPENSSL_malloc_fn)() = NULL;
-static void (*OPENSSL_free_fn)() = NULL;
 
 static void solaris_locking_callback(int, int, char *, int);
 static unsigned long solaris_thread_id(void);
@@ -100,9 +119,12 @@ static boolean_t thread_setup(void);
 /* LINTED E_STATIC_UNUSED */
 static void thread_cleanup(void);
 
-mutex_t init_lock = DEFAULTMUTEX;
 static mutex_t *lock_cs;
 static long *lock_count;
+
+#endif
+
+mutex_t init_lock = DEFAULTMUTEX;
 
 static boolean_t libssl_loaded = B_FALSE;
 static boolean_t libcrypto_loaded = B_FALSE;
@@ -140,6 +162,13 @@ libssl_load()
 		if (ERR_error_string_fn == NULL)
 			goto libssl_err;
 
+		X509_NAME_free_fn = (void(*)())dlsym(dldesc,
+		    "X509_NAME_free");
+		if (X509_NAME_free_fn == NULL)
+			goto libssl_err;
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+
 		SSL_load_error_strings_fn = (void(*)())dlsym(dldesc,
 		    "SSL_load_error_strings");
 		if (SSL_load_error_strings_fn == NULL)
@@ -160,13 +189,9 @@ libssl_load()
 		if (CRYPTO_set_id_callback_fn == NULL)
 			goto libssl_err;
 
-		X509_NAME_free_fn = (void(*)())dlsym(dldesc,
-		    "X509_NAME_free");
-		if (X509_NAME_free_fn == NULL)
-			goto libssl_err;
-
 		if (thread_setup() == B_FALSE)
 			goto libssl_err;
+#endif
 
 		libssl_loaded = B_TRUE;
 	}
@@ -190,6 +215,8 @@ libcrypto_load()
 
 	dldesc = dlopen(LIBCRYPTO, RTLD_LAZY);
 	if (dldesc != NULL) {
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 		CRYPTO_num_locks_fn = (int(*)())dlsym(dldesc,
 		    "CRYPTO_num_locks");
 		if (CRYPTO_num_locks_fn == NULL)
@@ -214,15 +241,25 @@ libcrypto_load()
 		    "CRYPTO_malloc");
 		if (OPENSSL_malloc_fn == NULL)
 			goto libcrypto_err;
+#endif
 
 		libcrypto_loaded = B_TRUE;
 	}
 	(void) mutex_unlock(&init_lock);
 	return;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 libcrypto_err:
 	(void) dlclose(dldesc);
 	(void) mutex_unlock(&init_lock);
+#endif
 }
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+
+/*
+ * The locking and thread ID calls and associated functions have been removed
+ * from OpenSSL 1.1. It now automatically detects and uses pthreads.
+ */
 
 static boolean_t
 thread_setup(void)
@@ -283,6 +320,7 @@ solaris_thread_id(void)
 	ret = (unsigned long)thr_self();
 	return (ret);
 }
+#endif /* OPENSSL_VERSION_NUMBER < 0x10100000L */
 
 void
 print_asn1_name(FILE *file, const unsigned char *buf, long buflen)
@@ -295,8 +333,10 @@ print_asn1_name(FILE *file, const unsigned char *buf, long buflen)
 		X509_NAME *x509name = NULL;
 		const unsigned char *p;
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 		/* Make an effort to decode the ASN1 encoded name */
 		SSL_load_error_strings_fn();
+#endif
 
 		/*
 		 * Temporary variable is mandatory per d2i_X509(3). Upcoming
@@ -319,7 +359,9 @@ print_asn1_name(FILE *file, const unsigned char *buf, long buflen)
 			(void) fprintf(file, dgettext(TEXT_DOMAIN,
 			    "<cannot interpret>\n"));
 		}
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 		ERR_free_strings_fn();
+#endif
 	} else {
 		(void) fprintf(file, dgettext(TEXT_DOMAIN, "<cannot print>\n"));
 	}
