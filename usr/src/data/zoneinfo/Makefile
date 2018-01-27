@@ -13,10 +13,6 @@ TZFILES=	africa \
 		europe \
 		factory \
 		northamerica \
-		pacificnew \
-		solar87 \
-		solar88 \
-		solar89 \
 		southamerica \
 		backward
 
