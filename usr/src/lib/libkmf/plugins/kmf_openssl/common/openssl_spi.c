@@ -2497,6 +2497,7 @@ static X509 *ocsp_find_signer_sk(STACK_OF(X509) *certs, OCSP_RESPID *id)
 	keyhash = id->value.byKey->data;
 	/* Calculate hash of each key and compare */
 	for (i = 0; i < sk_X509_num(certs); i++) {
+		/* LINTED E_BAD_PTR_CAST_ALIGN */
 		X509 *x = sk_X509_value(certs, i);
 		/* Use pubkey_digest to get the key ID value */
 		(void) X509_pubkey_digest(x, EVP_sha1(), tmphash, NULL);
@@ -3636,6 +3637,7 @@ extract_pem(KMF_HANDLE *kmfh,
 	}
 
 	for (i = 0; i < sk_X509_INFO_num(x509_info_stack); i++) {
+		/* LINTED E_BAD_PTR_CAST_ALIGN */
 		cert_infos[ncerts] = sk_X509_INFO_value(x509_info_stack, i);
 		ncerts++;
 	}
@@ -3717,6 +3719,7 @@ extract_pem(KMF_HANDLE *kmfh,
 err:
 	/* Cleanup the stack of X509 info records */
 	for (i = 0; i < sk_X509_INFO_num(x509_info_stack); i++) {
+		/* LINTED E_BAD_PTR_CAST_ALIGN */
 		info = (X509_INFO *)sk_X509_INFO_value(x509_info_stack, i);
 		X509_INFO_free(info);
 	}
@@ -3737,6 +3740,7 @@ openssl_parse_bags(STACK_OF(PKCS12_SAFEBAG) *bags, char *pin,
 	int i;
 
 	for (i = 0; i < sk_PKCS12_SAFEBAG_num(bags); i++) {
+		/* LINTED E_BAD_PTR_CAST_ALIGN */
 		PKCS12_SAFEBAG *bag = sk_PKCS12_SAFEBAG_value(bags, i);
 		ret = openssl_parse_bag(bag, pin, (pin ? strlen(pin) : 0),
 		    keys, certs);
@@ -3767,9 +3771,11 @@ set_pkey_attrib(EVP_PKEY *pkey, ASN1_TYPE *attrib, int nid)
 		X509_ATTRIBUTE *a;
 		for (i = 0;
 		    i < sk_X509_ATTRIBUTE_num(pkey->attributes); i++) {
+			/* LINTED E_BAD_PTR_CASE_ALIGN */
 			a = sk_X509_ATTRIBUTE_value(pkey->attributes, i);
 			if (OBJ_obj2nid(a->object) == nid) {
 				X509_ATTRIBUTE_free(a);
+				/* LINTED E_BAD_PTR_CAST_ALIGN */
 				(void) sk_X509_ATTRIBUTE_set(pkey->attributes,
 				    i, attr);
 				return (KMF_OK);
@@ -3947,6 +3953,7 @@ openssl_pkcs12_parse(PKCS12 *p12, char *pin,
 
 	for (i = 0; ret == KMF_OK && i < sk_PKCS7_num(asafes); i++) {
 		bags = NULL;
+		/* LINTED E_BAD_PTR_CAST_ALIGN */
 		p7 = sk_PKCS7_value(asafes, i);
 		bagnid = OBJ_obj2nid(p7->type);
 
@@ -4224,6 +4231,7 @@ find_attr(STACK_OF(X509_ATTRIBUTE) *attrs, int nid)
 		return (NULL);
 
 	for (i = 0; i < sk_X509_ATTRIBUTE_num(attrs); i++) {
+		/* LINTED E_BAD_PTR_CAST_ALIGN */
 		a = sk_X509_ATTRIBUTE_value(attrs, i);
 		if (OBJ_obj2nid(a->object) == nid)
 			return (a);
@@ -4264,6 +4272,7 @@ convertToRawKey(EVP_PKEY *pkey, KMF_RAW_KEY_DATA *key)
 		ASN1_TYPE *ty = NULL;
 		int numattr = sk_ASN1_TYPE_num(attr->value.set);
 		if (attr->single == 0 && numattr > 0) {
+			/* LINTED E_BAD_PTR_CAST_ALIGN */
 			ty = sk_ASN1_TYPE_value(attr->value.set, 0);
 		}
 		if (ty != NULL) {
@@ -4287,6 +4296,7 @@ convertToRawKey(EVP_PKEY *pkey, KMF_RAW_KEY_DATA *key)
 		ASN1_TYPE *ty = NULL;
 		int numattr = sk_ASN1_TYPE_num(attr->value.set);
 		if (attr->single == 0 && numattr > 0) {
+			/* LINTED E_BAD_PTR_CAST_ALIGN */
 			ty = sk_ASN1_TYPE_value(attr->value.set, 0);
 		}
 		key->id.Data = (uchar_t *)malloc(
@@ -4317,6 +4327,7 @@ convertPK12Objects(
 	int i;
 
 	for (i = 0; sslkeys != NULL && i < sk_EVP_PKEY_num(sslkeys); i++) {
+		/* LINTED E_BAD_PTR_CAST_ALIGN */
 		EVP_PKEY *pkey = sk_EVP_PKEY_value(sslkeys, i);
 		rv = convertToRawKey(pkey, &key);
 		if (rv == KMF_OK)
@@ -4328,6 +4339,7 @@ convertPK12Objects(
 
 	/* Now add the certificate to the certlist */
 	for (i = 0; sslcert != NULL && i < sk_X509_num(sslcert); i++) {
+		/* LINTED E_BAD_PTR_CAST_ALIGN */
 		X509 *cert = sk_X509_value(sslcert, i);
 		rv = add_cert_to_list(kmfh, cert, certlist, ncerts);
 		if (rv != KMF_OK)
@@ -4343,6 +4355,7 @@ convertPK12Objects(
 		 * Lint is complaining about the embedded casting, and
 		 * to fix it, you need to fix openssl header files.
 		 */
+		/* LINTED E_BAD_PTR_CAST_ALIGN */
 		c = sk_X509_value(sslcacerts, i);
 
 		/* Now add the ca cert to the certlist */
@@ -5409,6 +5422,7 @@ OpenSSL_FindCertInCRL(KMF_HANDLE_T handle, int numattr, KMF_ATTRIBUTE *attrlist)
 	}
 
 	for (i = 0; i < sk_X509_REVOKED_num(revoke_stack); i++) {
+		/* LINTED E_BAD_PTR_CAST_ALIGN */
 		revoke = sk_X509_REVOKED_value(revoke_stack, i);
 		if (ASN1_INTEGER_cmp(xcert->cert_info->serialNumber,
 		    revoke->serialNumber) == 0) {
