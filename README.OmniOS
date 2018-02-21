@@ -1,6 +1,5 @@
-This README is new for OmniOS as of Stable release r151020 -- it is here
-because it keeps track of LX merges from OmniOS (a massive and continuing
-side-pull).
+This README is here to keep track of merges from Joyent (a massive and
+continuing side-pull).
 
-Last illumos-joyent commit: de818a9daccca7db99174202eb0e91352a54720e
+Last illumos-joyent commit: f49f984d73e73b99d7388dfffa647c0d2f406d31
 
