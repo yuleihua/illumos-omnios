@@ -187,7 +187,7 @@ function build {
 	#
 	#	Build OS-Networking source
 	#
-	echo "\n==== Building OS-Net source at `date` ($LABEL) ====\n" \
+	echo "\n==== Building $LABEL OS-Net source at `date` ====\n" \
 		>> $LOGFILE
 
 	rm -f $SRC/${INSTALLOG}.out
@@ -228,7 +228,7 @@ function build {
 		this_build_ok=n
 	fi
 
-	echo "\n==== Ended OS-Net source build at `date` ($LABEL) ====\n" \
+	echo "\n==== Ended $LABEL OS-Net source build at `date` ====\n" \
 		>> $LOGFILE
 
 	echo "\n==== Elapsed build time ($LABEL) ====\n" >>$mail_msg_file
