@@ -135,7 +135,7 @@ print_error(TSS_RESULT ret, char *msg)
 	case TPM_E_DEACTIVATED:
 	case TPM_E_DISABLED:
 		(void) fprintf(stderr,
-		    gettext("Enable the TPM and restart Solaris.\n"));
+		    gettext("Enable the TPM and reboot.\n"));
 		break;
 	case TSP_ERROR(TSS_E_COMM_FAILURE):
 		(void) fprintf(stderr,
