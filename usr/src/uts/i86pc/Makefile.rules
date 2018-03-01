@@ -501,6 +501,9 @@ $(LINTS_DIR)/%.ln:		$(UTSBASE)/i86pc/io/vmm/intel/%.c
 $(LINTS_DIR)/%.ln:		$(UTSBASE)/i86pc/io/vmm/io/%.c
 	@($(LHEAD) $(LINT.c) $< $(LTAIL))
 
+$(LINTS_DIR)/%.ln:		$(UTSBASE)/i86pc/io/vmm/amd/%.s
+	@($(LHEAD) $(LINT.s) $< $(LTAIL))
+
 $(LINTS_DIR)/%.ln:		$(UTSBASE)/i86pc/io/vmm/intel/%.s
 	@($(LHEAD) $(LINT.s) $< $(LTAIL))
 

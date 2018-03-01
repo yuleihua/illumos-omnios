@@ -27,7 +27,6 @@
  */
 #include <machine/asmacros.h>
 
-#include "svm_assym.h"
 
 /* Porting note: This is named 'svm_support.S' upstream. */
 
@@ -42,6 +41,8 @@ svm_launch(uint64_t pa, struct svm_regctx *gctx, struct pcpu *pcpu)
 {}
 
 #else /* lint */
+
+#include "svm_assym.h"
 
 /*
  * Be friendly to DTrace FBT's prologue/epilogue pattern matching.
