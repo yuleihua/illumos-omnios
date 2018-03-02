@@ -23,7 +23,7 @@
 #
 # Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
 # Copyright 2010, Richard Lowe
-# Copyright 2017 OmniOS Community Edition (OmniOSce) Association.
+# Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
 #
 
 PATH=/usr/bin:/usr/sbin
@@ -31,30 +31,41 @@ export PATH
 
 DEFAULTONURI="https://pkg.omniosce.org/bloody/core"
 DEFAULTONPUB="omnios"
+DEFAULTCONS="osnet"
+NATIVE_BRAND="ipkg"
+# Keep the leading and trailing spaces in this definition
+LINKED_BRANDS=" lipkg sparse vm kvm bhyve "
+
+banner()
+{
+	echo '***'
+	echo "*** $*"
+	echo '***'
+}
 
 usage()
 {
-	echo "usage: $0 [opts] [-s beName] -t beName"
-	echo "usage: $0 [opts] -r"
-	echo
-	echo "\t-c consolidation : consolidation being upgraded"
-	echo "\t-d repodir : directory for repositories"
-	echo "\t-r : configure publisher only"
-	echo "\t-s : source BE to clone"
-	echo "\t-t : new BE name"
-	echo "\t-u uri : origin URI for redist repository"
-	echo "\t-U prefix:  prefix for redist repository"
-	echo "\t-v : verbose"
-	echo "\t-Z : skip updating zones"
-	echo
-	echo "Update to an ON build:"
-	echo "\tonu -t newbe -d /path/to/my/ws/packages/\`uname -p\`/nightly"
-	echo
-	echo "Update to the nightly build:"
-	echo "\tonu -t newbe"
-	echo
-	echo "Re-enable the publishers in the current BE:"
-	echo "\tonu -r -d /path/to/my/ws/packages/\`uname -p\`/nightly"
+	cat << EOM
+usage: $0 [opts] [-s beName] -t beName
+usage: $0 [opts] -r
+
+	-c consolidation : consolidation being upgraded
+	-d repodir : directory for repositories
+	-e : remove 'entire' package
+	-r : configure publisher only
+	-s : source BE to clone
+	-t : new BE name
+	-u uri : origin URI for redist repository
+	-U prefix:  prefix for redist repository
+	-v : verbose
+	-Z : skip updating zones
+
+Update to an ON build:
+	onu -t newbe -d /path/to/my/ws/packages/`uname -p`/nightly
+
+Re-enable the publishers in the current BE:
+	onu -r -d /path/to/my/ws/packages/`uname -p`/nightly
+EOM
 	exit 1
 }
 
@@ -79,6 +90,8 @@ configure_publishers()
 {
 	root=$1
 
+	[ $verbose -gt 0 ] && banner "Configuring publishers for $root"
+
 	#
 	# Get the publisher name from the 'list -v' output.  It may seem we
 	# could do this more tidily using 'info', but that is
@@ -97,6 +110,25 @@ configure_publishers()
         fi
 	do_cmd pkg -R $root set-publisher -e --no-refresh -P \
 	    --set-property signature-policy=verify -O $uri $redistpub
+
+	# Also set new publisher property on any linked-image zones
+	for zone in `do_cmd zoneadm -R $root list -cip`; do
+		OIFS="$IFS"
+		IFS=:
+		set -- $zone
+		zone=$2; state=$3; path=$4; brand=$6
+		IFS="$OIFS"
+		[ "$state" = "incomplete" ] && continue
+		[ "$state" = "configured" ] && continue
+		if [[ $LINKED_BRANDS = *" $brand "* ]]; then
+			banner "... linked zone $zone ($brand)"
+			do_cmd pkg -R $path/root \
+			    set-publisher -e --no-refresh -P \
+			    --set-property signature-policy=verify \
+			    -O $uri $redistpub
+		fi
+
+	done
 	do_cmd pkg -R $root refresh --full
 }
 
@@ -104,59 +136,48 @@ update()
 {
 	root=$1
 
-	pkg -R $root list entire > /dev/null 2>&1
-	[ $? -eq 0 ] && do_cmd pkg -R $root uninstall entire
+	[ $verbose -gt 0 ] && banner "Updating $root"
 
 	configure_publishers $root
 
-	do_cmd pkg -R $root image-update
+	if [ $remove_entire -eq 1 ] && pkg -R $root list -q entire; then
+		banner "Removing 'entire'..."
+		do_cmd pkg -R $root uninstall -r -C0 entire
+	fi
+
+	banner "Running image-update"
+	do_cmd pkg -R $root update -fr -C0
 }
 
 update_zone()
 {
-	zone=$1
+	OIFS="$IFS"
+	IFS=:
+	set -- $1
+	zone=$2; state=$3; path=$4; brand=$6
+	IFS="$OIFS"
 
-	name=`echo $zone | cut -d: -f 2`
-	if [ "$name" = "global" ]; then
-		return
-	fi
+	[ "$zone" = "global" ] && return
+	[ "$state" = "incomplete" ] && return
+	[ "$state" = "configured" ] && return
+	[ "$brand" = "$NATIVE_BRAND" ] || return
 
-	brand=`echo $zone | cut -d: -f 6`
-	if [ "$brand" != "ipkg" -a "$brand" != "lipkg" ]; then
-		return
-	fi
-
-	if [ "$zone_warned" = 0 ]; then
-		echo "WARNING: Use of onu(1) will prevent use of zone attach in the new BE" >&2
-		echo "See onu(1)" >&2
-		zone_warned=1
-	fi
-
-	state=`echo $zone | cut -d: -f 3`
-
-	case "$state" in
-	configured|incomplete)
-		return
-		;;
-	esac
-
-	zoneroot=`echo $zone | cut -d: -f 4`
-
-	echo "Updating zone $name"
-	update $zoneroot/root
+	banner "Updating $brand zone $zone"
+	update "$path/root"
 }
 
 sourcebe=""
 targetbe=""
 uri=""
 repodir=""
-consolidation="osnet"
+consolidation="$DEFAULTCONS"
 verbose=0
 no_zones=0
 zone_warned=0
 reposonly=0
+remove_entire=0
 
-while getopts :c:d:Ors:t:U:u:vZ i ; do
+while getopts :c:d:eOrs:t:U:u:vZ i ; do
 	case $i in
 	c)
 		consolidation=$OPTARG
@@ -165,6 +186,9 @@ while getopts :c:d:Ors:t:U:u:vZ i ; do
 		repodir=$OPTARG
 		;;
 	O)			# no-op, compatibility with recommended use
+		;;
+	e)
+		remove_entire=1
 		;;
 	r)
 		reposonly=1
