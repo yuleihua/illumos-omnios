@@ -19,8 +19,9 @@
 .\" "
 .\" "Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
 .\" "Copyright 2010, Richard Lowe
+.\" "Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
 .\" "
-.TH ONU 1ONBLD "Aug 28, 2010"
+.TH ONU 1ONBLD "Mar 02, 2018"
 .SH NAME
 .I onu
 \- OS/Net Update
@@ -34,7 +35,7 @@
 is a replacement for
 .I bfu
 used to update a system with the latest set of IPS packages for the ON
-(OS/Net) consolidation of Solaris, using beadm(1M) to create a new Boot
+(OS/Net) consolidation of illumos, using beadm(1M) to create a new Boot
 Environment (BE) and pkg(1) to update the image.
 .SH OPTIONS
 .LP
@@ -66,6 +67,9 @@ Verbose mode.
 .LP
 The first form of onu creates a new BE and then updates it, and takes
 the following options:
+.TP 4
+.B \-e
+Specifies that the \fBentire\fR incorporation should be removed from the new boot-environment.
 .TP 4
 .B \-s <beName>
 Specifies that <beName> should be used as the source Boot Environment to
@@ -114,19 +118,17 @@ sourced from the ON repositories. In both cases, the \fB-r\fR option
 can be used in the new BE to re-enable the publishers. See
 \fBEXAMPLES\fR.
 .LP
-Use of
+If the entire incorporation is removed (via the \fB-e\fR option) then use of
 .I onu
-will prevent use of zone attach for ipkg-brand zones (including lipkg) in the
-new BE, since the
-.B entire
-incorporation is removed.
+will prevent use of zone attach for ipkg-brand zones (including linked-image zones) in the new BE.
 .LP
 By default,
 .I onu
-will attempt to update any ipkg-brand installed zones (including lipkg) on the
+will attempt to update any ipkg-brand installed zones on the
 system; the
 .B -Z
-option may be used to disable this behavior.
+option may be used to disable this behavior. Linked-image zones such as
+\fBlipkg\fR and \fBsparse\fR will always be updated.
 .SH EXAMPLES
 .LP
 \fBExample 1\fR Installing latest ON nightly build
