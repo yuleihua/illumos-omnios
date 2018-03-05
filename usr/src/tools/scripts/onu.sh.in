@@ -34,7 +34,7 @@ DEFAULTONPUB="omnios"
 DEFAULTCONS="osnet"
 NATIVE_BRAND="ipkg"
 # Keep the leading and trailing spaces in this definition
-LINKED_BRANDS=" lipkg sparse vm kvm bhyve "
+LINKED_BRANDS=" lipkg sparse kvm bhyve "
 
 banner()
 {
