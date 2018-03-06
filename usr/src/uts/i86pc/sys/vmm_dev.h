@@ -36,7 +36,7 @@
  * http://www.illumos.org/license/CDDL.
  *
  * Copyright 2015 Pluribus Networks Inc.
- * Copyright 2017 Joyent, Inc.
+ * Copyright 2018 Joyent, Inc.
  */
 
 #ifndef	_VMM_DEV_H_
@@ -155,6 +155,14 @@ struct vm_pptdev_msix {
 	uint64_t	msg;
 	uint32_t	vector_control;
 	uint64_t	addr;
+};
+
+struct vm_pptdev_limits {
+	int		bus;
+	int		slot;
+	int		func;
+	int		msi_limit;
+	int		msix_limit;
 };
 
 struct vm_nmi {
@@ -285,6 +293,7 @@ enum {
 	IOCNUM_MAP_PPTDEV_MMIO = 42,
 	IOCNUM_PPTDEV_MSI = 43,
 	IOCNUM_PPTDEV_MSIX = 44,
+	IOCNUM_GET_PPTDEV_LIMITS = 45,
 
 	/* statistics */
 	IOCNUM_VM_STATS = 50, 
@@ -377,6 +386,8 @@ enum {
 	_IOW('v', IOCNUM_PPTDEV_MSI, struct vm_pptdev_msi)
 #define	VM_PPTDEV_MSIX \
 	_IOW('v', IOCNUM_PPTDEV_MSIX, struct vm_pptdev_msix)
+#define	VM_GET_PPTDEV_LIMITS \
+	_IOR('v', IOCNUM_GET_PPTDEV_LIMITS, struct vm_pptdev_limits)
 #define VM_INJECT_NMI \
 	_IOW('v', IOCNUM_INJECT_NMI, struct vm_nmi)
 #define	VM_STATS_IOC \
@@ -420,6 +431,8 @@ enum {
 #define	VMM_IOC_BASE		(('V' << 16) | ('M' << 8))
 #define	VMM_CREATE_VM		(VMM_IOC_BASE | 0x01)
 #define	VMM_DESTROY_VM		(VMM_IOC_BASE | 0x02)
+
+#define	VMM_CTL_DEV		"/dev/vmmctl"
 
 #endif
 

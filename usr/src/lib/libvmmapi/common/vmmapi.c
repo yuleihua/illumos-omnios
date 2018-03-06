@@ -36,6 +36,7 @@
  * http://www.illumos.org/license/CDDL.
  *
  * Copyright 2015 Pluribus Networks Inc.
+ * Copyright 2018 Joyent, Inc.
  */
 
 #include <sys/cdefs.h>
@@ -108,10 +109,9 @@ struct vmctx {
 static int
 vm_do_ctl(int cmd, const char *name)
 {
-	const char vmm_ctl[] = "/devices/pseudo/vmm@0:ctl";
 	int ctl_fd;
 
-	ctl_fd = open(vmm_ctl, O_EXCL | O_RDWR);
+	ctl_fd = open(VMM_CTL_DEV, O_EXCL | O_RDWR);
 	if (ctl_fd < 0) {
 		return (-1);
 	}
@@ -136,18 +136,10 @@ vm_device_open(const char *name)
         int fd, len;
         char *vmfile;
 
-#ifdef	__FreeBSD__
 	len = strlen("/dev/vmm/") + strlen(name) + 1;
-#else
-	len = strlen("/devices/pseudo/vmm@0:") + strlen(name) + 1;
-#endif
 	vmfile = malloc(len);
 	assert(vmfile != NULL);
-#ifdef	__FreeBSD__
 	snprintf(vmfile, len, "/dev/vmm/%s", name);
-#else
-	snprintf(vmfile, len, "/devices/pseudo/vmm@0:%s", name);
-#endif
 
         /* Open the device file */
         fd = open(vmfile, O_RDWR, 0);
@@ -1003,6 +995,26 @@ vm_setup_pptdev_msix(struct vmctx *ctx, int vcpu, int bus, int slot, int func,
 	pptmsix.vector_control = vector_control;
 
 	return ioctl(ctx->fd, VM_PPTDEV_MSIX, &pptmsix);
+}
+
+int
+vm_get_pptdev_limits(struct vmctx *ctx, int bus, int slot, int func,
+    int *msi_limit, int *msix_limit)
+{
+	struct vm_pptdev_limits pptlimits;
+	int error;
+
+	bzero(&pptlimits, sizeof (pptlimits));
+	pptlimits.bus = bus;
+	pptlimits.slot = slot;
+	pptlimits.func = func;
+
+	error = ioctl(ctx->fd, VM_GET_PPTDEV_LIMITS, &pptlimits);
+
+	*msi_limit = pptlimits.msi_limit;
+	*msix_limit = pptlimits.msix_limit;
+
+	return (error);
 }
 
 uint64_t *
