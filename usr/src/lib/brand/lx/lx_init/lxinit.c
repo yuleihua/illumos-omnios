@@ -21,6 +21,7 @@
 
 /*
  * Copyright 2017 Joyent, Inc.
+ * Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
  */
 
 /*
@@ -599,8 +600,17 @@ lxi_net_setup(zone_dochandle_t handle)
 		 */
 		lxi_net_plumb(iface);
 
-		if (zone_find_attr(attrs, "ips", &ipaddrs) != 0 /* &&
-		    lxi_get_old_ip(attrs, &ipaddrs, cidraddr, BUFSIZ) != 0*/) {
+		/*
+		 * If there is a configured allowed-address, then use
+		 * that to determine the single address for this interface.
+		 * zoneadmd in the GZ will have taken care of setting the
+		 * protection and allowed-ips link property on the interface
+		 * anyway so no other address can be configured.
+		 */
+		if (strlen(lookup.zone_nwif_allowed_address) > 0) {
+			ipaddrs = lookup.zone_nwif_allowed_address;
+			no_zonecfg = B_FALSE;
+		} else if (zone_find_attr(attrs, "ips", &ipaddrs) != 0) {
 			/*
 			 * Do not panic.  This interface has no in-zonecfg(1M)
 			 * configuration.  We keep a warning around for now.
@@ -656,13 +666,25 @@ lxi_net_setup(zone_dochandle_t handle)
 			}
 		}
 
-		if (zone_find_attr(attrs, "primary", &primary) == 0 &&
-		    strncmp(primary, "true", MAXNAMELEN) == 0 &&
-		    zone_find_attr(attrs, "gateway", &gateway) == 0) {
-			if (lxi_iface_gateway(iface, NULL, 0, gateway) != 0) {
-				lxi_err("default route on %s -> %s failed",
-				    iface, gateway);
-			}
+		/*
+		 * If a default router is set for this interface, use it.
+		 * This will have been configured in conjunction with
+		 * allowed-address.
+		 */
+
+		gateway = NULL;
+		if (strlen(lookup.zone_nwif_defrouter) > 0) {
+			gateway = lookup.zone_nwif_defrouter;
+		} else if (zone_find_attr(attrs, "primary", &primary) == 0 &&
+		    strncmp(primary, "true", MAXNAMELEN) == 0) {
+			if (zone_find_attr(attrs, "gateway", &gateway) != 0)
+				gateway = NULL;
+		}
+
+		if (gateway != NULL &&
+		    lxi_iface_gateway(iface, NULL, 0, gateway) != 0) {
+			lxi_err("default route on %s -> %s failed",
+			    iface, gateway);
 		}
 	}
 
