@@ -42,9 +42,12 @@
 	    We also need dladm from /native/sbin.
 	-->
 	<global_mount special="/lib" directory="/native/lib"
-	    opt="ro" type="lofs" />
+	    opt="ro,nodevices,nosub" type="lofs" />
 	<global_mount special="/usr" directory="/native/usr"
-	    opt="ro" type="lofs" />
+	    opt="ro,nodevices,nosub" type="lofs" />
+	<global_mount special="/sbin" directory="/native/sbin"
+	    opt="ro,nodevices,nosub" type="lofs" />
+
 	<global_mount special="/usr/lib/brand/lx/etc_default_nfs"
 	    directory="/native/etc/default/nfs" type="lofs" opt="ro" />
 	<global_mount special="/etc/default/dhcpagent"
@@ -53,10 +56,10 @@
 	    directory="/native/etc/netconfig" type="lofs" opt="ro" />
 	<global_mount special="/etc/nfssec.conf"
 	    directory="/native/etc/nfssec.conf" type="lofs" opt="ro" />
-	<global_mount special="/sbin"
-	    directory="/native/sbin" opt="ro,nodevices" type="lofs" />
+
 	<global_mount special="/usr/lib/brand/lx/ld" directory="/var/ld"
 	    opt="ro" type="lofs" />
+
 	<global_mount special="/etc/zones/%z.xml"
 	    directory="/native/etc/zones/%z.xml" opt="ro" type="lofs" />
 
