@@ -45,6 +45,7 @@
 #include "io/vhpet.h"
 #include "vmm_lapic.h"
 #include "vmm_stat.h"
+#include "vmm_util.h"
 #include "vm/vm_glue.h"
 
 /*
@@ -72,6 +73,9 @@ static const char *vmmdev_hvm_name = "bhyve";
  */
 #define	VMM_SDEV_ROOT "/dev/vmm"
 static sdev_plugin_hdl_t vmm_sdev_hdl;
+
+/* From uts/i86pc/io/vmm/intel/vmx.c */
+extern int vmx_x86_supported(char **);
 
 /*
  * vmm trace ring
@@ -609,65 +613,67 @@ vmmdev_do_ioctl(vmm_softc_t *sc, int cmd, intptr_t arg, int md,
 
 	case VM_PPTDEV_MSI: {
 		struct vm_pptdev_msi pptmsi;
+
 		if (ddi_copyin(datap, &pptmsi, sizeof (pptmsi), md)) {
 			error = EFAULT;
 			break;
 		}
-		error = ppt_setup_msi(sc->vmm_vm, pptmsi.vcpu, pptmsi.bus,
-		    pptmsi.slot, pptmsi.func, pptmsi.addr, pptmsi.msg,
-		    pptmsi.numvec);
+		error = ppt_setup_msi(sc->vmm_vm, pptmsi.vcpu, pptmsi.pptfd,
+		    pptmsi.addr, pptmsi.msg, pptmsi.numvec);
 		break;
 	}
 	case VM_PPTDEV_MSIX: {
 		struct vm_pptdev_msix pptmsix;
+
 		if (ddi_copyin(datap, &pptmsix, sizeof (pptmsix), md)) {
 			error = EFAULT;
 			break;
 		}
-		error = ppt_setup_msix(sc->vmm_vm, pptmsix.vcpu, pptmsix.bus,
-		    pptmsix.slot, pptmsix.func, pptmsix.idx, pptmsix.addr,
-		    pptmsix.msg, pptmsix.vector_control);
+		error = ppt_setup_msix(sc->vmm_vm, pptmsix.vcpu, pptmsix.pptfd,
+		    pptmsix.idx, pptmsix.addr, pptmsix.msg,
+		    pptmsix.vector_control);
 		break;
 	}
 	case VM_MAP_PPTDEV_MMIO: {
 		struct vm_pptdev_mmio pptmmio;
+
 		if (ddi_copyin(datap, &pptmmio, sizeof (pptmmio), md)) {
 			error = EFAULT;
 			break;
 		}
-		error = ppt_map_mmio(sc->vmm_vm, pptmmio.bus, pptmmio.slot,
-		    pptmmio.func, pptmmio.gpa, pptmmio.len, pptmmio.hpa);
+		error = ppt_map_mmio(sc->vmm_vm, pptmmio.pptfd, pptmmio.gpa,
+		    pptmmio.len, pptmmio.hpa);
 		break;
 	}
 	case VM_BIND_PPTDEV: {
 		struct vm_pptdev pptdev;
+
 		if (ddi_copyin(datap, &pptdev, sizeof (pptdev), md)) {
 			error = EFAULT;
 			break;
 		}
-		error = vm_assign_pptdev(sc->vmm_vm, pptdev.bus, pptdev.slot,
-		    pptdev.func);
+		error = vm_assign_pptdev(sc->vmm_vm, pptdev.pptfd);
 		break;
 	}
 	case VM_UNBIND_PPTDEV: {
 		struct vm_pptdev pptdev;
+
 		if (ddi_copyin(datap, &pptdev, sizeof (pptdev), md)) {
 			error = EFAULT;
 			break;
 		}
-		error = vm_unassign_pptdev(sc->vmm_vm, pptdev.bus, pptdev.slot,
-		    pptdev.func);
+		error = vm_unassign_pptdev(sc->vmm_vm, pptdev.pptfd);
 		break;
 	}
 	case VM_GET_PPTDEV_LIMITS: {
 		struct vm_pptdev_limits pptlimits;
+
 		if (ddi_copyin(datap, &pptlimits, sizeof (pptlimits), md)) {
 			error = EFAULT;
 			break;
 		}
-		error = ppt_get_limits(sc->vmm_vm, pptlimits.bus,
-		    pptlimits.slot, pptlimits.func, &pptlimits.msi_limit,
-		    &pptlimits.msix_limit);
+		error = ppt_get_limits(sc->vmm_vm, pptlimits.pptfd,
+		    &pptlimits.msi_limit, &pptlimits.msix_limit);
 		if (error == 0 &&
 		    ddi_copyout(&pptlimits, datap, sizeof (pptlimits), md)) {
 			error = EFAULT;
@@ -1678,6 +1684,23 @@ vmm_close(dev_t dev, int flag, int otyp, cred_t *credp)
 }
 
 static int
+vmm_is_supported(intptr_t arg)
+{
+	int r;
+	char *msg;
+
+	if (!vmm_is_intel())
+		return (ENXIO);
+
+	r = vmx_x86_supported(&msg);
+	if (r != 0 && arg != NULL) {
+		if (copyoutstr(msg, (char *)arg, strlen(msg) + 1, NULL) != 0)
+			return (EFAULT);
+	}
+	return (r);
+}
+
+static int
 vmm_ioctl(dev_t dev, int cmd, intptr_t arg, int mode, cred_t *credp,
     int *rvalp)
 {
@@ -1711,6 +1734,8 @@ vmm_ioctl(dev_t dev, int cmd, intptr_t arg, int mode, cred_t *credp,
 			if ((mode & FWRITE) == 0)
 				return (EPERM);
 			return (vmmdev_do_vm_destroy(name, credp));
+		case VMM_VM_SUPPORTED:
+			return (vmm_is_supported(arg));
 		default:
 			/* No other actions are legal on ctl device */
 			return (ENOTTY);

@@ -121,6 +121,7 @@ struct vm_capability {
 	int		allcpus;
 };
 
+#ifdef __FreeBSD__
 struct vm_pptdev {
 	int		bus;
 	int		slot;
@@ -164,6 +165,41 @@ struct vm_pptdev_limits {
 	int		msi_limit;
 	int		msix_limit;
 };
+#else /* __FreeBSD__ */
+struct vm_pptdev {
+	int		pptfd;
+};
+
+struct vm_pptdev_mmio {
+	int		pptfd;
+	vm_paddr_t	gpa;
+	vm_paddr_t	hpa;
+	size_t		len;
+};
+
+struct vm_pptdev_msi {
+	int		vcpu;
+	int		pptfd;
+	int		numvec;		/* 0 means disabled */
+	uint64_t	msg;
+	uint64_t	addr;
+};
+
+struct vm_pptdev_msix {
+	int		vcpu;
+	int		pptfd;
+	int		idx;
+	uint64_t	msg;
+	uint32_t	vector_control;
+	uint64_t	addr;
+};
+
+struct vm_pptdev_limits {
+	int		pptfd;
+	int		msi_limit;
+	int		msix_limit;
+};
+#endif /* __FreeBSD__ */
 
 struct vm_nmi {
 	int		cpuid;
@@ -431,6 +467,7 @@ enum {
 #define	VMM_IOC_BASE		(('V' << 16) | ('M' << 8))
 #define	VMM_CREATE_VM		(VMM_IOC_BASE | 0x01)
 #define	VMM_DESTROY_VM		(VMM_IOC_BASE | 0x02)
+#define	VMM_VM_SUPPORTED	(VMM_IOC_BASE | 0x03)
 
 #define	VMM_CTL_DEV		"/dev/vmmctl"
 
