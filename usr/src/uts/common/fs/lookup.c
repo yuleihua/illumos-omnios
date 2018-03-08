@@ -1408,26 +1408,7 @@ vnodetopath_common(vnode_t *vrootp, vnode_t *vp, char *buf, size_t buflen,
 	}
 	pn_free(&pn);
 
-	if (PROC_IS_BRANDED(curproc)) {
-		/*
-		 * If v_path doesn't work out and we're in a branded zone,
-		 * we're not going to bother doing more work here:  because
-		 * directories from the global can be lofs mounted into odd
-		 * locations (e.g., /native in an lx zone), it is likely that
-		 * the DNLC reverse lookup will yield nothing.  Indeed, the
-		 * only certainty is that the DNLC reverse lookup will be
-		 * exceedingly painful; we save ourselves the substantial
-		 * grief of scanning the entire DNLC and kick out with ENOENT
-		 * in this case.
-		 */
-		ret = ENOENT;
-	} else if (vp->v_type != VDIR) {
-		/*
-		 * The reverse lookup tricks used by dirtopath aren't possible
-		 * for non-directory entries.  The best which can be done is
-		 * clearing any stale v_path so later lookups can potentially
-		 * repopulate it with a valid path.
-		 */
+	if (vp->v_type != VDIR) {
 		ret = ENOENT;
 	} else {
 		ret = dirtopath(vrootp, vp, buf, buflen, flags, cr);
