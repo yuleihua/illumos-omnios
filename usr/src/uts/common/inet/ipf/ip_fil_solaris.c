@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  *
- * Copyright (c) 2015, Joyent, Inc.  All rights reserved.
+ * Copyright 2018 Joyent, Inc.
  */
 
 #if !defined(lint)
@@ -1931,8 +1931,7 @@ int len;
 		 * Need to preserve checksum information by copying them
 		 * to newmp which heads the pulluped message.
 		 */
-		hcksum_retrieve(m, NULL, NULL, &start, &stuff, &end,
-		    &value, &flags);
+		mac_hcksum_get(m, &start, &stuff, &end, &value, &flags);
 
 		if (pullupmsg(m, len + ipoff + inc) == 0) {
 			ATOMIC_INCL(ifs->ifs_frstats[out].fr_pull[1]);
@@ -1945,8 +1944,7 @@ int len;
 			return NULL;
 		}
 
-		(void) hcksum_assoc(m, NULL, NULL, start, stuff, end,
-		    value, flags, 0);
+		mac_hcksum_set(m, start, stuff, end, value, flags);
 
 		m->b_prev = m2;
 		m->b_rptr += inc;
