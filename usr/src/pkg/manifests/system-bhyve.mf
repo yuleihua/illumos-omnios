@@ -14,7 +14,6 @@
 #
 
 #
-# Copyright 2016 Nexenta Systems, Inc. All rights reserved.
 # Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
 #
 
@@ -50,7 +49,6 @@ file path=kernel/kmdb/$(ARCH64)/vmm mode=0555
 file path=lib/$(ARCH64)/libvmmapi.so.1
 file path=lib/$(ARCH64)/llib-lvmmapi.ln
 file path=usr/bin/bhhwcompat mode=0555
-#later file path=sbin/bhhwcompat mode=0555
 file path=usr/kernel/drv/$(ARCH64)/ppt
 file path=usr/kernel/drv/$(ARCH64)/viona
 file path=usr/kernel/drv/$(ARCH64)/vmm
@@ -58,16 +56,11 @@ file path=usr/kernel/drv/ppt.conf
 file path=usr/kernel/drv/viona.conf
 file path=usr/kernel/drv/vmm.conf
 file path=usr/lib/mdb/kvm/$(ARCH64)/vmm.so mode=0555
-file path=usr/sbin/$(ARCH64)/bhyve mode=0555 \
-    variant.opensolaris.zone=__NODEFAULT
-file path=usr/sbin/$(ARCH64)/bhyvectl mode=0555 \
-    variant.opensolaris.zone=__NODEFAULT
-hardlink path=usr/sbin/bhyve target=../lib/isaexec \
-    variant.opensolaris.zone=__NODEFAULT
-hardlink path=usr/sbin/bhyvectl target=../lib/isaexec \
-    variant.opensolaris.zone=__NODEFAULT
+file path=usr/sbin/$(ARCH64)/bhyve mode=0555
+file path=usr/sbin/$(ARCH64)/bhyvectl mode=0555
+hardlink path=usr/sbin/bhyve target=../lib/isaexec
+hardlink path=usr/sbin/bhyvectl target=../lib/isaexec
 license lic_CDDL license=lic_CDDL
 link path=lib/$(ARCH64)/libvmmapi.so target=./libvmmapi.so.1
-#later link path=usr/sbin/bhhwcompat target=../../sbin/bhhwcompat
 depend fmri=developer/acpi/compiler type=require
 depend fmri=system/bhyve/firmware type=require
