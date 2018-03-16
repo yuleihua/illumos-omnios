@@ -36,7 +36,7 @@
  * http://www.illumos.org/license/CDDL.
  *
  * Copyright 2015 Pluribus Networks Inc.
- * Copyright 2017 Joyent, Inc.
+ * Copyright 2018 Joyent, Inc.
  */
 
 #include <sys/cdefs.h>
@@ -838,19 +838,8 @@ vmx_trigger_hostintr(int vector)
 	func = ((long)gd->gd_hioffset << 16 | gd->gd_looffset);
 	vmx_call_isr(func);
 #else
-	uintptr_t func;
-	gate_desc_t *dp;
-
 	VERIFY(vector >= 32 && vector <= 255);
-	dp = &CPU->cpu_m.mcpu_idt[vector];
-
-	VERIFY(dp->sgd_ist == 0);
-	VERIFY(dp->sgd_p == 1);
-
-	func = (((uint64_t)dp->sgd_hi64offset << 32) |
-	    ((uint64_t)dp->sgd_hioffset << 16) |
-	    dp->sgd_looffset);
-	vmx_call_isr(func);
+	vmx_call_isr(vector - 32);
 #endif /* __FreeBSD__ */
 }
 
@@ -2459,6 +2448,10 @@ vmx_exit_process(struct vmx *vmx, int vcpu, struct vm_exit *vmexit)
 		vmm_stat_incr(vmx->vm, vcpu, VMEXIT_HLT, 1);
 		vmexit->exitcode = VM_EXITCODE_HLT;
 		vmexit->u.hlt.rflags = vmcs_read(VMCS_GUEST_RFLAGS);
+		if (virtual_interrupt_delivery) {
+			vmexit->u.hlt.intr_status =
+			    vmcs_read(VMCS_GUEST_INTR_STATUS);
+		}
 		break;
 	case EXIT_REASON_MTF:
 		vmm_stat_incr(vmx->vm, vcpu, VMEXIT_MTRAP, 1);
@@ -3369,8 +3362,27 @@ vmx_pending_intr(struct vlapic *vlapic, int *vecptr)
 	pir_desc = vlapic_vtx->pir_desc;
 
 	pending = atomic_load_acq_long(&pir_desc->pending);
-	if (!pending)
-		return (0);	/* common case */
+	if (!pending) {
+		/*
+		 * While a virtual interrupt may have already been
+		 * processed the actual delivery maybe pending the
+		 * interruptibility of the guest.  Recognize a pending
+		 * interrupt by reevaluating virtual interrupts
+		 * following Section 29.2.1 in the Intel SDM Volume 3.
+		 */
+		struct vm_exit *vmexit;
+		uint8_t rvi, ppr;
+
+		vmexit = vm_exitinfo(vlapic->vm, vlapic->vcpuid);
+		rvi = vmexit->u.hlt.intr_status & APIC_TPR_INT;
+		lapic = vlapic->apic_page;
+		ppr = lapic->ppr & APIC_TPR_INT;
+		if (rvi > ppr) {
+			return (1);
+		}
+
+		return (0);
+	}
 
 	/*
 	 * If there is an interrupt pending then it will be recognized only
@@ -3380,7 +3392,7 @@ vmx_pending_intr(struct vlapic *vlapic, int *vecptr)
 	 * interrupt will be recognized.
 	 */
 	lapic = vlapic->apic_page;
-	ppr = lapic->ppr & 0xf0;
+	ppr = lapic->ppr & APIC_TPR_INT;
 	if (ppr == 0)
 		return (1);
 
@@ -3390,7 +3402,7 @@ vmx_pending_intr(struct vlapic *vlapic, int *vecptr)
 	for (i = 3; i >= 0; i--) {
 		pirval = pir_desc->pir[i];
 		if (pirval != 0) {
-			vpr = (i * 64 + flsl(pirval) - 1) & 0xf0;
+			vpr = (i * 64 + flsl(pirval) - 1) & APIC_TPR_INT;
 			return (vpr > ppr);
 		}
 	}
