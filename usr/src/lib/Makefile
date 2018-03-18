@@ -621,9 +621,9 @@ libinetsvc:	libscf
 libinstzones:	libzonecfg libcontract
 libipadm:	libinetutil libdlpi libdhcpagent libdladm libsecdb libdhcputil
 libipmp:	libinetutil
-libipsecutil:	libtecla libtsol
+libipsecutil:	libtecla libtsol libkmf
 libiscsit:	libstmf libuuid
-libkmf:		libcryptoutil pkcs11
+libkmf:		libcryptoutil pkcs11 libcmdutils
 libkvm:		../cmd/sgs/libelf
 libldap5:	libsasl
 libmapid:	libresolv2 libscf
