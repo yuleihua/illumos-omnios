@@ -32,6 +32,10 @@
  */
 
 /*
+ * Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
+ */
+
+/*
  * Print a disk partition map (volume table of contents, or VTOC).
  */
 
@@ -99,6 +103,7 @@ extern char	*getfullrawname();
 static short	fflag;			/* Print freespace shell assignments */
 static short	hflag;			/* Omit headers */
 static short	sflag;			/* Omit all but the column header */
+static short	eflag;			/* Include extended partition info */
 static char	*fstab = VFSTAB;	/* Fstab pathname */
 static char	*mnttab = MNTTAB;	/* mnttab pathname */
 static char	*progname;		/* Last qualifier of arg0 */
@@ -112,8 +117,11 @@ main(int ac, char **av)
 		++progname;
 	else
 		progname = av[0];
-	while ((idx = getopt(ac, av, "fhst:m:")) != -1)
+	while ((idx = getopt(ac, av, "efhst:m:")) != -1)
 		switch (idx) {
+		case 'e':
+			++eflag;
+			break;
 		case 'f':
 			++fflag;
 			break;
@@ -526,6 +534,18 @@ puttable(struct dk_geom *geom, struct extvtoc *vtoc, freemap_t *freemap,
 	}
 }
 
+static void
+uuid_print(struct uuid *u)
+{
+	int i;
+
+	(void) printf("%8.8x-%4.4x-%4.4x-%2.2x%2.2x-", u->time_low,
+	    u->time_mid, u->time_hi_and_version,
+	    u->clock_seq_hi_and_reserved, u->clock_seq_low);
+	for (i = 0; i < 6; i++)
+		(void) printf("%2.2x", u->node_addr[i]);
+}
+
 /*
  * puttable(): Print a human-readable VTOC.
  */
@@ -542,7 +562,7 @@ puttable64(struct dk_gpt *efi, freemap_t *freemap, char *name,
 			*efi->efi_parts[idx].p_name)
 			    (void) printf(" (volume \"%.8s\")",
 				    efi->efi_parts[idx].p_name);
-		(void) printf(" partition map\n");
+		(void) printf(" EFI partition map\n");
 		(void) printf("*\n* Dimensions:\n");
 		(void) printf("* %7u bytes/sector\n", efi->efi_lbasize);
 		(void) printf("* %llu sectors\n", efi->efi_last_lba + 1);
@@ -570,15 +590,46 @@ puttable64(struct dk_gpt *efi, freemap_t *freemap, char *name,
 "* Partition  Tag  Flags    Sector     Count    Sector  Mount Directory\n");
 	}
 	for (idx = 0; idx < efi->efi_nparts; ++idx) {
-	    if (efi->efi_parts[idx].p_size == 0)
+	    struct dk_part *p = &efi->efi_parts[idx];
+	    if (p->p_size == 0 && (!eflag || p->p_tag == V_UNASSIGNED))
 		    continue;
 	    (void) printf("      %2u  %5u    %02x  %9llu %9llu %9llu",
-		idx, efi->efi_parts[idx].p_tag, efi->efi_parts[idx].p_flag,
-		efi->efi_parts[idx].p_start, efi->efi_parts[idx].p_size,
-		efi->efi_parts[idx].p_start + efi->efi_parts[idx].p_size - 1);
+		idx, p->p_tag, p->p_flag, p->p_start, p->p_size,
+		p->p_start + p->p_size - 1);
 	    if ((idx < 7) && mtab && mtab[idx])
 		    (void) printf("   %s", mtab[idx]);
 	    (void) printf("\n");
+	    if (eflag) {
+		char *tag;
+
+		(void) printf("           GUID: ");
+		(void) uuid_print(&p->p_guid);
+		switch (p->p_tag)
+		{
+		    case V_UNASSIGNED:	tag = "Unassigned"; break;
+		    case V_BOOT:	tag = "Boot"; break;
+		    case V_ROOT:	tag = "Root"; break;
+		    case V_SWAP:	tag = "Swap"; break;
+		    case V_USR:		tag = "Usr - illumos ZFS"; break;
+		    case V_BACKUP:	tag = "Backup"; break;
+		    case V_STAND:	tag = "Stand"; break;
+		    case V_VAR:		tag = "Var"; break;
+		    case V_HOME:	tag = "Home"; break;
+		    case V_ALTSCTR:	tag = "Alternate Sector"; break;
+		    case V_CACHE:	tag = "Cache"; break;
+		    case V_RESERVED:	tag = "Reserved"; break;
+		    case V_SYSTEM:	tag = "UEFI System"; break;
+		    case V_BIOS_BOOT:	tag = "BIOS Boot"; break;
+		    case V_FREEBSD_BOOT:tag = "FreeBSD Boot"; break;
+		    case V_FREEBSD_SWAP:tag = "FreeBSD Swap"; break;
+		    case V_FREEBSD_UFS:	tag = "FreeBSD UFS"; break;
+		    case V_FREEBSD_VINUM:tag = "FreeBSD VINUM"; break;
+		    case V_FREEBSD_ZFS:	tag = "FreeBSD ZFS"; break;
+		    case V_UNKNOWN:	tag = "Unknown"; break;
+		    default:		tag = "?"; break;
+		}
+		(void) printf("   (%s)\n", tag);
+	    }
 	}
 }
 
