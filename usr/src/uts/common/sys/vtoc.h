@@ -87,6 +87,11 @@ extern "C" {
 #define	V_RESERVED	0x0b		/* SMI reserved data */
 #define	V_SYSTEM	0x0c		/* EFI/GPT system partition */
 #define	V_BIOS_BOOT	0x18		/* BIOS Boot partition */
+#define	V_FREEBSD_BOOT	0x19		/* FreeBSD Boot */
+#define	V_FREEBSD_SWAP	0x1a		/* FreeBSD Swap */
+#define	V_FREEBSD_UFS	0x1b		/* FreeBSD UFS */
+#define	V_FREEBSD_VINUM	0x1c		/* FreeBSD VINUM */
+#define	V_FREEBSD_ZFS	0x1d		/* FreeBSD ZFS */
 
 #define	V_UNKNOWN	0xff		/* Unknown partition */
 
