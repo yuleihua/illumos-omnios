@@ -69,7 +69,7 @@ SRCS =	acpi.c			\
 OBJS = $(SRCS:.c=.o)
 
 CLEANFILES =	$(PROG)
-CLOBBERFILES =	$(ROOTUSRSBINPROG) $(ZHYVE)
+CLOBBERFILES =	$(ROOTUSRSBINPROG)
 
 CFLAGS +=	$(CCVERBOSE) -_gcc=-Wimplicit-function-declaration -_gcc=-Wno-parentheses
 CPPFLAGS =	-I$(COMPAT)/freebsd -I$(CONTRIB)/freebsd \
@@ -84,7 +84,7 @@ CPPFLAGS =	-I$(COMPAT)/freebsd -I$(CONTRIB)/freebsd \
 		-I$(SRC)/uts/i86pc \
 		-I$(SRC)/lib/libdladm/common \
 		-DWITHOUT_CAPSICUM
-LDLIBS +=	-lsocket -lnsl -ldlpi -ldladm -lmd -luuid -lvmmapi -lz -lnvpair
+LDLIBS +=	-lsocket -lnsl -ldlpi -ldladm -lmd -luuid -lvmmapi -lz
 
 POST_PROCESS += ; $(GENSETDEFS) $@
 

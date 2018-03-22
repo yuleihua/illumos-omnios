@@ -446,6 +446,7 @@ function dolint {
 		# should be none, though there are a few that were filtered out
 		# above
 		egrep -i '(warning|lint):' ${LINTNOISE}.out \
+			| egrep -v '/vmm/' \
 			| sort | uniq | tee $TMPDIR/lint_warns >> $mail_msg_file
 		if [[ -s $TMPDIR/lint_warns ]]; then
 			build_extras_ok=n
