@@ -1573,8 +1573,11 @@ vdev_validate(vdev_t *vd)
 	/*
 	 * If we are performing an extreme rewind, we allow for a label that
 	 * was modified at a point after the current txg.
+	 * If config lock is not held do not check for the txg. spa_sync could
+	 * be updating the vdev's label before updating spa_last_synced_txg.
 	 */
-	if (spa->spa_extreme_rewind || spa_last_synced_txg(spa) == 0)
+	if (spa->spa_extreme_rewind || spa_last_synced_txg(spa) == 0 ||
+	    spa_config_held(spa, SCL_CONFIG, RW_WRITER) != SCL_CONFIG)
 		txg = UINT64_MAX;
 	else
 		txg = spa_last_synced_txg(spa);
@@ -1582,7 +1585,8 @@ vdev_validate(vdev_t *vd)
 	if ((label = vdev_label_read_config(vd, txg)) == NULL) {
 		vdev_set_state(vd, B_TRUE, VDEV_STATE_CANT_OPEN,
 		    VDEV_AUX_BAD_LABEL);
-		vdev_dbgmsg(vd, "vdev_validate: failed reading config");
+		vdev_dbgmsg(vd, "vdev_validate: failed reading config for "
+		    "txg %llu", (u_longlong_t)txg);
 		return (0);
 	}
 
