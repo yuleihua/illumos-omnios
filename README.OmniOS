@@ -47,6 +47,14 @@ Packages:
 Archive:
  > https://downloads.omniosce.org/pkg/8806-backport_r24.p5p
 
+## 9317 FMD crashes with zero-length allocation
+
+Packages:
+ > system/library
+
+Archive:
+ > https://downloads.omniosce.org/pkg/r151024/9317-ses2.p5p
+
 =======================================================================
 
 =============================
