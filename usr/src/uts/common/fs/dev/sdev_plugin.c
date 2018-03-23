@@ -611,10 +611,17 @@ sdev_plugin_register(const char *name, sdev_plugin_ops_t *ops, int *errp)
 	 * to make sure we really get to the global /dev (i.e.  escape both
 	 * CRED() and ->u_rdir).
 	 */
-	pn_get_buf("dev", UIO_SYSSPACE, &pn, buf, sizeof (buf));
-	VN_HOLD(rootdir);
-	ret = lookuppnvp(&pn, NULL, NO_FOLLOW, NULLVPP,
-	    &vp, rootdir, rootdir, kcred);
+
+	/*
+	 * OmniOS local modification - upstream does not check the return
+	 * value of pn_get_buf()
+	 */
+	ret = pn_get_buf("dev", UIO_SYSSPACE, &pn, buf, sizeof (buf));
+	if (ret == 0) {
+		VN_HOLD(rootdir);
+		ret = lookuppnvp(&pn, NULL, NO_FOLLOW, NULLVPP,
+		    &vp, rootdir, rootdir, kcred);
+	}
 
 	if (ret != 0) {
 		*errp = ret;
@@ -701,11 +708,17 @@ sdev_plugin_unregister_cb(sdev_node_t *rdp, void *arg)
 	rw_exit(&rdp->sdev_contents);
 }
 
+int sdev_plugin_unregister_allowed;
+
 /*
  * Remove a plugin. This will block until everything has become a zombie, thus
  * guaranteeing the caller that nothing will call into them again once this call
  * returns. While the call is ongoing, it could be called into. Note that while
  * this is ongoing, it will block other mounts.
+ *
+ * NB: this is not safe when used from detach() context - we will be DEVI_BUSY,
+ * and other sdev threads may be waiting for this.  Only use the over-ride if
+ * willing to risk it.
  */
 int
 sdev_plugin_unregister(sdev_plugin_hdl_t hdl)
@@ -713,6 +726,9 @@ sdev_plugin_unregister(sdev_plugin_hdl_t hdl)
 	sdev_plugin_t *spp = (sdev_plugin_t *)hdl;
 	if (spp->sp_islegacy)
 		return (EINVAL);
+
+	if (!sdev_plugin_unregister_allowed)
+		return (EBUSY);
 
 	mutex_enter(&sdev_plugin_lock);
 	list_remove(&sdev_plugin_list, spp);

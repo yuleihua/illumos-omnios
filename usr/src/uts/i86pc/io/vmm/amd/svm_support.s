@@ -37,7 +37,7 @@ struct pcpu;
 
 /*ARGSUSED*/
 void
-svm_launch(uint64_t pa, struct svm_regctx *gctx, struct pcpu *pcpu)
+svm_launch(unsigned long pa, struct svm_regctx *gctx, struct pcpu *pcpu)
 {}
 
 #else /* lint */
