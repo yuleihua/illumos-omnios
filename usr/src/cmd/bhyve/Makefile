@@ -128,8 +128,6 @@ $(SUBDIRS): FRC
 
 FRC:
 
-include ../Makefile.targ
-
 %.o: $(SRC)/uts/i86pc/io/vmm/%.c
 	$(COMPILE.c) $<
 	$(POST_PROCESS_O)
