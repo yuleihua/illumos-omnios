@@ -259,28 +259,13 @@ mtx_destroy(struct mtx *mtx)
 void
 critical_enter(void)
 {
-	kthread_t *tp = curthread;
-
 	kpreempt_disable();
-	if (tp->t_preempt == 1) {
-		/*
-		 * Avoid extra work when nested calls to this are made and only
-		 * set affinity on the top-level entry.  This also means only
-		 * removing the affinity in critical_exit() when at last call.
-		 */
-		thread_affinity_set(tp, CPU_CURRENT);
-	}
 }
 
 void
 critical_exit(void)
 {
-	kthread_t *tp = curthread;
-
 	kpreempt_enable();
-	if (tp->t_preempt == 0) {
-		thread_affinity_clear(tp);
-	}
 }
 
 struct unrhdr;
@@ -633,38 +618,6 @@ void
 vmm_sol_glue_cleanup(void)
 {
 	fpu_save_area_cleanup();
-}
-
-int idtvec_justreturn;
-
-int
-lapic_ipi_alloc(int *id)
-{
-	/* Only poke_cpu() equivalent is supported */
-	VERIFY(id == &idtvec_justreturn);
-
-	/*
-	 * This is only used by VMX to allocate a do-nothing vector for
-	 * interrupting other running CPUs.  The cached poke_cpu() vector
-	 * as an "allocation" is perfect for this.
-	 */
-	if (psm_cached_ipivect != NULL) {
-		return (psm_cached_ipivect(XC_CPUPOKE_PIL, PSM_INTR_POKE));
-	}
-
-	return (-1);
-}
-
-void
-lapic_ipi_free(int vec)
-{
-	VERIFY(vec > 0);
-
-	/*
-	 * A cached vector was used in the first place.
-	 * No deallocation is necessary
-	 */
-	return;
 }
 
 

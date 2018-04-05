@@ -111,7 +111,10 @@ struct vcpu {
 	kcondvar_t	vcpu_cv;	/* (o) cpu waiter cv */
 	kcondvar_t	state_cv;	/* (o) IDLE-transition cv */
 #endif /* __FreeBSD__ */
-	int		hostcpu;	/* (o) vcpu's host cpu */
+	int		hostcpu;	/* (o) vcpu's current host cpu */
+#ifndef __FreeBSD__
+	int		lastloccpu;	/* (o) last host cpu localized to */
+#endif
 	int		reqidle;	/* (i) request vcpu to idle */
 	struct vlapic	*vlapic;	/* (i) APIC device model */
 	enum x2apic_state x2apic_state;	/* (i) APIC mode */
@@ -314,6 +317,9 @@ vcpu_init(struct vm *vm, int vcpu_id, bool create)
 		vcpu_lock_init(vcpu);
 		vcpu->state = VCPU_IDLE;
 		vcpu->hostcpu = NOCPU;
+#ifndef __FreeBSD__
+		vcpu->lastloccpu = NOCPU;
+#endif
 		vcpu->guestfpu = fpu_save_area_alloc();
 		vcpu->stats = vmm_stat_alloc();
 	}
@@ -370,7 +376,7 @@ vmm_init(void)
 	if (vmm_ipinum < 0)
 		vmm_ipinum = IPI_AST;
 #else
-	/* XXX: verify for EPT settings */
+	/* We use cpu_poke() for IPIs */
 	vmm_ipinum = 0;
 #endif
 
@@ -411,8 +417,10 @@ vmm_handler(module_t mod, int what, void *arg)
 		if (error == 0) {
 			vmm_resume_p = NULL;
 			iommu_cleanup();
+#ifdef __FreeBSD__
 			if (vmm_ipinum != IPI_AST)
 				lapic_ipi_free(vmm_ipinum);
+#endif
 			error = VMM_CLEANUP();
 			/*
 			 * Something bad happened - prevent new
@@ -451,7 +459,6 @@ vmm_mod_load()
 {
 	int	error;
 
-	vmmdev_init();
 	error = vmm_init();
 	if (error == 0)
 		vmm_initialized = 1;
@@ -464,7 +471,6 @@ vmm_mod_unload()
 {
 	int	error;
 
-	vmmdev_cleanup();
 	error = VMM_CLEANUP();
 	if (error)
 		return (error);
@@ -1739,20 +1745,23 @@ vm_exit_astpending(struct vm *vm, int vcpuid, uint64_t rip)
 /*
  * Some vmm resources, such as the lapic, may have CPU-specific resources
  * allocated to them which would benefit from migration onto the host CPU which
- * is processing the vcpu state.  When running on a host CPU different from
- * previous activity, attempt to localize resources when possible.
+ * is processing the vcpu state.
  */
 static void
 vm_localize_resources(struct vm *vm, struct vcpu *vcpu)
 {
-	if (vcpu->hostcpu == curcpu)
-		return;
+	/*
+	 * Localizing cyclic resources requires acquisition of cpu_lock, and
+	 * doing so with kpreempt disabled is a recipe for deadlock disaster.
+	 */
+	VERIFY(curthread->t_preempt == 0);
 
 	/*
-	 * The cyclic backing the LAPIC timer is nice to have local as
-	 * reprogramming operations would otherwise require a crosscall.
+	 * Do not bother with localization if this vCPU is about to return to
+	 * the host CPU it was last localized to.
 	 */
-	vlapic_localize_resources(vcpu->vlapic);
+	if (vcpu->lastloccpu == curcpu)
+		return;
 
 	/*
 	 * Localize system-wide resources to the primary boot vCPU.  While any
@@ -1764,6 +1773,9 @@ vm_localize_resources(struct vm *vm, struct vcpu *vcpu)
 		vrtc_localize_resources(vm->vrtc);
 	}
 
+	vlapic_localize_resources(vcpu->vlapic);
+
+	vcpu->lastloccpu = curcpu;
 }
 #endif /* __FreeBSD */
 
@@ -1800,6 +1812,19 @@ vm_run(struct vm *vm, struct vm_run *vmrun)
 	evinfo.sptr = &vm->suspend;
 	evinfo.iptr = &vcpu->reqidle;
 restart:
+#ifndef	__FreeBSD__
+	thread_affinity_set(curthread, CPU_CURRENT);
+	/*
+	 * Resource localization should happen after the CPU affinity for the
+	 * thread has been set to ensure that access from restricted contexts,
+	 * such as VMX-accelerated APIC operations, can occur without inducing
+	 * cyclic cross-calls.
+	 *
+	 * This must be done prior to disabling kpreempt via critical_enter().
+	 */
+	vm_localize_resources(vm, vcpu);
+#endif
+
 	critical_enter();
 
 	KASSERT(!CPU_ISSET(curcpu, &pmap->pm_active),
@@ -1816,8 +1841,6 @@ restart:
 #endif
 
 #ifndef	__FreeBSD__
-	vm_localize_resources(vm, vcpu);
-
 	installctx(curthread, vcpu, save_guest_fpustate,
 	    restore_guest_fpustate, NULL, NULL, NULL, NULL);
 #endif
@@ -1831,6 +1854,12 @@ restart:
 #ifndef	__FreeBSD__
 	removectx(curthread, vcpu, save_guest_fpustate,
 	    restore_guest_fpustate, NULL, NULL, NULL, NULL);
+
+	/*
+	 * Once clear of the delicate contexts comprising the VM_RUN handler,
+	 * thread CPU affinity can be loosened while other processing occurs.
+	 */
+	thread_affinity_clear(curthread);
 #endif
 
 	vmm_stat_incr(vm, vcpuid, VCPU_TOTAL_RUNTIME, rdtsc() - tscval);
