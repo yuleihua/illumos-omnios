@@ -644,7 +644,8 @@ vdev_alloc(spa_t *spa, vdev_t **vdp, nvlist_t *nv, vdev_t *parent, uint_t id,
 		    alloctype == VDEV_ALLOC_SPLIT ||
 		    alloctype == VDEV_ALLOC_ROOTPOOL);
 		vd->vdev_mg = metaslab_group_create(islog ?
-		    spa_log_class(spa) : spa_normal_class(spa), vd);
+		    spa_log_class(spa) : spa_normal_class(spa), vd,
+		    spa->spa_alloc_count);
 	}
 
 	if (vd->vdev_ops->vdev_op_leaf &&
@@ -1013,7 +1014,6 @@ vdev_metaslab_init(vdev_t *vd, uint64_t txg)
 
 	vd->vdev_ms = mspp;
 	vd->vdev_ms_count = newc;
-
 	for (m = oldc; m < newc; m++) {
 		uint64_t object = 0;
 
@@ -2459,7 +2459,7 @@ vdev_dtl_sync(vdev_t *vd, uint64_t txg)
 	mutex_exit(&vd->vdev_dtl_lock);
 
 	space_map_truncate(vd->vdev_dtl_sm, vdev_dtl_sm_blksz, tx);
-	space_map_write(vd->vdev_dtl_sm, rtsync, SM_ALLOC, tx);
+	space_map_write(vd->vdev_dtl_sm, rtsync, SM_ALLOC, SM_NO_VDEVID, tx);
 	range_tree_vacate(rtsync, NULL, NULL);
 
 	range_tree_destroy(rtsync);
