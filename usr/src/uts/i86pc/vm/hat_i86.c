@@ -27,6 +27,7 @@
  */
 /*
  * Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
+ * Copyright 2018 Joyent, Inc.  All rights reserved.
  * Copyright (c) 2014, 2015 by Delphix. All rights reserved.
  * Copyright 2018 Joyent, Inc.  All rights reserved.
  */
