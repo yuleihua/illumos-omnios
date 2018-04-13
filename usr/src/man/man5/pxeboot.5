@@ -54,7 +54,7 @@ The
 .Nm
 binary is loaded just like any other boot file,
 by specifying it in the DHCP server's configuration file.
-Below is a sample configuration for the ISC DHCP v2 server:
+Below is a sample configuration for the ISC DHCP server:
 .Bd -literal -offset indent
 option domain-name "example.com";
 option routers 10.0.0.1;
@@ -70,7 +70,7 @@ max-lease-time 120;
 subnet 10.0.0.0 netmask 255.255.255.0 {
        filename "pxeboot";
        range 10.0.0.10 10.0.0.254;
-       if exists user-class and option user-class = "illumos" {
+       if exists user-class and option user-class ~~ "illumos" {
             option root-path "tftp://10.0.0.1/illumos";
        }
 }
