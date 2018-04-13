@@ -415,6 +415,11 @@ net_parse_rootpath(void)
 			 * Also will need rework for IPv6.
 			 */
 			val = strchr(ptr, '/');
+			if (val == NULL) {
+				/* If no pathname component, default to / */
+				strlcat(rootpath, "/", sizeof (rootpath));
+				val = strchr(ptr, '/');
+			}
 			if (val != NULL) {
 				snprintf(ip, sizeof (ip), "%.*s",
 				    (int)((uintptr_t)val - (uintptr_t)ptr),
