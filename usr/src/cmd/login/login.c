@@ -1043,6 +1043,7 @@ getargs(char *input_line)
 
 		case '\\':
 			c = quotec();
+			/* FALLTHROUGH */
 
 		default:
 			if (state == WHITESPACE) {
