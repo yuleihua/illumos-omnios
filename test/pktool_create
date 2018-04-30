@@ -19,8 +19,10 @@ certs=`pwd`/certs
 #                 [ lifetime=number-hour|number-day|number-year ]
 
 
+export LD_PRELOAD=libumem.so
+export UMEM_DEBUG=default
 for type in rsa dsa; do
-	pktool gencert keystore=file \
+	truss -f -T _exit pktool gencert keystore=file \
 		outcert=$certs/$type-cert.pem \
 		outkey=$certs/$type-key.pem \
 		serial=1 \
