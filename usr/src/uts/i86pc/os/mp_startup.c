@@ -1534,10 +1534,10 @@ start_other_cpus(int cprboot)
 	 */
 	cmn_err(CE_CONT, "?KPTI %s (PCID %s, INVPCID %s)\n",
 	    kpti_enable ? "enabled" : "disabled",
-	    x86_use_pcid ? "in use" :
+	    x86_use_pcid == 1 ? "in use" :
 	    (is_x86_feature(x86_featureset, X86FSET_PCID) ? "disabled" :
 	    "not supported"),
-	    x86_use_invpcid ? "in use" :
+	    x86_use_pcid == 1 && x86_use_invpcid == 1 ? "in use" :
 	    (is_x86_feature(x86_featureset, X86FSET_INVPCID) ? "disabled" :
 	    "not supported"));
 
