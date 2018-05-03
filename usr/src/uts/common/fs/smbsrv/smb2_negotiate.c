@@ -260,19 +260,8 @@ smb2_negotiate_common(smb_request_t *sr, uint16_t version)
 	int rc;
 	uint32_t max_rwsize;
 	uint16_t secmode;
-	uint32_t max_rwsize;
 
 	sr->smb2_status = 0;
-
-	/*
-	 * Some older clients (e.g. HP Printers, see illumos bug 9500) are
-	 * confused by a sufficiently large max_rwsize (like our default).
-	 * So if there's no "Large MTU" capability, lower it to 64k.
-	 */
-	if ((s->capabilities & SMB2_CAP_LARGE_MTU) == 0)
-		max_rwsize = (1 << 16);
-	else
-		max_rwsize = smb2_max_rwsize;
 
 	/*
 	 * Negotiation itself.  First the Security Mode.
