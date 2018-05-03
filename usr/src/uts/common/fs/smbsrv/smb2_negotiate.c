@@ -50,6 +50,15 @@ uint32_t smb2_max_rwsize = (1<<20);	/* 1MB */
 uint32_t smb2_max_trans  = (1<<16);	/* 64KB */
 
 /*
+ * With clients (e.g. HP scanners) that don't advertise SMB2_CAP_LARGE_MTU
+ * (including all clients using dialect < SMB 2.1), use a "conservative" value
+ * for max r/w size because some older clients misbehave with larger values.
+ * 64KB is recommended in the [MS-SMB2] spec.  (3.3.5.3.1 SMB 2.1 or SMB 3.x
+ * Support) as the minimum so we'll use that.
+ */
+uint32_t smb2_old_rwsize = (1<<16);	/* 64KB */
+
+/*
  * List of all SMB2 versions we implement.  Note that the
  * highest version we support may be limited by the
  * _cfg.skc_max_protocol setting.
@@ -249,20 +258,10 @@ smb2_negotiate_common(smb_request_t *sr, uint16_t version)
 	timestruc_t boot_tv, now_tv;
 	smb_session_t *s = sr->session;
 	int rc;
-	uint16_t secmode;
 	uint32_t max_rwsize;
+	uint16_t secmode;
 
 	sr->smb2_status = 0;
-
-	/*
-	 * Some older clients (e.g. HP Printers, see illumos bug 9500) are
-	 * confused by a sufficiently large max_rwsize (like our default).
-	 * So if there's no "Large MTU" capability, lower it to 64k.
-	 */
-	if ((s->capabilities & SMB2_CAP_LARGE_MTU) == 0)
-		max_rwsize = (1 << 16);
-	else
-		max_rwsize = smb2_max_rwsize;
 
 	/*
 	 * Negotiation itself.  First the Security Mode.
@@ -307,6 +306,14 @@ smb2_negotiate_common(smb_request_t *sr, uint16_t version)
 		smb2_send_reply(sr);
 		return (-1); /* will drop */
 	}
+
+	/*
+	 * See notes above smb2_max_rwsize, smb2_old_rwsize
+	 */
+	if (s->capabilities & SMB2_CAP_LARGE_MTU)
+		max_rwsize = smb2_max_rwsize;
+	else
+		max_rwsize = smb2_old_rwsize;
 
 	rc = smb_mbc_encodef(
 	    &sr->reply,

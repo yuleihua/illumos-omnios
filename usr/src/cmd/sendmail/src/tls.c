@@ -994,7 +994,7 @@ inittls(ctx, req, options, srv, certfile, keyfile, cacertpath, cacertfile, dhpar
 		}
 		if (dh == NULL && bitset(TLS_I_DH1024, req))
 		{
-			DSA *dsa;
+			DSA *dsa = NULL;
 
 			/* this takes a while! (7-130s on a 450MHz AMD K6-2) */
 			if ((dsa = DSA_new()) == NULL ||
@@ -1002,11 +1002,9 @@ inittls(ctx, req, options, srv, certfile, keyfile, cacertpath, cacertfile, dhpar
 			    NULL, 0, NULL, 0, NULL) == 0)
 				dh = NULL;
 			else
-			{
 				dh = DSA_dup_DH(dsa);
+			if (dsa != NULL)
 				DSA_free(dsa);
-				dsa = NULL;
-			}
 		}
 		else if (dh == NULL && bitset(TLS_I_DH512, req))
 			dh = get_dh512();

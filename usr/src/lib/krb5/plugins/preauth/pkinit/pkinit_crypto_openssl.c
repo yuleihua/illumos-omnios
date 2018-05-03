@@ -766,47 +766,55 @@ pkinit_fini_pkinit_oids(pkinit_plg_crypto_context ctx)
     k5_mutex_unlock(&oids_mutex);
 }
 
+static DH *
+make_dhprime(uint8_t *prime, size_t len)
+{
+    DH *dh = NULL;
+    BIGNUM *p = NULL, *q = NULL, *g = NULL;
+
+    if ((p = BN_bin2bn(prime, len, NULL)) == NULL)
+	goto cleanup;
+    if ((q = BN_new()) == NULL)
+	goto cleanup;
+    if (!BN_rshift1(q, p))
+	goto cleanup;
+    if ((g = BN_new()) == NULL)
+	goto cleanup;
+    if (!BN_set_word(g, DH_GENERATOR_2))
+	goto cleanup;
+
+    dh = DH_new();
+    if (dh == NULL)
+	goto cleanup;
+    DH_set0_pqg(dh, p, q, g);
+    p = g = q = NULL;
+
+cleanup:
+    BN_free(p);
+    BN_free(q);
+    BN_free(g);
+    return dh;
+}
+
 static krb5_error_code
 pkinit_init_dh_params(pkinit_plg_crypto_context plgctx)
 {
     krb5_error_code retval = ENOMEM;
-    BIGNUM *p, *g, *q;
 
-    plgctx->dh_1024 = DH_new();
+    plgctx->dh_1024 = make_dhprime(pkinit_1024_dhprime,
+        sizeof(pkinit_1024_dhprime));
     if (plgctx->dh_1024 == NULL)
 	goto cleanup;
 
-    p = BN_bin2bn(pkinit_1024_dhprime, sizeof(pkinit_1024_dhprime), NULL);
-    if (p == NULL || (g = BN_new()) == NULL || (q = BN_new()) == NULL)
-	goto cleanup;
-
-    BN_set_word(g, DH_GENERATOR_2);
-    BN_rshift1(q, p);
-    DH_set0_pqg(plgctx->dh_1024, p, q, g);
-
-    plgctx->dh_2048 = DH_new();
+    plgctx->dh_2048 = make_dhprime(pkinit_2048_dhprime,
+        sizeof(pkinit_2048_dhprime));
     if (plgctx->dh_2048 == NULL)
 	goto cleanup;
 
-    p = BN_bin2bn(pkinit_2048_dhprime, sizeof(pkinit_2048_dhprime), NULL);
-    if (p == NULL || (g = BN_new()) == NULL || (q = BN_new()) == NULL)
-	goto cleanup;
-
-    BN_set_word(g, DH_GENERATOR_2);
-    BN_rshift1(q, p);
-    DH_set0_pqg(plgctx->dh_2048, p, q, g);
-
-    plgctx->dh_4096 = DH_new();
+    plgctx->dh_4096 = make_dhprime(pkinit_4096_dhprime,
+        sizeof(pkinit_4096_dhprime));
     if (plgctx->dh_4096 == NULL)
 	goto cleanup;
-
-    p = BN_bin2bn(pkinit_4096_dhprime, sizeof(pkinit_4096_dhprime), NULL);
-    if (p == NULL || (g = BN_new()) == NULL || (q = BN_new()) == NULL)
-	goto cleanup;
-
-    BN_set_word(g, DH_GENERATOR_2);
-    BN_rshift1(q, p);
-    DH_set0_pqg(plgctx->dh_4096, p, q, g);
 
     retval = 0;
 
@@ -2303,31 +2311,27 @@ client_create_dh(krb5_context context,
 	switch(dh_size) {
 	    case 1024:
 		pkiDebug("client uses 1024 DH keys\n");
-		p = BN_get_rfc2409_prime_1024(NULL);
+		cryptoctx->dh = make_dhprime(pkinit_1024_dhprime,
+		    sizeof(pkinit_1024_dhprime));
 		break;
 	    case 2048:
 		pkiDebug("client uses 2048 DH keys\n");
-		p = BN_bin2bn(pkinit_2048_dhprime,
-		    sizeof(pkinit_2048_dhprime), NULL);
+		cryptoctx->dh = make_dhprime(pkinit_2048_dhprime,
+		    sizeof(pkinit_2048_dhprime));
 		break;
 	    case 4096:
 		pkiDebug("client uses 4096 DH keys\n");
-		p = BN_bin2bn(pkinit_4096_dhprime,
-		    sizeof(pkinit_4096_dhprime), NULL);
+		cryptoctx->dh = make_dhprime(pkinit_4096_dhprime,
+		    sizeof(pkinit_4096_dhprime));
 		break;
-	    default:
-		goto cleanup;
 	}
-
-	BN_set_word(g, DH_GENERATOR_2);
-	BN_rshift1(q, p);
-	DH_set0_pqg(cryptoctx->dh, p, q, g);
+	if (cryptoctx->dh == NULL)
+		goto cleanup;
     }
-    else
-	DH_get0_pqg(cryptoctx->dh, (const BIGNUM **)&p, (const BIGNUM **)&q,
-	    (const BIGNUM **)&g);
 
     DH_generate_key(cryptoctx->dh);
+    DH_get0_key(cryptoctx->dh, &pub_key, NULL);
+
 /* Solaris Kerberos */
 #ifdef DEBUG
     DH_check(cryptoctx->dh, &dh_err);
@@ -2343,7 +2347,6 @@ client_create_dh(krb5_context context,
 	    pkiDebug("the g value is not a generator\n");
     }
 #endif
-    DH_get0_key(cryptoctx->dh, &pub_key, NULL);
 #ifdef DEBUG_DH
     print_dh(cryptoctx->dh, "client's DH params\n");
     print_pubkey(pub_key, "client's pub_key=");
@@ -2359,6 +2362,8 @@ client_create_dh(krb5_context context,
     /* aglo: usually we could just call i2d_DHparams to encode DH params
      * however, PKINIT requires RFC3279 encoding and openssl does pkcs#3.
      */
+    DH_get0_pqg(cryptoctx->dh, (const BIGNUM **)&p, (const BIGNUM **)&q,
+	(const BIGNUM **)&g);
     retval = pkinit_encode_dh_params(p, g, q, dh_params, dh_params_len);
     if (retval)
 	goto cleanup;
