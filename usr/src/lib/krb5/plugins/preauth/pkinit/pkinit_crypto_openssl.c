@@ -800,7 +800,6 @@ static krb5_error_code
 pkinit_init_dh_params(pkinit_plg_crypto_context plgctx)
 {
     krb5_error_code retval = ENOMEM;
-    BIGNUM *p, *g, *q;
 
     plgctx->dh_1024 = make_dhprime(pkinit_1024_dhprime,
         sizeof(pkinit_1024_dhprime));
@@ -2329,9 +2328,6 @@ client_create_dh(krb5_context context,
 	if (cryptoctx->dh == NULL)
 		goto cleanup;
     }
-    else
-	DH_get0_pqg(cryptoctx->dh, (const BIGNUM **)&p, (const BIGNUM **)&q,
-	    (const BIGNUM **)&g);
 
     DH_generate_key(cryptoctx->dh);
     DH_get0_key(cryptoctx->dh, &pub_key, NULL);
@@ -2351,7 +2347,6 @@ client_create_dh(krb5_context context,
 	    pkiDebug("the g value is not a generator\n");
     }
 #endif
-    DH_get0_key(cryptoctx->dh, &pub_key, NULL);
 #ifdef DEBUG_DH
     print_dh(cryptoctx->dh, "client's DH params\n");
     print_pubkey(pub_key, "client's pub_key=");

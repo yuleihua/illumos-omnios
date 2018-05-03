@@ -3232,13 +3232,6 @@ ImportRawRSAKey(KMF_RAW_RSA_KEY *key)
 		goto cleanup;
 	dmp1 = dmq1 = iqmp = NULL;
 
-	if (RSA_set0_key(rsa, n, e, d) == 0)
-		return (NULL);
-	if (RSA_set0_factors(rsa, p, q) == 0)
-		return (NULL);
-	if (RSA_set0_crt_params(rsa, dmp1, dmq1, iqmp) == 0)
-		return (NULL);
-
 	if ((newkey = EVP_PKEY_new()) == NULL)
 		goto cleanup;
 
