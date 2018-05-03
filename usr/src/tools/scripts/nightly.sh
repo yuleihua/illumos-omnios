@@ -28,6 +28,7 @@
 # Copyright (c) 2017 by Delphix. All rights reserved.
 # Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
 # Copyright 2018 Joyent, Inc.
+# Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
 #
 # Based on the nightly script from the integration folks,
 # Mostly modified and owned by mike_s.

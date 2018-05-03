@@ -3185,46 +3185,52 @@ ImportRawRSAKey(KMF_RAW_RSA_KEY *key)
 {
 	RSA		*rsa = NULL;
 	EVP_PKEY	*newkey = NULL;
-	BIGNUM *n, *e, *d, *p, *q, *dmp1, *dmq1, *iqmp;
+	BIGNUM		*n = NULL, *e = NULL, *d = NULL,
+			*p = NULL, *q = NULL,
+			*dmp1 = NULL, *dmq1 = NULL, *iqmp = NULL;
 
 	if ((rsa = RSA_new()) == NULL)
-		return (NULL);
+		goto cleanup;
 
 	if ((n = BN_bin2bn(key->mod.val, key->mod.len, NULL)) == NULL)
-		return (NULL);
+		goto cleanup;
 
 	if ((e = BN_bin2bn(key->pubexp.val, key->pubexp.len, NULL)) == NULL)
-		return (NULL);
+		goto cleanup;
 
-	if (key->priexp.val != NULL)
-		if ((d = BN_bin2bn(key->priexp.val, key->priexp.len,
-		    NULL)) == NULL)
-			return (NULL);
+	if (key->priexp.val != NULL &&
+	    (d = BN_bin2bn(key->priexp.val, key->priexp.len, NULL)) == NULL)
+		goto cleanup;
 
-	if (key->prime1.val != NULL)
-		if ((p = BN_bin2bn(key->prime1.val, key->prime1.len,
-		    NULL)) == NULL)
-			return (NULL);
+	if (key->prime1.val != NULL &&
+	    (p = BN_bin2bn(key->prime1.val, key->prime1.len, NULL)) == NULL)
+		goto cleanup;
 
-	if (key->prime2.val != NULL)
-		if ((q = BN_bin2bn(key->prime2.val, key->prime2.len,
-		    NULL)) == NULL)
-			return (NULL);
+	if (key->prime2.val != NULL &&
+	    (q = BN_bin2bn(key->prime2.val, key->prime2.len, NULL)) == NULL)
+		goto cleanup;
 
-	if (key->exp1.val != NULL)
-		if ((dmp1 = BN_bin2bn(key->exp1.val, key->exp1.len,
-		    NULL)) == NULL)
-			return (NULL);
+	if (key->exp1.val != NULL &&
+	    (dmp1 = BN_bin2bn(key->exp1.val, key->exp1.len, NULL)) == NULL)
+		goto cleanup;
 
-	if (key->exp2.val != NULL)
-		if ((dmq1 = BN_bin2bn(key->exp2.val, key->exp2.len,
-		    NULL)) == NULL)
-			return (NULL);
+	if (key->exp2.val != NULL &&
+	    (dmq1 = BN_bin2bn(key->exp2.val, key->exp2.len, NULL)) == NULL)
+		goto cleanup;
 
-	if (key->coef.val != NULL)
-		if ((iqmp = BN_bin2bn(key->coef.val, key->coef.len,
-		    NULL)) == NULL)
-			return (NULL);
+	if (key->coef.val != NULL &&
+	    (iqmp = BN_bin2bn(key->coef.val, key->coef.len, NULL)) == NULL)
+		goto cleanup;
+
+	if (RSA_set0_key(rsa, n, e, d) == 0)
+		goto cleanup;
+	n = e = d = NULL;
+	if (RSA_set0_factors(rsa, p, q) == 0)
+		goto cleanup;
+	p = q = NULL;
+	if (RSA_set0_crt_params(rsa, dmp1, dmq1, iqmp) == 0)
+		goto cleanup;
+	dmp1 = dmq1 = iqmp = NULL;
 
 	if (RSA_set0_key(rsa, n, e, d) == 0)
 		return (NULL);
@@ -3234,12 +3240,22 @@ ImportRawRSAKey(KMF_RAW_RSA_KEY *key)
 		return (NULL);
 
 	if ((newkey = EVP_PKEY_new()) == NULL)
-		return (NULL);
+		goto cleanup;
 
 	(void) EVP_PKEY_set1_RSA(newkey, rsa);
 
+cleanup:
 	/* The original key must be freed once here or it leaks memory */
-	RSA_free(rsa);
+	if (rsa)
+		RSA_free(rsa);
+	BN_free(n);
+	BN_free(e);
+	BN_free(d);
+	BN_free(p);
+	BN_free(q);
+	BN_free(dmp1);
+	BN_free(dmq1);
+	BN_free(iqmp);
 
 	return (newkey);
 }
@@ -3249,40 +3265,51 @@ ImportRawDSAKey(KMF_RAW_DSA_KEY *key)
 {
 	DSA		*dsa = NULL;
 	EVP_PKEY	*newkey = NULL;
-	BIGNUM		*p, *q, *g, *priv_key, *pub_key;
+	BIGNUM		*p = NULL, *q = NULL, *g = NULL,
+			*priv_key = NULL, *pub_key = NULL;
 
 	if ((dsa = DSA_new()) == NULL)
-		return (NULL);
+		goto cleanup;
 
 	if ((p = BN_bin2bn(key->prime.val, key->prime.len, NULL)) == NULL)
-		return (NULL);
+		goto cleanup;
 
 	if ((q = BN_bin2bn(key->subprime.val, key->subprime.len, NULL)) == NULL)
-		return (NULL);
+		goto cleanup;
 
 	if ((g = BN_bin2bn(key->base.val, key->base.len, NULL)) == NULL)
-		return (NULL);
+		goto cleanup;
 
 	if ((priv_key = BN_bin2bn(key->value.val, key->value.len,
 	    NULL)) == NULL)
-		return (NULL);
+		goto cleanup;
 
 	if (key->pubvalue.val != NULL && (pub_key =
 	    BN_bin2bn(key->pubvalue.val, key->pubvalue.len, NULL)) == NULL)
-		return (NULL);
+		goto cleanup;
 
 	if (DSA_set0_pqg(dsa, p, q, g) == 0)
-		return (NULL);
+		goto cleanup;
+	p = q = g = NULL;
 	if (DSA_set0_key(dsa, pub_key, priv_key) == 0)
-		return (NULL);
+		goto cleanup;
+	pub_key = priv_key = 0;
 
 	if ((newkey = EVP_PKEY_new()) == NULL)
-		return (NULL);
+		goto cleanup;
 
 	(void) EVP_PKEY_set1_DSA(newkey, dsa);
 
+cleanup:
 	/* The original key must be freed once here or it leaks memory */
-	DSA_free(dsa);
+	if (dsa)
+		DSA_free(dsa);
+	BN_free(p);
+	BN_free(q);
+	BN_free(g);
+	BN_free(priv_key);
+	BN_free(pub_key);
+
 	return (newkey);
 }
 
