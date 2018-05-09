@@ -507,6 +507,7 @@ HDRSUBDIRS=				\
 	smbsrv		\
 	smhba		\
 	udapl		\
+	varpd		\
 	$($(MACH)_HDRSUBDIRS)
 
 i386_HDRSUBDIRS=	\
