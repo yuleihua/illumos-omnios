@@ -312,6 +312,7 @@ COMMON_SUBDIRS=		\
 	ppgsz		\
 	pg		\
 	plockstat	\
+	pptadm		\
 	pr		\
 	prctl		\
 	print		\
