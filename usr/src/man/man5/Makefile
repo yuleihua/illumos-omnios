@@ -14,8 +14,9 @@
 # Copyright (c) 2012 by Delphix. All rights reserved.
 # Copyright 2014 Nexenta Systems, Inc.
 # Copyright 2014 Garrett D'Amore <garrett@damore.org>
-# Copyright (c) 2015, Joyent, Inc.  All rights reserved.
+# Copyright 2016, Joyent, Inc.
 # Copyright 2018 Gary Mills
+#
 
 include		$(SRC)/Makefile.master
 
