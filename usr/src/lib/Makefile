@@ -576,7 +576,8 @@ auditd_plugins: libbsm libsecdb libgss libmtmalloc
 brand:		libzonecfg libmapmalloc libipadm libcmdutils libproc librpcsvc
 cfgadm_plugins:	libdevice libdevinfo libhotplug librcm hbaapi libkstat libscf
 fm:		libexacct libipmi libzfs scsi libdevinfo libdevid libcfgadm \
-		libcontract libsysevent ../cmd/sgs/libelf libdladm libsff
+		libcontract libsysevent ../cmd/sgs/libelf libdladm libsff \
+		libpcidb
 $(SPARC_BLD)fm:	libpri
 gss_mechs/mech_dh: libgss
 gss_mechs/mech_dummy: libgss
@@ -601,13 +602,13 @@ libdiskmgt:	libdevid libdevinfo libadm libefi libkstat libsysevent
 $(INTEL_BLD)libdiskmgt: libfdisk
 libdladm:	libdevinfo libinetutil libscf librcm libexacct libkstat \
 		libpool
-libdll: 	libast
+libdll:		libast
 libdlpi:	libinetutil libdladm
 libds:		libsysevent
 libdscfg:	libnsctl libunistat libadm
 libdtrace:	libproc libgen libctf libmapmalloc
 libdtrace_jni:	libuutil libdtrace
-libefi:		libuuid
+libefi:		libuuid libsmbios
 libelfsign:	libcryptoutil libkmf ../cmd/sgs/libelf
 libeti:		libcurses
 libexacct/demo:	libexacct libproject
@@ -659,8 +660,8 @@ libsmbfs:	libkrb5 libsec libidmap pkcs11
 libsmbios:	libdevinfo
 libsrpt:	libstmf
 libstmf:	libscf
-libstmfproxy: 	libstmf libpthread
-libsum: 	libast
+libstmfproxy:	libstmf libpthread
+libsum:		libast
 libsun_ima:	libdevinfo libsysevent
 libsysevent:	libsecdb
 libtecla:	libcurses
@@ -675,7 +676,7 @@ libvolmgt:	libadm
 libvrrpadm:	libdladm libscf
 libvscan:	libscf libsecdb
 libzfs:		libdevid libgen libuutil libadm libavl libefi libidmap \
-		libumem libtsol libzfs_core libcmdutils
+		libumem libtsol libzfs_core
 libzfs_jni:	libdiskmgt libzfs
 libzonecfg:	libuuid libsysevent libsec libbrand libpool libscf libproc \
 		libuutil libbsm libsecdb
@@ -690,7 +691,7 @@ passwdutil:	libsldap
 pkcs11:		libcryptoutil libgen libuuid
 policykit:	dbusdeps
 print:		libldap5 libmd5 libsendfile
-pylibbe: 	libbe libzfs
+pylibbe:	libbe libzfs
 pysolaris:	libsec libidmap
 pyzfs:		libzfs
 raidcfg_plugins: libraidcfg librcm libcfgadm libpicl libpicltree

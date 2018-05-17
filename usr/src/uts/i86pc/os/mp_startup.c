@@ -29,6 +29,7 @@
 /*
  * Copyright 2018 Joyent, Inc.
  * Copyright 2013 Nexenta Systems, Inc.  All rights reserved.
+ * Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
  */
 
 #include <sys/types.h>
