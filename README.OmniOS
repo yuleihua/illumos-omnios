@@ -1,5 +1,37 @@
-This README is here to keep track of merges from Joyent (a massive and
-continuing side-pull).
 
-Last illumos-joyent commit: 7d4764a8704691712ae06535d720ae917acb4699
+=======================================================================
+
+The following commits are merged into this branch but not yet published
+to the IPS repository.
+
+This file is used to track packages that need to be published as part
+of the next reboot-required update for this branch. Archives that fix
+specific problems or are generally useful will be advertised on the
+web page and other mediums so users are no expected to monitor this
+file. However, some brief notes on how to install a package archive
+are included at the end of this file.
+
+=======================================================================
+
+## 7941 cannot use crypto lofi on a block/character device
+
+Commits:
+ > 7941 cannot use crypto lofi on a block/character device
+
+Packages:
+ > SUNWcs
+
+Archive:
+ > https://downloads.omniosce.org/pkg/r151026/7941-backport_r26.p5p
+
+=======================================================================
+
+=============================
+Installing a package archive.
+=============================
+
+Unpublished updates are provided for download as an IPS package archive (.p5p)
+which can be installed as follows:
+
+# pkg apply-hot-fix <archive_url>
 
