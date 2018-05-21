@@ -37,21 +37,34 @@ dir path=usr/kernel/drv group=sys
 dir path=usr/kernel/drv/$(ARCH64) group=sys
 dir path=usr/lib group=bin
 dir path=usr/sbin
+dir path=usr/share
+dir path=usr/share/man
+dir path=usr/share/man/man1m
 driver name=ppt
 driver name=viona
 driver name=vmm
 file path=lib/$(ARCH64)/libvmmapi.so.1
 file path=lib/$(ARCH64)/llib-lvmmapi.ln
 file path=usr/bin/bhhwcompat mode=0555
+file path=usr/include/libppt.h
 file path=usr/kernel/drv/$(ARCH64)/ppt
 file path=usr/kernel/drv/$(ARCH64)/viona
 file path=usr/kernel/drv/$(ARCH64)/vmm
 file path=usr/kernel/drv/ppt.conf
 file path=usr/kernel/drv/viona.conf
 file path=usr/kernel/drv/vmm.conf
+file path=usr/lib/$(ARCH64)/libppt.so.1
+file path=usr/lib/amd64/llib-lppt.ln
+file path=usr/lib/libppt.so.1
+file path=usr/lib/llib-lppt
+file path=usr/lib/llib-lppt.ln
 file path=usr/sbin/bhyve mode=0555
 file path=usr/sbin/bhyvectl mode=0555
+file path=usr/sbin/pptadm mode=0555
+file path=usr/share/man/man1m/pptadm.1m
 license lic_CDDL license=lic_CDDL
 link path=lib/$(ARCH64)/libvmmapi.so target=./libvmmapi.so.1
+link path=usr/lib/$(ARCH64)/libppt.so target=libppt.so.1
+link path=usr/lib/libppt.so target=libppt.so.1
 depend fmri=developer/acpi/compiler type=require
 depend fmri=system/bhyve/firmware type=require

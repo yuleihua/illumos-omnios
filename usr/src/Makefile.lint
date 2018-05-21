@@ -24,6 +24,7 @@
 # Copyright (c) 2012 by Delphix. All rights reserved.
 # Copyright 2015 Garrett D'Amore <garrett@damore.org>
 # Copyright 2016 Nexenta Systems, Inc.
+# Copyright 2018 Joyent, Inc.
 #
 
 # include global definitions
@@ -234,6 +235,7 @@ COMMON_SUBDIRS = \
 	cmd/printf \
 	cmd/latencytop \
 	cmd/ppgsz \
+	cmd/pptadm \
 	cmd/praudit \
 	cmd/prctl \
 	cmd/priocntl \
@@ -408,6 +410,7 @@ COMMON_SUBDIRS = \
 	lib/libpicltree \
 	lib/libpkg \
 	lib/libpool \
+	lib/libppt \
 	lib/libproc \
 	lib/libpthread \
 	lib/libraidcfg \
