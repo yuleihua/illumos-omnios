@@ -1677,7 +1677,7 @@ fi
 	if $MAKE -K $TMPDIR/make-state -e $target 2>/dev/null; then
 		continue
 	fi
-	touch $TMPDIR/nocompiler
+	[[ "$target" != openssl* ]] && touch $TMPDIR/nocompiler
   done
   echo
 ) | tee -a $build_environ_file >> $LOGFILE
