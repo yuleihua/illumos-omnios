@@ -29,7 +29,6 @@
 #include <stdlib.h>
 #include <strings.h>
 #include <zone.h>
-#include <libzonecfg.h>
 #include <dirent.h>
 #include <libproc.h>
 #include "rcapd.h"
