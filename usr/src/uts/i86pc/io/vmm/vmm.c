@@ -133,6 +133,9 @@ struct vcpu {
 	void		*stats;		/* (a,i) statistics */
 	struct vm_exit	exitinfo;	/* (x) exit reason and collateral */
 	uint64_t	nextrip;	/* (x) next instruction to execute */
+#ifndef __FreeBSD__
+	uint64_t	tsc_offset;	/* (x) offset from host TSC */
+#endif
 };
 
 #define	vcpu_lock_initialized(v) mtx_initialized(&((v)->mtx))
@@ -146,7 +149,11 @@ struct mem_seg {
 	bool	sysmem;
 	struct vm_object *object;
 };
+#ifdef __FreeBSD__
 #define	VM_MAX_MEMSEGS	3
+#else
+#define	VM_MAX_MEMSEGS	4
+#endif
 
 struct mem_map {
 	vm_paddr_t	gpa;
@@ -493,6 +500,7 @@ vmm_mod_unload()
 {
 	int	error;
 
+	iommu_cleanup();
 	error = VMM_CLEANUP();
 	if (error)
 		return (error);
@@ -507,6 +515,9 @@ static void
 vm_init(struct vm *vm, bool create)
 {
 	int i;
+#ifndef __FreeBSD__
+	uint64_t tsc_off;
+#endif
 
 	vm->cookie = VMINIT(vm, vmspace_pmap(vm->vmspace));
 	vm->iommu = NULL;
@@ -535,6 +546,13 @@ vm_init(struct vm *vm, bool create)
 
 	for (i = 0; i < VM_MAXCPU; i++)
 		vcpu_init(vm, i, create);
+
+#ifndef __FreeBSD__
+	tsc_off = (uint64_t)(-(int64_t)rdtsc());
+	for (i = 0; i < VM_MAXCPU; i++) {
+		vm->vcpu[i].tsc_offset = tsc_off;
+	}
+#endif /* __FreeBSD__ */
 }
 
 /*
@@ -1264,7 +1282,14 @@ save_guest_fpustate(struct vcpu *vcpu)
 	/* save guest FPU state */
 	fpu_stop_emulating();
 	fpusave(vcpu->guestfpu);
+#ifdef __FreeBSD__
 	fpu_start_emulating();
+#else
+	/*
+	 * When the host state has been restored, we should not re-enable
+	 * CR0.TS on illumos for eager FPU.
+	 */
+#endif
 }
 
 static VMM_STAT(VCPU_IDLE_TICKS, "number of ticks vcpu was idle");
@@ -1724,6 +1749,24 @@ vm_handle_reqidle(struct vm *vm, int vcpuid, bool *retu)
 	return (0);
 }
 
+#ifndef __FreeBSD__
+static int
+vm_handle_wrmsr(struct vm *vm, int vcpuid, struct vm_exit *vme)
+{
+	struct vcpu *cpu = &vm->vcpu[vcpuid];
+	const uint32_t code = vme->u.msr.code;
+	const uint64_t val = vme->u.msr.wval;
+
+	switch (code) {
+	case MSR_TSC:
+		cpu->tsc_offset = val - rdtsc();
+		return (0);
+	}
+
+	return (-1);
+}
+#endif /* __FreeBSD__ */
+
 int
 vm_suspend(struct vm *vm, enum vm_suspend_how how)
 {
@@ -1979,7 +2022,7 @@ restart:
 	set_pcb_flags(pcb, PCB_FULL_IRET);
 #else
 	/* Force a trip through update_sregs to reload %fs/%gs and friends */
-	ttolwp(curthread)->lwp_pcb.pcb_rupdate = 1;
+	PCB_SET_UPDATE_SEGS(&ttolwp(curthread)->lwp_pcb);
 #endif
 
 #ifdef	__FreeBSD__
@@ -2050,6 +2093,13 @@ restart:
 		case VM_EXITCODE_MWAIT:
 			vm_inject_ud(vm, vcpuid);
 			break;
+#ifndef __FreeBSD__
+		case VM_EXITCODE_WRMSR:
+			if (vm_handle_wrmsr(vm, vcpuid, vme) != 0) {
+				retu = true;
+			}
+			break;
+#endif
 		default:
 			retu = true;	/* handled in userland */
 			break;
@@ -2653,6 +2703,14 @@ vcpu_get_state(struct vm *vm, int vcpuid, int *hostcpu)
 
 	return (state);
 }
+
+#ifndef	__FreeBSD__
+uint64_t
+vcpu_tsc_offset(struct vm *vm, int vcpuid)
+{
+	return (vm->vcpu[vcpuid].tsc_offset);
+}
+#endif /* __FreeBSD__ */
 
 int
 vm_activate_cpu(struct vm *vm, int vcpuid)
