@@ -20,6 +20,7 @@
  */
 /*
  * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
  * Copyright 2018 Joyent, Inc.
  */
 
@@ -37,6 +38,7 @@
 #include <sys/mutex_impl.h>
 #include "i86mmu.h"
 #include "unix_sup.h"
+#include "sec.h"
 #include <sys/apix.h>
 #include <sys/x86_archext.h>
 #include <sys/bitmap.h>
@@ -999,6 +1001,7 @@ static const mdb_dcmd_t dcmds[] = {
 #ifdef _KMDB
 	{ "crregs", NULL, "dump control registers", crregs_dcmd },
 #endif
+	{ "sec", "?[-p]", "print security patch summary", sec_dcmd, sec_help },
 	{ NULL }
 };
 
