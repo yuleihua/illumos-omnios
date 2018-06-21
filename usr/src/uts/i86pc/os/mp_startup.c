@@ -2053,9 +2053,8 @@ mp_cpu_faulted_exit(struct cpu *cp)
  * syscall features.
  */
 
-/*ARGSUSED*/
 void
-cpu_fast_syscall_disable(void *arg)
+cpu_fast_syscall_disable(void)
 {
 	if (is_x86_feature(x86_featureset, X86FSET_MSR) &&
 	    is_x86_feature(x86_featureset, X86FSET_SEP))
@@ -2065,9 +2064,8 @@ cpu_fast_syscall_disable(void *arg)
 		cpu_asysc_disable();
 }
 
-/*ARGSUSED*/
 void
-cpu_fast_syscall_enable(void *arg)
+cpu_fast_syscall_enable(void)
 {
 	if (is_x86_feature(x86_featureset, X86FSET_MSR) &&
 	    is_x86_feature(x86_featureset, X86FSET_SEP))
