@@ -21,7 +21,7 @@
 
 /*
  * Copyright (c) 1988, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2016 Joyent, Inc.
+ * Copyright 2018 Joyent, Inc.
  */
 
 /*	Copyright (c) 1984, 1986, 1987, 1988, 1989 AT&T	*/
@@ -301,7 +301,8 @@ typedef struct	proc {
 	 */
 	kmutex_t	p_ldtlock;	/* protects the following fields */
 	user_desc_t	*p_ldt;		/* Pointer to private LDT */
-	system_desc_t	p_ldt_desc;	/* segment descriptor for private LDT */
+	uint64_t	p_unused1;	/* no longer used */
+	uint64_t	p_unused2;	/* no longer used */
 	ushort_t	p_ldtlimit;	/* highest selector used */
 #endif
 	size_t p_swrss;			/* resident set size before last swap */
@@ -775,6 +776,7 @@ extern	void	lwp_freeregs(klwp_t *, int);
 extern	caddr_t	lwp_stk_init(klwp_t *, caddr_t);
 extern	void	lwp_stk_cache_init(void);
 extern	void	lwp_stk_fini(klwp_t *);
+extern	void	lwp_fp_init(klwp_t *);
 extern	void	lwp_installctx(klwp_t *);
 extern	void	lwp_rtt(void);
 extern	void	lwp_rtt_initial(void);

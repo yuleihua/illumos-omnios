@@ -745,6 +745,7 @@ grow:
 	if (PROC_IS_BRANDED(p) && BROP(p)->b_initlwp_post != NULL) {
 		BROP(p)->b_initlwp_post(lwp);
 	}
+	lwp_fp_init(lwp);
 
 	if (state == TS_RUN) {
 		/*

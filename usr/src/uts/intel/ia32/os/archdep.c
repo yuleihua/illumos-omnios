@@ -25,7 +25,7 @@
 /*	Copyright (c) 1984, 1986, 1987, 1988, 1989 AT&T	*/
 /*	  All Rights Reserved  	*/
 /*
- * Copyright 2015 Joyent, Inc.
+ * Copyright (c) 2018, Joyent, Inc.
  * Copyright 2012 Nexenta Systems, Inc.  All rights reserved.
  */
 
@@ -67,9 +67,6 @@
 #include <sys/brand.h>
 #include <sys/machbrand.h>
 #include <sys/cmn_err.h>
-
-extern const struct fnsave_state x87_initial;
-extern const struct fxsave_state sse_initial;
 
 /*
  * Map an fnsave-formatted save area into an fxsave-formatted save area.
@@ -295,22 +292,22 @@ setfpregs(klwp_t *lwp, fpregset_t *fp)
 	switch (fp_save_mech) {
 #if defined(__i386)
 	case FP_FNSAVE:
-		bcopy(fp, &fpu->fpu_regs.kfpu_u.kfpu_fn,
-		    sizeof (fpu->fpu_regs.kfpu_u.kfpu_fn));
+		bcopy(fp, fpu->fpu_regs.kfpu_u.kfpu_fn,
+		    sizeof (*fpu->fpu_regs.kfpu_u.kfpu_fn));
 		break;
 #endif
 	case FP_FXSAVE:
-		fpregset_to_fxsave(fp, &fpu->fpu_regs.kfpu_u.kfpu_fx);
+		fpregset_to_fxsave(fp, fpu->fpu_regs.kfpu_u.kfpu_fx);
 		fpu->fpu_regs.kfpu_xstatus =
 		    fp->fp_reg_set.fpchip_state.xstatus;
 		break;
 
 	case FP_XSAVE:
 		fpregset_to_fxsave(fp,
-		    &fpu->fpu_regs.kfpu_u.kfpu_xs.xs_fxsave);
+		    &fpu->fpu_regs.kfpu_u.kfpu_xs->xs_fxsave);
 		fpu->fpu_regs.kfpu_xstatus =
 		    fp->fp_reg_set.fpchip_state.xstatus;
-		fpu->fpu_regs.kfpu_u.kfpu_xs.xs_xstate_bv |=
+		fpu->fpu_regs.kfpu_u.kfpu_xs->xs_xstate_bv |=
 		    (XFEATURE_LEGACY_FP | XFEATURE_SSE);
 		break;
 	default:
@@ -320,6 +317,7 @@ setfpregs(klwp_t *lwp, fpregset_t *fp)
 
 	fpu->fpu_regs.kfpu_status = fp->fp_reg_set.fpchip_state.status;
 	fpu->fpu_flags |= FPU_VALID;
+	PCB_SET_UPDATE_FPU(&lwp->lwp_pcb);
 }
 
 /*
@@ -359,18 +357,18 @@ getfpregs(klwp_t *lwp, fpregset_t *fp)
 		switch (fp_save_mech) {
 #if defined(__i386)
 		case FP_FNSAVE:
-			bcopy(&fpu->fpu_regs.kfpu_u.kfpu_fn, fp,
-			    sizeof (fpu->fpu_regs.kfpu_u.kfpu_fn));
+			bcopy(fpu->fpu_regs.kfpu_u.kfpu_fn, fp,
+			    sizeof (*fpu->fpu_regs.kfpu_u.kfpu_fn));
 			break;
 #endif
 		case FP_FXSAVE:
-			fxsave_to_fpregset(&fpu->fpu_regs.kfpu_u.kfpu_fx, fp);
+			fxsave_to_fpregset(fpu->fpu_regs.kfpu_u.kfpu_fx, fp);
 			fp->fp_reg_set.fpchip_state.xstatus =
 			    fpu->fpu_regs.kfpu_xstatus;
 			break;
 		case FP_XSAVE:
 			fxsave_to_fpregset(
-			    &fpu->fpu_regs.kfpu_u.kfpu_xs.xs_fxsave, fp);
+			    &fpu->fpu_regs.kfpu_u.kfpu_xs->xs_fxsave, fp);
 			fp->fp_reg_set.fpchip_state.xstatus =
 			    fpu->fpu_regs.kfpu_xstatus;
 			break;
@@ -467,7 +465,7 @@ getgregs(klwp_t *lwp, gregset_t grp)
 	grp[REG_GSBASE] = pcb->pcb_gsbase;
 	if (thisthread)
 		kpreempt_disable();
-	if (pcb->pcb_rupdate == 1) {
+	if (PCB_NEED_UPDATE_SEGS(pcb)) {
 		grp[REG_DS] = pcb->pcb_ds;
 		grp[REG_ES] = pcb->pcb_es;
 		grp[REG_FS] = pcb->pcb_fs;
@@ -503,7 +501,7 @@ getgregs32(klwp_t *lwp, gregset32_t grp)
 
 	if (thisthread)
 		kpreempt_disable();
-	if (pcb->pcb_rupdate == 1) {
+	if (PCB_NEED_UPDATE_SEGS(pcb)) {
 		grp[GS] = (uint16_t)pcb->pcb_gs;
 		grp[FS] = (uint16_t)pcb->pcb_fs;
 		grp[DS] = (uint16_t)pcb->pcb_ds;
@@ -778,7 +776,7 @@ setgregs(klwp_t *lwp, gregset_t grp)
 		/*
 		 * Ensure that we go out via update_sregs
 		 */
-		pcb->pcb_rupdate = 1;
+		PCB_SET_UPDATE_SEGS(pcb);
 		lwptot(lwp)->t_post_sys = 1;
 		if (thisthread)
 			kpreempt_enable();
@@ -815,7 +813,7 @@ setgregs(klwp_t *lwp, gregset_t grp)
 		/*
 		 * Ensure that we go out via update_sregs
 		 */
-		pcb->pcb_rupdate = 1;
+		PCB_SET_UPDATE_SEGS(pcb);
 		lwptot(lwp)->t_post_sys = 1;
 		if (thisthread)
 			kpreempt_enable();

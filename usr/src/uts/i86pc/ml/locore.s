@@ -23,7 +23,7 @@
  * Copyright (c) 1992, 2010, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright (c) 2016, Joyent, Inc. All rights reserved.
+ * Copyright (c) 2018 Joyent, Inc.
  */
 
 /*	Copyright (c) 1990, 1991 UNIX System Laboratories, Inc.	*/
@@ -238,6 +238,11 @@ __return_from_main:
 	.string	"main() returned"
 __unsupported_cpu:
 	.string	"486 style cpu detected - no longer supported!"
+
+#if defined(DEBUG)
+_no_pending_updates:
+	.string	"locore.s:%d lwp_rtt(lwp %p) but pcb_rupdate != 1"
+#endif
 
 #endif	/* !__lint */
 
@@ -1186,7 +1191,7 @@ cmntrap()
 	addq	%rax, %r12
 	movq	%r12, REGOFF_RIP(%rbp)
 	INTR_POP
-	IRET
+	jmp	tr_iret_auto
 	/*NOTREACHED*/
 3:
 	leaq	dtrace_badflags(%rip), %rdi
@@ -1505,8 +1510,6 @@ _sys_rtt(void)
 
 #else	/* __lint */
 
-#if defined(__amd64)
-
 	ENTRY_NP(lwp_rtt_initial)
 	movq	%gs:CPU_THREAD, %r15
 	movq	T_STACK(%r15), %rsp	/* switch to the thread stack */
@@ -1549,8 +1552,6 @@ _lwp_rtt:
 	movq	%r14, %rdx
 	xorl	%eax, %eax
 	call	panic
-_no_pending_updates:
-	.string	"locore.s:%d lwp_rtt(lwp %p) but pcb_rupdate != 1"
 1:
 #endif
 
@@ -1569,11 +1570,6 @@ _no_pending_updates:
 	movq	REGOFF_RDX(%rsp), %rsi
 	movq	REGOFF_RAX(%rsp), %rdi
 	call	post_syscall		/* post_syscall(rval1, rval2) */
-
-	/*
-	 * set up to take fault on first use of fp
-	 */
-	STTS(%rdi)
 
 	/*
 	 * XXX - may want a fast path that avoids sys_rtt_common in the
@@ -1599,7 +1595,7 @@ _no_pending_updates:
 	 */
 	ALTENTRY(sys_rtt_syscall32)
 	USER32_POP
-	IRET
+	jmp	tr_iret_user
 	/*NOTREACHED*/
 
 	ALTENTRY(sys_rtt_syscall)
@@ -1608,7 +1604,7 @@ _no_pending_updates:
 	 */
 	USER_POP
 	ALTENTRY(nopop_sys_rtt_syscall)
-	IRET
+	jmp	tr_iret_user
 	/*NOTREACHED*/
 	SET_SIZE(nopop_sys_rtt_syscall)
 
@@ -1623,7 +1619,7 @@ _no_pending_updates:
 	 * Restore regs before doing iretq to kernel mode
 	 */
 	INTR_POP
-	IRET
+	jmp	tr_iret_kernel
 	.globl	_sys_rtt_end
 _sys_rtt_end:
 	/*NOTREACHED*/
@@ -1635,99 +1631,6 @@ _sys_rtt_end:
 	SET_SIZE(_sys_rtt)
 	SET_SIZE(sys_rtt_syscall)
 	SET_SIZE(sys_rtt_syscall32)
-
-#elif defined(__i386)
-
-	ENTRY_NP(lwp_rtt_initial)
-	movl	%gs:CPU_THREAD, %eax
-	movl	T_STACK(%eax), %esp	/* switch to the thread stack */
-	movl	%esp, %ebp
-	call	__dtrace_probe___proc_start
-	jmp	_lwp_rtt
-
-	ENTRY_NP(lwp_rtt)
-	movl	%gs:CPU_THREAD, %eax
-	movl	T_STACK(%eax), %esp	/* switch to the thread stack */
-	movl	%esp, %ebp
-_lwp_rtt:
-	call	__dtrace_probe___proc_lwp__start
-
-        /*
-         * If agent lwp, clear %fs and %gs.
-         */
-        movl    %gs:CPU_LWP, %eax
-        movl    LWP_PROCP(%eax), %edx
-
-        cmpl    %eax, P_AGENTTP(%edx)
-        jne     1f
-        movl    $0, REGOFF_FS(%esp)
-        movl    $0, REGOFF_GS(%esp)
-1:
-	call	dtrace_systrace_rtt
-	movl	REGOFF_EDX(%esp), %edx
-	movl	REGOFF_EAX(%esp), %eax
-	pushl	%edx
-	pushl	%eax
-	call	post_syscall		/* post_syscall(rval1, rval2) */
-	addl	$8, %esp
-
-	/*
-	 * set up to take fault on first use of fp
-	 */
-	STTS(%eax)
-
-	/*
-	 * XXX - may want a fast path that avoids sys_rtt_common in the
-	 * most common case.
-	 */
-	ALTENTRY(_sys_rtt)
-	CLI(%eax)			/* disable interrupts */
-	ALTENTRY(_sys_rtt_ints_disabled)
-	pushl	%esp			/* pass rp to sys_rtt_common */
-	call	sys_rtt_common
-	addl	$4, %esp		/* pop arg */
-	testl	%eax, %eax		/* test for return to user mode */
-	jz	sr_sup
-
-	/*
-	 * Return to User.
-	 */
-	ALTENTRY(sys_rtt_syscall)
-	INTR_POP_USER
-
-	/*
-	 * There can be no instructions between this label and IRET or
-	 * we could end up breaking linux brand support. See label usage
-	 * in lx_brand_int80_callback for an example.
-	 */
-	ALTENTRY(nopop_sys_rtt_syscall)
-	IRET
-	/*NOTREACHED*/
-	SET_SIZE(nopop_sys_rtt_syscall)
-
-	ALTENTRY(_sys_rtt_end)
-
-	/*
-	 * Return to supervisor
-	 */
-	ALTENTRY(sr_sup)
-
-	/*
-	 * Restore regs before doing iret to kernel mode
-	 */
-	INTR_POP_KERNEL
-	IRET
-	/*NOTREACHED*/
-
-	SET_SIZE(sr_sup)
-	SET_SIZE(_sys_rtt_end)
-	SET_SIZE(lwp_rtt)
-	SET_SIZE(lwp_rtt_initial)
-	SET_SIZE(_sys_rtt_ints_disabled)
-	SET_SIZE(_sys_rtt)
-	SET_SIZE(sys_rtt_syscall)
-
-#endif	/* __i386 */
 
 #endif	/* __lint */
 
