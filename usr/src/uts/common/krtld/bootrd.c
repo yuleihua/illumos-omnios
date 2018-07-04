@@ -22,6 +22,7 @@
  * Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
  * Copyright 2013 Joyent, Inc.  All rights reserved.
+ * Copyright 2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  */
 
 
@@ -37,12 +38,14 @@
 extern void (*_kobj_printf)(void *, const char *fmt, ...);
 extern int get_weakish_int(int *);
 extern struct bootops *ops;
-extern struct boot_fs_ops bufs_ops, bhsfs_ops, bbootfs_ops;
+extern struct boot_fs_ops bufs_ops, bhsfs_ops, bbootfs_ops, bcpio_ops;
 extern int kmem_ready;
 
 static uint64_t rd_start, rd_end;
 struct boot_fs_ops *bfs_ops;
-struct boot_fs_ops *bfs_tab[] = {&bufs_ops, &bhsfs_ops, &bbootfs_ops, NULL};
+struct boot_fs_ops *bfs_tab[] = {
+	&bufs_ops, &bhsfs_ops, &bbootfs_ops, &bcpio_ops, NULL,
+};
 
 static uintptr_t scratch_max = 0;
 

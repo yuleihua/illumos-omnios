@@ -126,6 +126,11 @@ typedef enum {
 #define	UFS_SIGNATURE_LIST	"/var/run/grub_ufs_signatures"
 #define	ZFS_LEGACY_MNTPT	"/tmp/bootadm_mnt_zfs_legacy"
 
+/* SMF */
+#define	BOOT_ARCHIVE_FMRI	"system/boot-archive:default"
+#define	SCF_PG_CONFIG		"config"
+#define	SCF_PROPERTY_FORMAT	"format"
+
 /* BE defaults */
 #define	BE_DEFAULTS		"/etc/default/be"
 #define	BE_DFLT_BE_HAS_GRUB	"BE_HAS_GRUB="
@@ -3289,14 +3294,34 @@ is_be(char *root)
 }
 
 /*
- * Returns 1 if mkiso is in the expected PATH, 0 otherwise
+ * Returns 1 if mkiso is in the expected PATH and should be used, 0 otherwise
  */
 static int
-is_mkisofs()
+use_mkisofs()
 {
-	if (access(MKISOFS_PATH, X_OK) == 0)
+	scf_simple_prop_t *prop;
+	char *format;
+	int ret;
+
+	/* First check if we have a mkisofs binary */
+	if (access(MKISOFS_PATH, X_OK) != 0)
+		return (0);
+
+	/*
+	 * Then check that the system/boot-archive config/format property
+	 * is "hsfs" or empty.
+	 */
+	if ((prop = scf_simple_prop_get(NULL, BOOT_ARCHIVE_FMRI, SCF_PG_CONFIG,
+	    SCF_PROPERTY_FORMAT)) == NULL)
+		/* Could not find property, use mkisofs */
 		return (1);
-	return (0);
+	if (scf_simple_prop_numvalues(prop) < 0 ||
+	    (format = scf_simple_prop_next_astring(prop)) == NULL)
+		ret = 1;
+	else
+		ret = strcmp(format, "hsfs") == 0;
+	scf_simple_prop_free(prop);
+	return (ret);
 }
 
 #define	MKISO_PARAMS	" -quiet -graft-points -dlrDJN -relaxed-filenames "
@@ -3634,7 +3659,8 @@ mkisofs_archive(char *root)
 	if (ret >= sizeof (boot_archive))
 		goto out_path_err;
 
-	bam_print("updating %s\n", boot_archive);
+	bam_print("updating %s (HSFS)\n",
+	    boot_archive[1] == '/' ? boot_archive + 1 : boot_archive);
 
 	if (is_flag_on(IS_SPARC_TARGET)) {
 		ret = snprintf(bootblk, sizeof (bootblk),
@@ -3705,8 +3731,8 @@ create_ramdisk(char *root)
 	struct stat sb;
 	int ret, status = BAM_SUCCESS;
 
-	/* If there is mkisofs, use it to create the required archives */
-	if (is_mkisofs()) {
+	/* If mkisofs should be used, use it to create the required archives */
+	if (use_mkisofs()) {
 		if (has_cachedir() && is_dir_flag_on(NEED_UPDATE)) {
 			ret = mkisofs_archive(root);
 			if (ret != 0)
