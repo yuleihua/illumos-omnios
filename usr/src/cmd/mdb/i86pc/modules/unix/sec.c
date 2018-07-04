@@ -46,6 +46,10 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 
 	sz = sizeof (uchar_t) * BT_SIZEOFMAP(NUM_X86_FEATURES);
 	fset = mdb_zalloc(sz, UM_NOSLEEP);
+	if (fset == NULL) {
+		mdb_warn("failed to allocate memory for x86_featureset");
+		return (DCMD_ERR);
+	}
 	if (mdb_readvar(fset, "x86_featureset") != sz) {
 		mdb_warn("failed to read x86_featureset");
 		mdb_free(fset, sz);
