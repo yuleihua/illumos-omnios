@@ -27,23 +27,21 @@
 
 #
 # Copyright (c) 2014 by Delphix. All rights reserved.
+# Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
 #
 
 ALT_ROOT=
 EXTRACT_ARGS=
 compress=yes
-SPLIT=unknown
-ERROR=0
-dirsize32=0
-dirsize64=0
+dirsize=0
 
 usage() {
 	echo "This utility is a component of the bootadm(1M) implementation"
 	echo "and it is not recommended for stand-alone use."
 	echo "Please use bootadm(1M) instead."
 	echo ""
-	echo "Usage: ${0##*/}: [-R \<root\>] [-p \<platform\>] [--nocompress]"
-	echo "where \<platform\> is one of i86pc, sun4u or sun4v"
+	echo "Usage: ${0##*/}: [-R <root>] [-p <platform>] [--nocompress]"
+	echo "where <platform> is one of i86pc, sun4u or sun4v"
 	exit
 }
 
@@ -89,41 +87,29 @@ if [ $# -eq 1 ]; then
 fi
 
 case $PLATFORM in
-i386)	PLATFORM=i86pc
-	ISA=i386
-	ARCH64=amd64
-	;;
-i86pc)	ISA=i386
-	ARCH64=amd64
-	;;
-sun4u)	ISA=sparc
-	ARCH64=sparcv9
-	;;
-sun4v)	ISA=sparc
-	ARCH64=sparcv9
-	;;
-*)	usage
-	;;
+i386|i86pc)	PLATFORM=i86pc
+		ISA=i386
+		ARCH64=amd64
+		BOOT_ARCHIVE_SUFFIX=$ARCH64/boot_archive
+		compress=yes
+		;;
+sun4u|sun4v)	ISA=sparc
+		ARCH64=sparcv9
+		BOOT_ARCHIVE_SUFFIX=boot_archive
+		compress=no
+		;;
+*)		usage
+		;;
 esac
 
-BOOT_ARCHIVE=platform/$PLATFORM/boot_archive
-BOOT_ARCHIVE_64=platform/$PLATFORM/$ARCH64/boot_archive
-
-if [ $PLATFORM = i86pc ] ; then
-	SPLIT=yes
-else			# must be sparc
-	SPLIT=no	# there's only 64-bit (sparcv9), so don't split
-	compress=no
-fi
+BOOT_ARCHIVE=platform/$PLATFORM/$BOOT_ARCHIVE_SUFFIX
 
 [ -x $GZIP_CMD ] || compress=no
 
 function cleanup
 {
-	umount -f "$rdmnt32" 2>/dev/null
-	umount -f "$rdmnt64" 2>/dev/null
-	lofiadm -d "$rdfile32" 2>/dev/null
-	lofiadm -d "$rdfile64" 2>/dev/null
+	umount -f "$rdmnt" 2>/dev/null
+	lofiadm -d "$rdfile" 2>/dev/null
 	[ -n "$rddir" ] && rm -fr "$rddir" 2> /dev/null
 	[ -n "$new_rddir" ] && rm -fr "$new_rddir" 2>/dev/null
 }
@@ -133,7 +119,7 @@ function getsize
 	# Estimate image size and add 10% overhead for ufs stuff.
 	# Note, we can't use du here in case we're on a filesystem, e.g. zfs,
 	# in which the disk usage is less than the sum of the file sizes.
-	# The nawk code 
+	# The nawk code
 	#
 	#	{t += ($5 % 1024) ? (int($5 / 1024) + 1) * 1024 : $5}
 	#
@@ -141,19 +127,15 @@ function getsize
 	# next multiple of 1024.  This mimics the behavior of ufs especially
 	# with directories.  This results in a total size that's slightly
 	# bigger than if du was called on a ufs directory.
-	size32=$(cat "$list32" | xargs -I {} ls -lLd "{}" 2> /dev/null |
+	size=$(cat "$list" | xargs -I {} ls -lLd "{}" 2> /dev/null |
 		nawk '{t += ($5 % 1024) ? (int($5 / 1024) + 1) * 1024 : $5}
 		END {print int(t * 1.10 / 1024)}')
-	(( size32 += dirsize32 ))
-	size64=$(cat "$list64" | xargs -I {} ls -lLd "{}" 2> /dev/null |
-		nawk '{t += ($5 % 1024) ? (int($5 / 1024) + 1) * 1024 : $5}
-		END {print int(t * 1.10 / 1024)}')
-	(( size64 += dirsize64 ))
-	(( total_size = size32 + size64 ))
-
-	if [ $compress = yes ] ; then
-		total_size=`echo $total_size | nawk '{print int($1 / 2)}'`
-	fi
+	(( size += dirsize ))
+	(( total_size = size ))
+	# If compression is enabled, then each file within the archive will
+	# be individually compressed. The compression ratio is around 60%
+	# across the archive so make the image smaller.
+	[ $compress = yes ] && (( total_size = total_size / 2 ))
 }
 
 #
@@ -167,7 +149,7 @@ function getsize
 #
 function copy_files
 {
-	list="$1"
+	typeset listfile="$1"
 
 	#
 	# If compress is set, the files are gzip'd and put in the correct
@@ -177,8 +159,7 @@ function copy_files
 	# If compress is not set, the file names are printed, which causes
 	# the cpio at the end to do the copy.
 	#
-	while read path
-	do
+	while read path; do
 		if [ $compress = yes ]; then
 			dir="${path%/*}"
 			[ -d "$rdmnt/$dir" ] || mkdir -p "$rdmnt/$dir"
@@ -186,7 +167,7 @@ function copy_files
 		else
 			print "$path"
 		fi
-	done <"$list" | cpio -pdum "$rdmnt" 2>/dev/null
+	done <"$listfile" | cpio -pdum "$rdmnt" 2>/dev/null
 
 	if [ $ISA = sparc ] ; then
 		# copy links
@@ -201,38 +182,16 @@ function copy_files
 
 }
 
-#
-# The first argument can be:
-#
-# "both" - create an archive with both 32-bit and 64-bit binaries
-# "32-bit" - create an archive with only 32-bit binaries
-# "64-bit" - create an archive with only 64-bit binaries
-#
 function create_ufs
 {
-	which=$1
-	archive=$2
-	lofidev=$3
+	archive=$1
+	lofidev=$2
 
-	# should we exclude amd64 binaries?
-	if [ "$which" = "32-bit" ]; then
-		rdfile="$rdfile32"
-		rdmnt="$rdmnt32"
-		list="$list32"
-	elif [ "$which" = "64-bit" ]; then
-		rdfile="$rdfile64"
-		rdmnt="$rdmnt64"
-		list="$list64"
-	else
-		rdfile="$rdfile32"
-		rdmnt="$rdmnt32"
-		list="$list32"
-	fi
-
-	NOINUSE_CHECK=1 newfs $lofidev < /dev/null 2> /dev/null
+	NOINUSE_CHECK=1 newfs -m 0 $lofidev < /dev/null 2> /dev/null
 	mkdir "$rdmnt"
 	mount -F mntfs mnttab /etc/mnttab > /dev/null 2>&1
 	mount -F ufs -o nologging $lofidev "$rdmnt"
+	rm -rf "$rdmnt/lost+found"
 	files=
 
 	# do the actual copy
@@ -241,7 +200,7 @@ function create_ufs
 	rmdir "$rdmnt"
 
 	if [ $ISA = sparc ] ; then
-		rlofidev=`echo "$lofidev" | sed -e "s/dev\/lofi/dev\/rlofi/"`
+		rlofidev="${lofidev/lofi/rlofi}"
 		bb="$ALT_ROOT/platform/$PLATFORM/lib/fs/ufs/bootblk"
 		# installboot is not available on all platforms
 		dd if=$bb of=$rlofidev bs=1b oseek=1 count=15 conv=sync 2>&1
@@ -256,13 +215,12 @@ function create_ufs
 	# compressed, and the final compression will accomplish very
 	# little.  To save time, we skip the gzip in this case.
 	#
-	if [ $ISA = i386 ] && [ $compress = no ] && \
-	    [ -x $GZIP_CMD ] ; then
+	if [ $ISA = i386 ] && [ $compress = no ] && [ -x $GZIP_CMD ] ; then
 		gzip -c "$rdfile" > "${archive}-new"
 	else
 		cat "$rdfile" > "${archive}-new"
 	fi
-	
+
 	if [ $? -ne 0 ] ; then
 		rm -f "${archive}-new"
 	fi
@@ -270,13 +228,12 @@ function create_ufs
 
 function create_archive
 {
-	which=$1
-	archive=$2
-	lofidev=$3
+	archive=$1
+	lofidev=$2
 
 	echo "updating $archive"
 
-	create_ufs "$which" "$archive" "$lofidev"
+	create_ufs "$archive" "$lofidev"
 
 	# sanity check the archive before moving it into place
 	#
@@ -298,21 +255,14 @@ function create_archive
 
 	if [ $? = 1 ] && [ -x $GZIP_CMD ] || [ "$ARCHIVE_SIZE" -lt 10000 ]
 	then
-		#
-		# Two of these functions may be run in parallel.  We
-		# need to allow the other to clean up, so we can't
-		# exit immediately.  Instead, we set a flag.
-		#
-		echo "update of $archive failed"
-		ERROR=1
+		fatal_error "update of $archive failed"
 	else
 		lockfs -f "/$ALT_ROOT" 2>/dev/null
-		mv "${archive}-new" "$archive"
 		rm -f "$archive.hash"
+		mv "${archive}-new" "$archive"
 		digest -a sha1 "$archive" > "$archive.hash"
 		lockfs -f "/$ALT_ROOT" 2>/dev/null
 	fi
-
 }
 
 function fatal_error
@@ -336,8 +286,8 @@ filelist=$($EXTRACT_FILELIST $EXTRACT_ARGS \
 		2>/dev/null | sort -u)
 
 #
-# We use /tmp/ for scratch space now.  This may be changed later if there
-# is insufficient space in /tmp/.
+# We use /tmp/ for scratch space now.  This will be changed later to
+# $ALT_ROOT/var/tmp if there is insufficient space in /tmp/.
 #
 rddir="/tmp/create_ramdisk.$$.tmp"
 new_rddir=
@@ -347,56 +297,28 @@ mkdir "$rddir" || fatal_error "Could not create temporary directory $rddir"
 # Clean up upon exit.
 trap 'cleanup' EXIT
 
-list32="$rddir/filelist.32"
-list64="$rddir/filelist.64"
+list="$rddir/filelist"
 
-touch $list32 $list64
-
-#
-# This loop creates the 32-bit and 64-bit lists of files.  The 32-bit list
-# is written to stdout, which is redirected at the end of the loop.  The
-# 64-bit list is appended with each write.
-#
 cd "/$ALT_ROOT"
-find $filelist -print 2>/dev/null | while read path
-do
-	if [ $SPLIT = no ]; then
-		print "$path"
-	elif [ -d "$path" ]; then
+find $filelist -print 2>/dev/null | while read path; do
+	if [ -d "$path" ]; then
 		size=`ls -lLd "$path" | nawk '
 		    {print ($5 % 1024) ? (int($5 / 1024) + 1) * 1024 : $5}'`
-		if [ `basename "$path"` != "amd64" ]; then
-			(( dirsize32 += size ))
-		fi
-		(( dirsize64 += size ))
+		(( dirsize += size / 1024 ))
 	else
-		case `LC_MESSAGES=C /usr/bin/file -m /dev/null "$path" 2>/dev/null` in
-		*ELF\ 64-bit*)
-			print "$path" >> "$list64"
-			;;
-		*ELF\ 32-bit*)
-			print "$path"
-			;;
-		*)
-			# put in both lists
-			print "$path"
-			print "$path" >> "$list64"
-		esac
+		print "$path"
 	fi
-done >"$list32"
+done >"$list"
 
 # calculate image size
 getsize
 
 # check to see if there is sufficient space in tmpfs
 #
-tmp_free=`df -b /tmp | tail -1 | awk '{ printf ($2) }'`
+tmp_free=`df -b /tmp | tail -1 | awk '{ print $2 }'`
 (( tmp_free = tmp_free / 3 ))
-if [ $SPLIT = yes ]; then
-	(( tmp_free = tmp_free / 2 ))
-fi
 
-if [ $total_size -gt $tmp_free  ] ; then
+if [ $total_size -gt $tmp_free ] ; then
 	# assumes we have enough scratch space on $ALT_ROOT
 	new_rddir="/$ALT_ROOT/var/tmp/create_ramdisk.$$.tmp"
 	rm -rf "$new_rddir"
@@ -404,10 +326,8 @@ if [ $total_size -gt $tmp_free  ] ; then
 	    "Could not create temporary directory $new_rddir"
 
 	# Save the file lists
-	mv "$list32" "$new_rddir"/
-	mv "$list64" "$new_rddir"/
-	list32="/$new_rddir/filelist.32"
-	list64="/$new_rddir/filelist.64"
+	mv "$list" "$new_rddir"/
+	list="/$new_rddir/filelist"
 
 	# Remove the old $rddir and set the new value of rddir
 	rm -rf "$rddir"
@@ -415,39 +335,15 @@ if [ $total_size -gt $tmp_free  ] ; then
 	new_rddir=
 fi
 
-rdfile32="$rddir/rd.file.32"
-rdfile64="$rddir/rd.file.64"
-rdmnt32="$rddir/rd.mount.32"
-rdmnt64="$rddir/rd.mount.64"
-errlog32="$rddir/rd.errlog.32"
-errlog64="$rddir/rd.errlog.64"
-lofidev32=""
-lofidev64=""
+rdfile="$rddir/rd.file"
+rdmnt="$rddir/rd.mount"
+errlog="$rddir/rd.errlog"
+lofidev=""
 
-if [ $SPLIT = yes ]; then
-	#
-	# We can't run lofiadm commands in parallel, so we have to do
-	# them here.
-	#
-	mkfile ${size32}k "$rdfile32"
-	lofidev32=`lofiadm -a "$rdfile32"`
-	mkfile ${size64}k "$rdfile64"
-	lofidev64=`lofiadm -a "$rdfile64"`
-	create_archive "32-bit" "$ALT_ROOT/$BOOT_ARCHIVE" $lofidev32 &
-	create_archive "64-bit" "$ALT_ROOT/$BOOT_ARCHIVE_64" $lofidev64
-	wait
-	lofiadm -d "$rdfile32"
-	lofiadm -d "$rdfile64"
-else
-	mkfile ${total_size}k "$rdfile32"
-	lofidev32=`lofiadm -a "$rdfile32"`
-	create_archive "both" "$ALT_ROOT/$BOOT_ARCHIVE" $lofidev32
-	lofiadm -d "$rdfile32"
-fi
-if [ $ERROR = 1 ]; then
-	cleanup
-	exit 1
-fi
+mkfile ${total_size}k "$rdfile" || fatal_error "Could not create backing file"
+lofidev=`lofiadm -a "$rdfile"` || fatal_error "Could not create lofi device"
+create_archive "$ALT_ROOT/$BOOT_ARCHIVE" $lofidev
+lofiadm -d "$rdfile"
 
 #
 # For the diskless case, hardlink archive to /boot to make it
@@ -456,11 +352,7 @@ fi
 #
 grep "[	 ]/[	 ]*nfs[	 ]" "$ALT_ROOT/etc/vfstab" > /dev/null
 if [ $? = 0 ]; then
-	rm -f "$ALT_ROOT/boot/boot_archive" "$ALT_ROOT/boot/amd64/boot_archive"
-	ln "$ALT_ROOT/$BOOT_ARCHIVE" "$ALT_ROOT/boot/boot_archive"
-	if [ $SPLIT = yes ]; then
-		ln "$ALT_ROOT/$BOOT_ARCHIVE_64" \
-		    "$ALT_ROOT/boot/amd64/boot_archive"
-	fi
+	rm -f "$ALT_ROOT/boot/$BOOT_ARCHIVE_SUFFIX"
+	ln "$ALT_ROOT/$BOOT_ARCHIVE" "$ALT_ROOT/boot/$BOOT_ARCHIVE_SUFFIX"
 fi
 [ -n "$rddir" ] && rm -rf "$rddir"
