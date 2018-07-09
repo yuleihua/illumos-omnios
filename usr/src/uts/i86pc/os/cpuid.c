@@ -5415,7 +5415,8 @@ cpuid_pass_ucode(cpu_t *cpu, uchar_t *fset)
 }
 
 static int
-cpuid_post_ucodeadm_xc(xc_arg_t arg0, xc_arg_t arg1, xc_arg_t arg2)
+/* LINTED E_FUNC_ARG_UNUSED */
+cpuid_post_ucodeadm_xc(xc_arg_t arg0,xc_arg_t arg1, xc_arg_t arg2)
 {
 	uchar_t *fset;
 
@@ -5482,7 +5483,8 @@ cpuid_post_ucodeadm(void)
 		if (!compare_x86_featureset(f0, fset)) {
 			panic("Post microcode update CPU %d has "
 			    "differing security feature (%p) set from CPU 0 "
-			    "(%p), not appending to feature set", i, fset, f0);
+			    "(%p), not appending to feature set", i,
+			    (void *)fset, (void *)f0);
 		}
 	}
 

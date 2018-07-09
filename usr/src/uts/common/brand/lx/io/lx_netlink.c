@@ -1804,7 +1804,7 @@ lx_netlink_au_emit_cb(void *s, uint_t type, const char *msg, uint_t size)
 	hdr = (lx_netlink_hdr_t *)mp->b_rptr;
 	hdr->lxnh_flags = LX_NETLINK_NLM_F_MULTI;
 	hdr->lxnh_len = len;
-	hdr->lxnh_type = (msg == NULL ? LX_NETLINK_NLMSG_DONE : type);
+	hdr->lxnh_type = (msg == NULL ? LX_NETLINK_NLMSG_DONE : type & 0xffff);
 	hdr->lxnh_seq = 0;
 	hdr->lxnh_pid = 0;
 

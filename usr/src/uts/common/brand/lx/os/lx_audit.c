@@ -629,7 +629,7 @@ trycons:
 
 	/* nothing left to do if console write fails */
 	(void) lx_audit_write(fp, msg);
-	close(fd);
+	(void) close(fd);
 }
 
 static void
