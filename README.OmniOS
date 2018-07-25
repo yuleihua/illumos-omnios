@@ -7,53 +7,13 @@ to the IPS repository.
 This file is used to track packages that need to be published as part
 of the next reboot-required update for this branch. Archives that fix
 specific problems or are generally useful will be advertised on the
-web page and other mediums so users are no expected to monitor this
+web page and other mediums so users are not expected to monitor this
 file. However, some brief notes on how to install a package archive
 are included at the end of this file.
 
 =======================================================================
 
-## ZFS fix
-
-Commits:
-
-	8969 Cannot boot from RAIDZ with parity > 1
-
-Packages:
-
-	system/file-system/zfs
-
-## UDP fix
-
-	8653 Use after free in UDP socket close.
-
-Packages:
-
-	system/kernel
-
-Archive:
-
-	https://downloads.omniosce.org/pkg/8953-udp-backport_r24.p5p
-
-
-## 8806 xattr_dir_inactive() releases used vnode with kernel panic
-
-Commits:
- > 8806 xattr_dir_inactive() releases used vnode with kernel panic
-
-Packages:
- > system/kernel
-
-Archive:
- > https://downloads.omniosce.org/pkg/8806-backport_r24.p5p
-
-## 9317 FMD crashes with zero-length allocation
-
-Packages:
- > system/library
-
-Archive:
- > https://downloads.omniosce.org/pkg/r151024/9317-ses2.p5p
+No pending updates.
 
 =======================================================================
 
@@ -62,16 +22,7 @@ Installing a package archive.
 =============================
 
 Unpublished updates are provided for download as an IPS package archive (.p5p)
-which can be added to the existing publisher as follows:
+which can be installed as follows:
 
-# pkg set-publisher -g /path/to/downloaded.p5p omnios
-
-and then can be installed/upgraded in the usual way:
-
-# pkg list -u
-# pkg update
-
-and removed afterwards:
-
-# pkg set-publisher -G /path/to/downloaded.p5p omnios
+# pkg apply-hot-fix <archive_url>
 
