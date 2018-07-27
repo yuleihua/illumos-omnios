@@ -119,9 +119,6 @@ seghole_dup(struct seg *seg, struct seg *newseg)
 static int
 seghole_unmap(struct seg *seg, caddr_t addr, size_t len)
 {
-	/* LINTED E_FUNC_SET_NOT_USED */
-	seghole_data_t *sud = (seghole_data_t *)seg->s_data;
-
 	ASSERT(seg->s_as && AS_WRITE_HELD(seg->s_as));
 
 	/* Entire segment is being unmapped */
