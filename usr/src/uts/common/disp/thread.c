@@ -1073,7 +1073,12 @@ installctx(
 	 * form a loop of the ctxops in newest-to-oldest order.  The 'prev'
 	 * pointers form a loop in the reverse direction, where t_ctx->prev is
 	 * the oldest entry associated with the thread.
+	 *
+	 * The protection of kpreempt_disable is required to safely perform the
+	 * list insertion, since there are inconsistent states between some of
+	 * the pointer assignments.
 	 */
+	kpreempt_disable();
 	if (t->t_ctx == NULL) {
 		ctx->next = ctx;
 		ctx->prev = ctx;
@@ -1086,6 +1091,7 @@ installctx(
 		tail->next = ctx;
 	}
 	t->t_ctx = ctx;
+	kpreempt_enable();
 }
 
 /*
