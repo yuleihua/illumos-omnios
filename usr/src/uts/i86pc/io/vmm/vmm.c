@@ -1864,7 +1864,6 @@ vmm_freectx(void *arg, int isexec)
 
 #endif /* __FreeBSD */
 
-
 int
 vm_run(struct vm *vm, struct vm_run *vmrun)
 {
@@ -1880,6 +1879,7 @@ vm_run(struct vm *vm, struct vm_run *vmrun)
 	pmap_t pmap;
 #ifndef	__FreeBSD__
 	vm_thread_ctx_t vtc;
+	int affinity_type = CPU_CURRENT;
 #endif
 
 	vcpuid = vmrun->cpuid;
@@ -1911,7 +1911,7 @@ vm_run(struct vm *vm, struct vm_run *vmrun)
 
 restart:
 #ifndef	__FreeBSD__
-	thread_affinity_set(curthread, CPU_CURRENT);
+	thread_affinity_set(curthread, affinity_type);
 	/*
 	 * Resource localization should happen after the CPU affinity for the
 	 * thread has been set to ensure that access from restricted contexts,
@@ -1921,6 +1921,8 @@ restart:
 	 * This must be done prior to disabling kpreempt via critical_enter().
 	 */
 	vm_localize_resources(vm, vcpu);
+
+	affinity_type = CPU_CURRENT;
 #endif
 
 	critical_enter();
@@ -2006,6 +2008,19 @@ restart:
 		case VM_EXITCODE_MWAIT:
 			vm_inject_ud(vm, vcpuid);
 			break;
+#ifndef __FreeBSD__
+		case VM_EXITCODE_WRMSR:
+			if (vm_handle_wrmsr(vm, vcpuid, vme) != 0) {
+				retu = true;
+			}
+			break;
+
+		case VM_EXITCODE_HT: {
+			affinity_type = CPU_BEST;
+			break;
+		}
+
+#endif
 		default:
 			retu = true;	/* handled in userland */
 			break;
