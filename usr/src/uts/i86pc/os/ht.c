@@ -393,6 +393,7 @@ ht_kick(cpu_ht_t *ht, zoneid_t zoneid)
 			SMT_PAUSE();
 		}
 
+		/* LINTED E_STMT_NOT_REACHED */
 		lock_set(&ht->ch_lock);
 	}
 }
@@ -581,6 +582,7 @@ ht_should_run(kthread_t *t, cpu_t *cp)
 pri_t
 ht_adjust_cpu_score(kthread_t *t, struct cpu *cp, pri_t score)
 {
+	/* LINTED E_FUNC_VAR_UNUSED */
 	cpu_t *sib;
 
 	if (ht_should_run(t, cp))
