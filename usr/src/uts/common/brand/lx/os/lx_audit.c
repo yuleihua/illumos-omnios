@@ -661,7 +661,7 @@ lx_audit_fail(lx_audit_state_t *asp, const char *msg)
 			mutex_exit(&asp->lxast_lock);
 			lx_audit_log_msg("audit: panic");
 			delay(drv_usectohz(1000000));
-			zone_kadmin(A_SHUTDOWN, AD_BOOT, NULL, kcred);
+			(void) zone_kadmin(A_SHUTDOWN, AD_BOOT, NULL, kcred);
 			mutex_enter(&asp->lxast_lock);
 		}
 	}
