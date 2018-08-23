@@ -84,6 +84,7 @@
 #include <sys/hpet.h>
 #include <sys/apic_common.h>
 #include <sys/apic_timer.h>
+#include <sys/ht.h>
 
 /*
  *	Local Function Prototypes
@@ -296,6 +297,11 @@ apic_init(void)
 		/* fill up any empty ipltopri slots */
 		apic_ipltopri[j] = (i << APIC_IPL_SHIFT) + APIC_BASE_VECT;
 	apic_init_common();
+
+	/*
+	 * For pcplusmp, we'll keep things simple and always disable this.
+	 */
+	ht_intr_alloc_pil(XC_CPUPOKE_PIL);
 
 #if !defined(__amd64)
 	if (cpuid_have_cr8access(CPU))
