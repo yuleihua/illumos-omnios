@@ -28,13 +28,13 @@ vuln_name(enum vuln_status vuln, int p)
 {
 	switch (vuln) {
 	case VULN_INVULN:
-		return p ? "not-vulnerable" : "NOT VULNERABLE";
+		return p ? "not vulnerable" : "NOT VULNERABLE";
 		break;
 	case VULN_PROT:
 		return p ? "protected" : "PROTECTED";
 		break;
 	case VULN_NOTPROT:
-		return p ? "not-protected" : "NOT PROTECTED";
+		return p ? "not protected" : "NOT PROTECTED";
 		break;
 	case VULN_UNKNOWN:
 	default:
@@ -96,12 +96,12 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 		mdb_printf("            PCID is %s\n",
 		    !BT_TEST((ulong_t *)fset, X86FSET_PCID) ?
 		    "not supported by this processor" :
-		    (x86_use_pcid == 1 ? "in-use" : "disabled"));
+		    (x86_use_pcid == 1 ? "in use" : "disabled"));
 		mdb_printf("            INVPCID is %s\n",
 		    !BT_TEST((ulong_t *)fset, X86FSET_INVPCID) ?
 		    "not supported by this processor" :
 		    (x86_use_pcid == 1 && x86_use_invpcid == 1 ?
-		    "in-use" : "disabled"));
+		    "in use" : "disabled"));
 		mdb_printf("\n");
 	}
 
@@ -111,7 +111,8 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 
 	if (opt_p) {
 		mdb_printf("lazy fpu:CVE-2018-3665:%s\n",
-		    eager ? "protected" : "not-protected");
+		    eager == 1 ? vuln_name(VULN_PROT, opt_p) :
+		    vuln_name(VULN_NOTPROT, opt_p));
 	} else {
 		mdb_printf("= Lazy FPU (CVE-2018-3665)\n");
 		mdb_printf("    Status: %s\n",
@@ -151,7 +152,8 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 		    vuln_name(vuln, opt_p));
 	} else {
 		mdb_printf("= Foreshadow/L1TF (CVE-2018-3646)\n");
-		mdb_printf("    Status: %s\n", vuln_name(vuln, opt_p));
+		mdb_printf("    Status: %s%c\n", vuln_name(vuln, opt_p),
+		    vuln == VULN_NOTPROT ? '*' : ' ');
 		if (rdcl_no)
 			mdb_printf("            CPU reports not vulnerable "
 			    "(RDCL_NO)\n");
@@ -164,6 +166,10 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 		mdb_printf(
 		    "            L1 Cache flush is %s\n",
 		    flush_cmd ? "available" : "not supported");
+		if (vuln == VULN_NOTPROT)
+			mdb_printf(
+			    "            * - Not necessary if hyperthreading "
+			    "is disabled/not present.\n");
 		mdb_printf("\n");
 	}
 
