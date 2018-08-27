@@ -46,7 +46,7 @@
 #include <rdn_parser.h>
 #include <stdio.h>
 #include <values.h>
-#include <libcmdutils.h> /* for custr */
+#include <libcustr.h>
 
 /*
  * The order here is important.  The OIDs are arranged in order of

@@ -10,26 +10,10 @@
  */
 
 /*
- * Copyright 2017 Joyent, Inc.
+ * Copyright 2018, Joyent, Inc.
  */
 
+/*LINTLIBRARY*/
+/*PROTOLIB1*/
 
-#ifndef _PC_HVM_H
-#define	_PC_HVM_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#if defined(_KERNEL)
-
-extern boolean_t hvm_excl_hold(const char *);
-extern void hvm_excl_rele(const char *);
-
-#endif /* defined(_KERNEL) */
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _PC_HVM_H */
+#include <libcustr.h>
