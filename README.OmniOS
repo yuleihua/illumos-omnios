@@ -13,7 +13,10 @@ are included at the end of this file.
 
 =======================================================================
 
-No pending updates.
+## 9769 SMB domain logon fails with I18N user name
+Fixes https://github.com/omniosorg/illumos-omnios/issues/254
+
+Package: system/file-system/smb
 
 =======================================================================
 
