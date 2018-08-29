@@ -216,7 +216,7 @@ export BUILD_TOOLS='/opt'
 export SPRO_ROOT='/opt/sunstudio12.1'
 
 # Since we only use SPRO_ROOT for lint, we need to tell nightly to use gcc.
-GCC_ROOT=/opt/gcc-4.4.4/;           export GCC_ROOT
+GNUC_ROOT=/opt/gcc-4.4.4/;           export GNUC_ROOT
 __GNUC="";           export __GNUC
 CW_NO_SHADOW=1;     export CW_NO_SHADOW
 ONLY_LINT_DEFS=-I${SPRO_ROOT}/sunstudio12.1/prod/include/lint; export ONLY_LINT_DEFS
