@@ -18,6 +18,24 @@ Fixes https://github.com/omniosorg/illumos-omnios/issues/254
 
 Package: system/file-system/smb
 
+## 9772 Panic in ahci when the failed slot spkt is NULL
+Fixes https://github.com/omniosorg/omnios-build/issues/960
+
+Package: driver/storage/ahci
+
+## 3354 kernel crash in rpcsec_gss after using gsscred
+
+Package: system/kernel/secure-rpc
+Package: system/kernel
+
+## OS-7125 Need mitigation of L1TF (CVE-2018-3646)
+
+Package: All ctf
+
+## OS-7115 Need Intel ucode update to 20180807
+
+Package: All ctf
+
 =======================================================================
 
 =============================
