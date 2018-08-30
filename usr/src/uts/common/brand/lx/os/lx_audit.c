@@ -862,6 +862,9 @@ lx_audit_syscall_exit(int sysnum, long ret)
 	if (lxzd->lxzd_audit_enabled == LXAE_DISABLED)
 		return;
 
+	if (sysnum >= LX_NSYSCALLS)
+		return;
+
 	asp = lxzd->lxzd_audit_state;
 	ASSERT(asp != NULL);
 
@@ -1233,6 +1236,9 @@ lx_audit_emit_user_msg(uint_t mtype, uint_t len, char *datap)
 	if (lxzd->lxzd_audit_enabled == LXAE_DISABLED ||
 	    lxzd->lxzd_audit_state == NULL)
 		return;
+
+	if (len >= sizeof (msg))
+		len = sizeof (msg) - 1;
 
 	mutex_enter(&p->p_splock);
 	sessid = p->p_sessp->s_sid;
