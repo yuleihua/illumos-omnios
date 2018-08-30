@@ -2009,12 +2009,6 @@ restart:
 			vm_inject_ud(vm, vcpuid);
 			break;
 #ifndef __FreeBSD__
-		case VM_EXITCODE_WRMSR:
-			if (vm_handle_wrmsr(vm, vcpuid, vme) != 0) {
-				retu = true;
-			}
-			break;
-
 		case VM_EXITCODE_HT: {
 			affinity_type = CPU_BEST;
 			break;

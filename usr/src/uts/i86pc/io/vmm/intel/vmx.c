@@ -2952,12 +2952,6 @@ vmx_run(void *arg, int vcpu, register_t rip, pmap_t pmap,
 			break;
 		}
 
-		if (vcpu_debugged(vm, vcpu)) {
-			enable_intr();
-			vm_exit_debug(vmx->vm, vcpu, rip);
-			break;
-		}
-
 #ifndef __FreeBSD__
 		if ((rc = ht_acquire()) != 1) {
 			enable_intr();
