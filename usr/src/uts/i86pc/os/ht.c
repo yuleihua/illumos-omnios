@@ -116,6 +116,12 @@
 #include <sys/cmn_err.h>
 #include <sys/sysmacros.h>
 #include <sys/x86_archext.h>
+/*
+ * OOCE - When backporting this to r151022, we needed sys/sdt.h here.
+ * In the master branch, commit ade42b557a6 added it to sys/vnode.h which ends
+ * up being included through sys/archsystm.h.
+ */
+#include <sys/sdt.h>
 
 #define	CS_SHIFT (8)
 #define	CS_MASK ((1 << CS_SHIFT) - 1)
