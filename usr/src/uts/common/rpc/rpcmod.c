@@ -954,7 +954,7 @@ rpcmod_hold(queue_t *q)
 void
 rpcmod_release(queue_t *q, mblk_t *bp,
     /* LINTED E_FUNC_ARG_UNUSED */
-    bool_t enable __unused)
+    bool_t enable)
 {
 	struct rpcm *rmp;
 
