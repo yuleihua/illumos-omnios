@@ -85,14 +85,15 @@ static int
 pci_hostbridge_parse_pci_val(const char *in, uint16_t *val)
 {
 	long num;
+	char *endp = NULL;
 
 	errno = 0;
-	num = strtol(in, NULL, 0);
-	if (errno != 0) {
+	num = strtol(in, &endp, 0);
+	if (errno != 0 || endp == NULL || *endp != '\0') {
 		fprintf(stderr, "pci_hostbridge: invalid num '%s'", in);
 		return (-1);
 	} else if (num < 1 || num > UINT16_MAX) {
-		fprintf(stderr, "pci_hostbridge: %04x out of range", num);
+		fprintf(stderr, "pci_hostbridge: 0x%04lx out of range", num);
 		return (-1);
 	}
 	*val = num;
