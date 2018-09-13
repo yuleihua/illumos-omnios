@@ -27,6 +27,9 @@
 #
 # Copyright 2013 Saso Kiselkov. All rights reserved.
 #
+#
+# Copyright 2018 Joyent, Inc.
+#
 
 #
 #	Path to the base of the uts directory tree (usually /usr/src/uts).
@@ -70,6 +73,7 @@ LDFLAGS		+= -dy -Nfs/specfs -Ncrypto/swrand -Nmisc/idmap \
 INC_PATH	+= -I$(UTSBASE)/common/fs/zfs
 INC_PATH	+= -I$(SRC)/common
 INC_PATH	+= -I$(COMMONBASE)/zfs
+INC_PATH	+= -I$(UTSBASE)/sun4
 
 C99MODE=	-xc99=%all
 C99LMODE=	-Xc99=%all

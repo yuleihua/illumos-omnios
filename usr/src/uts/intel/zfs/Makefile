@@ -27,6 +27,7 @@
 #
 # Copyright 2013 Saso Kiselkov. All rights reserved.
 #
+# Copyright 2018 Joyent, Inc.
 
 #
 #	Path to the base of the uts directory tree (usually /usr/src/uts).
@@ -69,6 +70,7 @@ INC_PATH	+= -I$(SRC)/common
 INC_PATH	+= -I$(COMMONBASE)/zfs
 
 C99MODE=	-xc99=%all
+CPPFLAGS	+= -I$(UTSBASE)/i86pc
 C99LMODE=	-Xc99=%all
 
 #

@@ -13,10 +13,14 @@
 # Copyright 2017 Nexenta Systems, Inc.
 #
 
-SUBDIRS=	hwdata \
+COMMON_SUBDIRS=	hwdata \
 		locale \
 		terminfo \
 		zoneinfo
+
+i386_SUBDIRS=	ucode
+
+SUBDIRS = $(COMMON_SUBDIRS) $($(MACH)_SUBDIRS)
 
 MSGSUBDIRS= 	zoneinfo
 
