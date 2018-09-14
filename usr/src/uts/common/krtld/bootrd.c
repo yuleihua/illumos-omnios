@@ -179,11 +179,15 @@ kobj_boot_mountroot()
 	    "ramdisk range: 0x%llx-%llx\n", rd_start, rd_end);
 #endif
 
+	/*
+	 * We have a range of virtual addresses which are the boot archive.
+	 */
 	for (i = 0; bfs_tab[i] != NULL; i++) {
 		bfs_ops = bfs_tab[i];
 		if (BRD_MOUNTROOT(bfs_ops, "dummy") == 0)
 			return (0);
 	}
+
 	_kobj_printf(ops, "failed to mount ramdisk from boot\n");
 	return (-1);
 }
