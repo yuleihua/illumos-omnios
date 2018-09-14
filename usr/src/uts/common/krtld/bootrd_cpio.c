@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright 2011-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -21,6 +21,7 @@
 #include <sys/filep.h>
 #include <sys/sunddi.h>
 #include <sys/ccompile.h>
+#include <sys/queue.h>
 
 /*
  * A cpio archive is just a sequence of files, each consisting of a header
@@ -42,33 +43,31 @@ struct cpio_hdr {
 	char		data[];
 };
 
+/*
+ * This structure represents an open file.  The list of all open files is
+ * rooted in the open_files global.
+ */
 struct cpio_file {
 	/* pointers into the archive */
 	const struct cpio_hdr *hdr;
-	const char *path;
-	const uint8_t *data;
+	const char *path;		/* pointer into the archive */
+	const void *data;		/* pointer into the archive */
 
 	int fd;
 	off_t off;
 	struct bootstat stat;
 
-	struct cpio_file *next;
+	SLIST_ENTRY(cpio_file) next;
 };
 
 extern void *bkmem_alloc(size_t);
 extern void bkmem_free(void *, size_t);
-extern void (*_kobj_printf)(void *, const char *, ...);
-extern struct bootops *ops;
 
-/* Linked list of open files in reverse order of opening. */
-static struct cpio_file *bcpio_open_files = NULL;
-static bool bcpio_mounted = false;
+static void cpio_closeall(int flag);
 
-#ifdef KOBJ_DEBUG
-static uint64_t bcpio_open_success = 0;
-static uint64_t bcpio_open_fail = 0;
-static uint64_t bcpio_open_max = 0;
-#endif
+static bool mounted;
+static SLIST_HEAD(cpio_file_list, cpio_file)
+    open_files = SLIST_HEAD_INITIALIZER(open_files);
 
 static int
 cpio_strcmp(const char *a, const char *b)
@@ -156,30 +155,13 @@ get_int32(const uint8_t *str, size_t len, int32_t *out)
 static void
 add_open_file(struct cpio_file *file)
 {
-#ifdef KOBJ_DEBUG
-	struct cpio_file *p;
-	uint64_t c;
-
-	for (p = bcpio_open_files; p; p = p->next)
-		c++;
-	bcpio_open_max = MAX(c, bcpio_open_max);
-#endif
-
-	file->next = bcpio_open_files;
-	bcpio_open_files = file;
+	SLIST_INSERT_HEAD(&open_files, file, next);
 }
 
 static void
 remove_open_file(struct cpio_file *file)
 {
-	struct cpio_file **p;
-
-	for (p = &bcpio_open_files; *p != NULL; p = &((*p)->next)) {
-		if (*p == file) {
-			*p = file->next;
-			return;
-		}
-	}
+	SLIST_REMOVE(&open_files, file, cpio_file, next);
 }
 
 static struct cpio_file *
@@ -187,10 +169,10 @@ find_open_file(int fd)
 {
 	struct cpio_file *file;
 
-	if (fd < 1)
+	if (fd < 0)
 		return (NULL);
 
-	for (file = bcpio_open_files; file != NULL; file = file->next)
+	SLIST_FOREACH(file, &open_files, next)
 		if (file->fd == fd)
 			return (file);
 
@@ -349,14 +331,14 @@ find_filename(char *path, struct cpio_file *file)
 	}
 }
 
+/* ARGSUSED */
 static int
-/* LINTED E_FUNC_ARG_UNUSED */
 bcpio_mountroot(char *str __unused)
 {
-	if (bcpio_mounted)
+	if (mounted)
 		return (-1);
 
-	bcpio_mounted = true;
+	mounted = true;
 
 	return (0);
 }
@@ -364,30 +346,24 @@ bcpio_mountroot(char *str __unused)
 static int
 bcpio_unmountroot(void)
 {
-	if (!bcpio_mounted)
+	if (!mounted)
 		return (-1);
 
-	bcpio_mounted = false;
+	mounted = false;
 
 	return (0);
 }
 
+/* ARGSUSED */
 static int
-bcpio_open(char *path,
-    /* LINTED E_FUNC_ARG_UNUSED */
-    int flags __unused)
+bcpio_open(char *path, int flags __unused)
 {
 	static int filedes = 1;
 	struct cpio_file temp_file;
 	struct cpio_file *file;
 
-	if (find_filename(path, &temp_file) != 0) {
-#ifdef KOBJ_DEBUG
-		bcpio_open_fail++;
-		_kobj_printf(ops, "F %s\n", path);
-#endif
+	if (find_filename(path, &temp_file) != 0)
 		return (-1);
-	}
 
 	file = bkmem_alloc(sizeof (struct cpio_file));
 	file->hdr = temp_file.hdr;
@@ -398,10 +374,6 @@ bcpio_open(char *path,
 	file->off = 0;
 
 	add_open_file(file);
-
-#ifdef KOBJ_DEBUG
-	bcpio_open_success++;
-#endif
 
 	return (file->fd);
 }
@@ -422,23 +394,17 @@ bcpio_close(int fd)
 	return (0);
 }
 
+/* ARGSUSED */
 static void
-/* LINTED E_FUNC_ARG_UNUSED */
 bcpio_closeall(int flag __unused)
 {
-	struct cpio_file *file, *next;
+	struct cpio_file *file;
 
-	file = bcpio_open_files;
+	while (!SLIST_EMPTY(&open_files)) {
+		file = SLIST_FIRST(&open_files);
 
-	while (file != NULL) {
-		int fd = file->fd;
-
-		next = file->next;
-
-		if (bcpio_close(fd) != 0)
-			printf("closeall invoked close(%d) failed\n", fd);
-
-		file = next;
+		if (bcpio_close(file->fd) != 0)
+			printf("closeall invoked close(%d) failed\n", file->fd);
 	}
 }
 
@@ -457,7 +423,7 @@ bcpio_read(int fd, caddr_t buf, size_t size)
 	if (file->off + size > file->stat.st_size)
 		size = file->stat.st_size - file->off;
 
-	bcopy(file->data + file->off, buf, size);
+	bcopy((void *)((uintptr_t)file->data + file->off), buf, size);
 
 	file->off += size;
 

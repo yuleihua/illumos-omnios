@@ -366,7 +366,7 @@ LX_BRAND_OBJS  =		\
 #
 #	special files
 #
-MODSTUB_OBJ +=	 	\
+MODSTUB_OBJ +=		\
 	modstubs.o
 
 BOOTDEV_OBJS +=		\
