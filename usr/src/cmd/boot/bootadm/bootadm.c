@@ -20,7 +20,6 @@
  */
 
 /*
- * Copyright 2012 OmniTI Computer Consulting, Inc. All rights reserved.
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012 Milan Jurik. All rights reserved.
  * Copyright (c) 2015 by Delphix. All rights reserved.
@@ -190,6 +189,17 @@ char *menu_cmds[] = {
 	NULL
 };
 
+char *bam_formats[] = {
+	"hsfs",
+	"ufs",
+	"cpio",
+	"ufs-nocompress",
+	NULL
+};
+#define	BAM_FORMAT_UNSET -1
+#define	BAM_FORMAT_HSFS 0
+short bam_format = BAM_FORMAT_UNSET;
+
 #define	OPT_ENTRY_NUM	"entry"
 
 /*
@@ -214,6 +224,7 @@ typedef struct {
 int bam_verbose;
 int bam_force;
 int bam_debug;
+int bam_skip_lock;
 static char *prog;
 static subcmd_t bam_cmd;
 char *bam_root;
@@ -438,7 +449,8 @@ usage(void)
 
 	/* archive usage */
 	(void) fprintf(stderr,
-	    "\t%s update-archive [-vn] [-R altroot [-p platform]]\n", prog);
+	    "\t%s update-archive [-vnf] [-R altroot [-p platform]] "
+	    "[-F format]\n", prog);
 	(void) fprintf(stderr,
 	    "\t%s list-archive [-R altroot [-p platform]]\n", prog);
 #if defined(_OBP)
@@ -623,7 +635,7 @@ parse_args(int argc, char *argv[])
  * The internal syntax and the corresponding functionality are:
  *	-a update			-- update-archive
  *	-a list				-- list-archive
- *	-a update-all			-- (reboot to sync all mnted OS archive)
+ *	-a update_all			-- (reboot to sync all mnted OS archive)
  *	-i install_bootloader		-- install-bootloader
  *	-m update_entry			-- update-menu
  *	-m list_entry			-- list-menu
@@ -634,20 +646,21 @@ parse_args(int argc, char *argv[])
  *	-m list_setting [entry] [value]	-- list_setting
  *
  * A set of private flags is there too:
- *	-F		-- purge the cache directories and rebuild them
+ *	-Q		-- purge the cache directories and rebuild them
  *	-e		-- use the (faster) archive update approach (used by
  *			   reboot)
+ *	-L		-- skip locking
  */
 static void
 parse_args_internal(int argc, char *argv[])
 {
-	int c, error;
+	int c, i, error;
 	extern char *optarg;
 	extern int optind, opterr;
 #if defined(_OBP)
-	const char *optstring = "a:d:fi:m:no:veFCR:p:P:XZ";
+	const char *optstring = "a:d:fF:i:m:no:veQCLR:p:P:XZ";
 #else
-	const char *optstring = "a:d:fi:m:no:veFCMR:p:P:XZ";
+	const char *optstring = "a:d:fF:i:m:no:veQCMLR:p:P:XZ";
 #endif
 
 	/* Suppress error message from getopt */
@@ -677,7 +690,29 @@ parse_args_internal(int argc, char *argv[])
 			bam_force = 1;
 			break;
 		case 'F':
+			if (bam_format != BAM_FORMAT_UNSET) {
+				error = 1;
+				bam_error(
+				    _("multiple formats specified: -%c\n"), c);
+			}
+			for (i = 0; bam_formats[i] != NULL; i++) {
+				if (strcmp(bam_formats[i], optarg) == 0) {
+					bam_format = i;
+					break;
+				}
+			}
+			if (bam_format == BAM_FORMAT_UNSET) {
+				error = 1;
+				bam_error(
+				    _("unknown format specified: -%c %s\n"),
+				    c, optarg);
+			}
+			break;
+		case 'Q':
 			bam_purge = 1;
+			break;
+		case 'L':
+			bam_skip_lock = 1;
 			break;
 		case 'i':
 			if (bam_cmd) {
@@ -1652,6 +1687,9 @@ bam_lock(void)
 	struct flock lock;
 	pid_t pid;
 
+	if (bam_skip_lock)
+		return;
+
 	bam_lock_fd = open(BAM_LOCK_FILE, O_CREAT|O_RDWR, LOCK_FILE_PERMS);
 	if (bam_lock_fd < 0) {
 		/*
@@ -1710,6 +1748,9 @@ static void
 bam_unlock(void)
 {
 	struct flock unlock;
+
+	if (bam_skip_lock)
+		return;
 
 	/*
 	 * NOP if we don't hold the lock
@@ -3294,32 +3335,59 @@ is_be(char *root)
 }
 
 /*
- * Returns 1 if mkiso is in the expected PATH and should be used, 0 otherwise
+ * Returns B_TRUE if mkiso is in the expected PATH and should be used,
+ * B_FALSE otherwise
  */
-static int
+static boolean_t
 use_mkisofs()
 {
 	scf_simple_prop_t *prop;
-	char *format;
-	int ret;
+	char *format = NULL;
+	boolean_t ret;
 
-	/* First check if we have a mkisofs binary */
-	if (access(MKISOFS_PATH, X_OK) != 0)
-		return (0);
+	/* Check whether the mkisofs binary is in the expected location */
+	if (access(MKISOFS_PATH, X_OK) != 0) {
+		if (bam_verbose)
+			bam_print("mkisofs not found\n");
+		return (B_FALSE);
+	}
+
+	if (bam_format == BAM_FORMAT_HSFS) {
+		if (bam_verbose)
+			bam_print("-F specified HSFS");
+		return (B_TRUE);
+	}
+
+	/* If working on an alt-root, do not use HSFS unless asked via -F */
+	if (bam_alt_root)
+		return (B_FALSE);
 
 	/*
 	 * Then check that the system/boot-archive config/format property
 	 * is "hsfs" or empty.
 	 */
 	if ((prop = scf_simple_prop_get(NULL, BOOT_ARCHIVE_FMRI, SCF_PG_CONFIG,
-	    SCF_PROPERTY_FORMAT)) == NULL)
+	    SCF_PROPERTY_FORMAT)) == NULL) {
 		/* Could not find property, use mkisofs */
-		return (1);
+		if (bam_verbose) {
+			bam_print(
+			    "%s does not have %s/%s property, using mkisofs\n",
+			    BOOT_ARCHIVE_FMRI, SCF_PG_CONFIG,
+			    SCF_PROPERTY_FORMAT);
+		}
+		return (B_TRUE);
+	}
 	if (scf_simple_prop_numvalues(prop) < 0 ||
 	    (format = scf_simple_prop_next_astring(prop)) == NULL)
-		ret = 1;
+		ret = B_TRUE;
 	else
-		ret = strcmp(format, "hsfs") == 0;
+		ret = strcmp(format, "hsfs") == 0 ? B_TRUE : B_FALSE;
+	if (bam_verbose) {
+		if (ret)
+			bam_print("Creating hsfs boot archive\n");
+		else
+			bam_print("Creating %s boot archive\n", format);
+	}
 	scf_simple_prop_free(prop);
 	return (ret);
 }
@@ -3739,14 +3807,15 @@ create_ramdisk(char *root)
 				status = BAM_ERROR;
 		}
 		return (status);
+	} else if (bam_format == BAM_FORMAT_HSFS) {
+		bam_error(_("cannot create hsfs archive\n"));
+		return (BAM_ERROR);
 	}
 
 	/*
-	 * Else setup command args for create_ramdisk.ksh for the UFS archives
+	 * Else setup command args for create_ramdisk.ksh for the archive
 	 * Note: we will not create hash here, CREATE_RAMDISK should create it.
 	 */
-	if (bam_verbose)
-		bam_print("mkisofs not found, creating UFS archive\n");
 
 	(void) snprintf(path, sizeof (path), "%s/%s", root, CREATE_RAMDISK);
 	if (stat(path, &sb) != 0) {
@@ -3760,7 +3829,9 @@ create_ramdisk(char *root)
 
 	len = strlen(path) + strlen(root) + 10;	/* room for space + -R */
 	if (bam_alt_platform)
-		len += strlen(bam_platform) + strlen("-p ");
+		len += strlen(bam_platform) + strlen(" -p ");
+	if (bam_format != BAM_FORMAT_UNSET)
+		len += strlen(bam_formats[bam_format]) + strlen(" -f ");
 	cmdline = s_calloc(1, len);
 
 	if (bam_alt_platform) {
@@ -3775,6 +3846,15 @@ create_ramdisk(char *root)
 		cmdline[strlen(cmdline) - 1] = '\0';
 	} else
 		(void) snprintf(cmdline, len, "%s", path);
+
+	if (bam_format != BAM_FORMAT_UNSET) {
+		if (strlcat(cmdline, " -f ", len) >= len ||
+		    strlcat(cmdline, bam_formats[bam_format], len) >= len) {
+			bam_error(_("boot-archive command line too long\n"));
+			free(cmdline);
+			return (BAM_ERROR);
+		}
+	}
 
 	if (exec_cmd(cmdline, NULL) != 0) {
 		bam_error(_("boot-archive creation FAILED, command: '%s'\n"),
@@ -5119,7 +5199,7 @@ add_boot_entry(menu_t *mp,
 	}
 
 	if (title == NULL) {
-		title = "Illumos";	/* default to Solaris */
+		title = "Solaris";	/* default to Solaris */
 	}
 	if (kernel == NULL) {
 		bam_error(_("missing suboption: %s\n"), menu_cmds[KERNEL_CMD]);
@@ -7698,7 +7778,7 @@ get_title(char *rootdir)
 	(void) fclose(fp);
 
 out:
-	cp = cp ? cp : "Illumos";
+	cp = cp ? cp : "Oracle Solaris";
 
 	BAM_DPRINTF(("%s: got title: %s\n", fcn, cp));
 
@@ -8690,7 +8770,7 @@ restore_default_entry(menu_t *mp, const char *which, line_t *lp)
  * Note that we are always rebooting the current OS instance
  * so osroot == / always.
  */
-#define	REBOOT_TITLE	"Illumos_reboot_transient"
+#define	REBOOT_TITLE	"Solaris_reboot_transient"
 
 /*ARGSUSED*/
 static error_t
@@ -9172,7 +9252,7 @@ set_archive_line(entry_t *entryp, line_t *kernelp)
 /*
  * Title for an entry to set properties that once went in bootenv.rc.
  */
-#define	BOOTENV_RC_TITLE	"Illumos bootenv rc"
+#define	BOOTENV_RC_TITLE	"Solaris bootenv rc"
 
 /*
  * If path is NULL, return the kernel (optnum == KERNEL_CMD) or arguments
