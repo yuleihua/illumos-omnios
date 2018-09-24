@@ -24,6 +24,7 @@
 #
 # Copyright 2016 Toomas Soome <tsoome@me.com>
 # Copyright 2016 Nexenta Systems, Inc.
+# Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
 #
 
 PROG= bootadm

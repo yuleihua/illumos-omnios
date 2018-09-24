@@ -32,6 +32,8 @@
 
 ALT_ROOT=
 EXTRACT_ARGS=
+FORMAT=
+format_set=0
 compress=yes
 dirsize=0
 
@@ -42,16 +44,13 @@ recommended for stand-alone use. Please use bootadm(1M) instead.
 
 Usage: ${0##*/}: [-R <root>] [-p <platform>] [ -f <format> ] [--nocompress]
 where <platform> is one of i86pc, sun4u or sun4v
-  and <format> is one of ufs or cpio
+  and <format> is one of ufs, ufs-nocompress or cpio
 	EOM
 	exit
 }
 
 # default platform is what we're running on
 PLATFORM=`uname -m`
-
-FORMAT=`svcprop -p config/format system/boot-archive`
-[[ "$FORMAT" =~ ^(cpio|ufs|ufs-nocompress)$ ]] || FORMAT=cpio
 
 export PATH=/usr/sbin:/usr/bin:/sbin
 export GZIP_CMD=/usr/bin/gzip
@@ -64,13 +63,9 @@ EXTRACT_FILELIST="/boot/solaris/bin/extract_boot_filelist"
 #
 while [ -n "$1" ]; do
         case $1 in
-        -R)	shift
-		ALT_ROOT="$1"
-		if [ "$ALT_ROOT" != "/" ]; then
-			echo "Creating boot_archive for $ALT_ROOT"
-			EXTRACT_ARGS="${EXTRACT_ARGS} -R ${ALT_ROOT}"
-			EXTRACT_FILELIST="${ALT_ROOT}${EXTRACT_FILELIST}"
-		fi
+	-f)	shift
+		FORMAT="$1"
+		format_set=1
 		;;
 	-n|--nocompress) compress=no
 		;;
@@ -78,8 +73,13 @@ while [ -n "$1" ]; do
 		PLATFORM="$1"
 		EXTRACT_ARGS="${EXTRACT_ARGS} -p ${PLATFORM}"
 		;;
-	-f)	shift
-		FORMAT="$1"
+        -R)	shift
+		ALT_ROOT="$1"
+		if [ "$ALT_ROOT" != "/" ]; then
+			echo "Creating boot_archive for $ALT_ROOT"
+			EXTRACT_ARGS="${EXTRACT_ARGS} -R ${ALT_ROOT}"
+			EXTRACT_FILELIST="${ALT_ROOT}${EXTRACT_FILELIST}"
+		fi
 		;;
         *)      usage
 		;;
@@ -93,6 +93,26 @@ if [ $# -eq 1 ]; then
 	ALT_ROOT="$1"
 	echo "Creating boot_archive for $ALT_ROOT"
 fi
+
+if [ -z "$FORMAT" ]; then
+	if [ -n "$ALT_ROOT" ]; then
+		SVCCFG_DTD=/$ALT_ROOT/usr/share/lib/xml/dtd/service_bundle.dtd.1
+		SVCCFG_REPOSITORY=/$ALT_ROOT/etc/svc/repository.db
+		export SVCCFG_DTD SVCCFG_REPOSITORY
+	fi
+	FORMAT=`svccfg -s system/boot-archive listprop config/format \
+	    | awk '{print $3}'`
+fi
+
+if [ $format_set -eq 0 -a "$FORMAT" = hsfs ]; then
+	if /sbin/bootadm update-archive -R ${ALT_ROOT:-/} -f -L -F hsfs; then
+		exit 0
+	else
+		echo "Failed to create HSFS archive, falling back."
+	fi
+fi
+
+[[ "$FORMAT" =~ ^(cpio|ufs|ufs-nocompress)$ ]] || FORMAT=ufs
 
 case $PLATFORM in
 i386|i86pc)	PLATFORM=i86pc
@@ -123,7 +143,6 @@ case $FORMAT in
 cpio)		[ -x $CPIO_CMD ] || FORMAT=ufs ;;
 ufs-nocompress)	FORMAT=ufs; compress=no ;;
 ufs)		;;
-*)		fatal_error "Unsupport archive format, $1" ;;
 esac
 
 #
@@ -204,7 +223,7 @@ function ufs_getsize
 
 function create_ufs_archive
 {
-	typeset archive="$BOOT_ARCHIVE"
+	typeset archive="$ALT_ROOT/$BOOT_ARCHIVE"
 
 	[ "$compress" = yes ] && \
 	    echo "updating $archive (UFS)" || \
@@ -301,7 +320,7 @@ function create_ufs_archive
 	# little.  To save time, we skip the gzip in this case.
 	#
 	if [ $ISA = i386 ] && [ $compress = no ] && [ -x $GZIP_CMD ] ; then
-		gzip -c "$rdfile" > "${archive}-new"
+		$GZIP_CMD -c "$rdfile" > "${archive}-new"
 	else
 		cat "$rdfile" > "${archive}-new"
 	fi
@@ -350,7 +369,7 @@ function cpio_cleanup
 
 function create_cpio_archive
 {
-	typeset archive="$BOOT_ARCHIVE"
+	typeset archive="$ALT_ROOT/$BOOT_ARCHIVE"
 
 	echo "updating $archive (CPIO)"
 
@@ -404,6 +423,9 @@ filelist=$($EXTRACT_FILELIST $EXTRACT_ARGS \
 case "$FORMAT" in
 	cpio)	create_cpio_archive ;;
 	ufs)	create_ufs_archive ;;
+	*)	print -u2 "Unknown boot archive format, $FORMAT"
+		exit 1
+		;;
 esac
 
 #
@@ -414,5 +436,6 @@ esac
 grep "[	 ]/[	 ]*nfs[	 ]" "$ALT_ROOT/etc/vfstab" > /dev/null
 if [ $? = 0 ]; then
 	rm -f "$ALT_ROOT/boot/$BOOT_ARCHIVE_SUFFIX"
+	mkdir -p "$ALT_ROOT/boot/`dirname $BOOT_ARCHIVE_SUFFIX`"
 	ln "$ALT_ROOT/$BOOT_ARCHIVE" "$ALT_ROOT/boot/$BOOT_ARCHIVE_SUFFIX"
 fi

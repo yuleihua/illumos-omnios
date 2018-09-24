@@ -12,6 +12,7 @@ bootadm \- manage bootability of the operating system
 .LP
 .nf
 \fB/sbin/bootadm\fR update-archive [\fB-vnf\fR] [\fB-R\fR \fIaltroot\fR [\fB-p\fR \fIplatform\fR]]
+     [\fB-F \fIformat\fR]
 .fi
 
 .LP
@@ -225,6 +226,7 @@ title of each entry. Applies to x86 platforms only.
 .SH OPTIONS
 .LP
 The \fBbootadm\fR command has the following options:
+
 .sp
 .ne 2
 .na
@@ -237,6 +239,18 @@ even if no files have changed.
 
 In an \fBinstall-bootloader\fR operation, override the boot loader versioning
 constraints.
+.RE
+
+.sp
+.ne 2
+.na
+\fB-F \fIformat\fR\fR
+.ad
+.sp .6
+.RS 4n
+In an \fBupdate-archive\fR operation, select the desired archive format. The
+format can be any of the values shown above for the
+svc:/system/boot-archive:default/config/format property.
 .RE
 
 .sp
