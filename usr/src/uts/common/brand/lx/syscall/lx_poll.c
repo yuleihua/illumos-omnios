@@ -178,6 +178,11 @@ lx_poll_common(pollfd_t *fds, nfds_t nfds, timespec_t *tsp, k_sigset_t *ksetp)
 	 * Initialize pollstate and copy in pollfd data if present.
 	 */
 	if (nfds != 0) {
+		/*
+		 * Cap the number of FDs they can give us so we don't go
+		 * allocating a huge chunk of memory. Note that this is *not*
+		 * the RLIMIT_NOFILE rctl.
+		 */
 		if (nfds > lx_poll_max_fds) {
 			error = EINVAL;
 			goto pollout;
@@ -589,6 +594,11 @@ lx_select_common(int nfds, long *rfds, long *wfds, long *efds,
 	 * Initialize pollstate and copy in pollfd data if present.
 	 */
 	if (nfds != 0) {
+		/*
+		 * Cap the number of FDs they can give us so we don't go
+		 * allocating a huge chunk of memory. Note that this is *not*
+		 * the RLIMIT_NOFILE rctl.
+		 */
 		if (nfds > lx_poll_max_fds) {
 			error = EINVAL;
 			goto out;
