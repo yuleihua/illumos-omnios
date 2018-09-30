@@ -1850,8 +1850,8 @@ file path=opt/SUNWdtrt/tst/common/sysevent/tst.post.d mode=0444
 file path=opt/SUNWdtrt/tst/common/sysevent/tst.post.exe mode=0555
 file path=opt/SUNWdtrt/tst/common/sysevent/tst.post_chan.d mode=0444
 file path=opt/SUNWdtrt/tst/common/sysevent/tst.post_chan.exe mode=0555
-file path=opt/SUNWdtrt/tst/common/tick-n/tst.threadname.d mode=0444
-file path=opt/SUNWdtrt/tst/common/tick-n/tst.threadname.exe mode=0555
+file path=opt/SUNWdtrt/tst/common/threadname/tst.threadname.d mode=0444
+file path=opt/SUNWdtrt/tst/common/threadname/tst.threadname.exe mode=0555
 file path=opt/SUNWdtrt/tst/common/tick-n/err.D_PDESC_ZERO.tick.d mode=0444
 file path=opt/SUNWdtrt/tst/common/tick-n/err.D_PDESC_ZEROonens.d mode=0444
 file path=opt/SUNWdtrt/tst/common/tick-n/err.D_PDESC_ZEROonensec.d mode=0444
