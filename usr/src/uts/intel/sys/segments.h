@@ -190,7 +190,9 @@ extern void load_segment_registers(selector_t, selector_t, selector_t,
     selector_t, selector_t, selector_t);	/* (alphabetical) */
 #endif	/* __i386 */
 
+#ifdef _KERNEL
 selector_t get_cs_register();
+#endif /* _KERNEL */
 
 #if !defined(__amd64)
 
@@ -683,6 +685,7 @@ extern tss_t *ktss0;
 extern tss_t *dftss0;
 #endif	/* __i386 */
 
+#ifdef _KERNEL
 extern void div0trap(), dbgtrap(), nmiint(), brktrap(), ovflotrap();
 extern void boundstrap(), invoptrap(), ndptrap();
 #if !defined(__xpv)
@@ -721,6 +724,7 @@ extern void pentium_pftrap();
 #endif
 
 extern uint64_t kpti_enable;
+#endif /* _KERNEL */
 
 #endif /* _ASM */
 
