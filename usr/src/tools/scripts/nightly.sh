@@ -445,9 +445,23 @@ function dolint {
 		echo "\n==== lint warnings $base ====\n" \
 			>>$mail_msg_file
 		# should be none, though there are a few that were filtered out
-		# above
+		# above.
+
+		# We also exclude:
+		#  /vmm/  as there are multiple lint warning present in this
+		#         code imported from FreeBSD which are not being
+		#         addressed in order to make future upstream merges
+		#         easier.
+		# ctype.h A specific warning for the isprint() function that
+		#         we have been so far unable to resolve. The issue is
+		#         that this is unused in most kernel modules but used
+		#         in prvnops (came in as part of OS-7200 would like
+		#         thread name API). This may get resolved once this
+		#         change is upstreamed to gate.
+
 		egrep -i '(warning|lint):' ${LINTNOISE}.out \
 			| egrep -v '/vmm/' \
+			| egrep -v 'sys/ctype.h.*line 111.*E_SUPPRESSION_DIRECTIVE_UNUSED' \
 			| sort | uniq | tee $TMPDIR/lint_warns >> $mail_msg_file
 		if [[ -s $TMPDIR/lint_warns ]]; then
 			build_extras_ok=n
