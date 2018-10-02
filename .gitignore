@@ -12,6 +12,7 @@ cscope.po.out
 /packages
 /proto
 /webrev
+/tools
 /usr/src/.build.tstamp
 /usr/src/ELF-data.*
 /usr/src/check-*.out
