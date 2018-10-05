@@ -331,36 +331,36 @@ pci_vtblk_init(struct vmctx *ctx, struct pci_devinst *pi, char *opts)
 	off_t size;
 	int i, sectsz, sts, sto;
 
-#if !defined(__FreeBSD__) && !defined(__JOYENT__)
-	char *tmpopts, *opt, *nextopt, *path = NULL, *serial = NULL;
+	if (opts == NULL) {
+		printf("virtio-block: backing device required\n");
+		return (1);
+	}
 
-	if ((tmpopts = strdup(opts)) == NULL)
+#if !defined(__FreeBSD__) && !defined(__JOYENT__)
+	char *newopts, *opt, *nextopt, *serial = NULL;
+	size_t optsz = strlen(opts) + 1;
+
+	if ((newopts = calloc(optsz, sizeof(char))) == NULL)
 		return (-1);
 
-	for (nextopt = tmpopts, opt = strsep(&nextopt, ",");
+	for (nextopt = opts, opt = strsep(&nextopt, ",");
 	    opt != NULL; opt = strsep(&nextopt, ",")) {
-		if (path == NULL && *opt == '/') {
-			path = opt;
-			continue;
-		}
 		if (!strncmp(opt, "serial=", 7)) {
 			serial = opt + 7;
 			continue;
 		}
 
-		printf("virtio-block: unknown option '%s'\n", opt);
-		free(tmpopts);
-		return (-1);
+		/*
+		 * Any options not handled here must be passed on to
+		 * blockif_open
+		 */
+		if (*newopts != '\0')
+			strlcat(newopts, ",", optsz);
+		strlcat(newopts, opt, optsz);
 	}
-	if (path == NULL) {
+	if (*newopts == '\0') {
 		printf("virtio-block: backing device required\n");
-		free(tmpopts);
-		return (1);
-	}
-	opts = path;
-#else
-	if (opts == NULL) {
-		printf("virtio-block: backing device required\n");
+		free(newopts);
 		return (1);
 	}
 #endif
@@ -369,12 +369,14 @@ pci_vtblk_init(struct vmctx *ctx, struct pci_devinst *pi, char *opts)
 	 * The supplied backing file has to exist
 	 */
 	snprintf(bident, sizeof(bident), "%d:%d", pi->pi_slot, pi->pi_func);
+#if !defined(__FreeBSD__) && !defined(__JOYENT__)
+	bctxt = blockif_open(newopts, bident);
+	free(newopts);
+#else
 	bctxt = blockif_open(opts, bident);
+#endif
 	if (bctxt == NULL) {       	
 		perror("Could not open backing file");
-#if !defined(__FreeBSD__) && !defined(__JOYENT__)
-		free(tmpopts);
-#endif
 		return (1);
 	}
 
@@ -415,7 +417,6 @@ pci_vtblk_init(struct vmctx *ctx, struct pci_devinst *pi, char *opts)
 		bzero(sc->vbsc_ident, sizeof(sc->vbsc_ident));
 		strlcpy(sc->vbsc_ident, serial, sizeof(sc->vbsc_ident));
 	}
-	free(tmpopts);
 #endif
 
 	/* setup virtio block config space */
