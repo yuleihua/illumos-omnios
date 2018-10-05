@@ -76,10 +76,6 @@ nfs/tst.call3.exe: nfs/tst.call3.o nfs/$(RPCSVCOBJS)
 	$(LDLIBS) -lnsl -lrpcsvc
 	$(POST_PROCESS) ; $(STRIP_STABS)
 
-pid/tst.gcc.exe: pid/tst.gcc.c
-	$(GCC) -o pid/tst.gcc.exe pid/tst.gcc.c $(LDFLAGS) $(LDLIBS)
-	$(POST_PROCESS) ; $(STRIP_STABS)
-
 json/tst.usdt.o: json/usdt.h
 
 json/usdt.h: json/usdt.d
