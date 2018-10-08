@@ -27,9 +27,6 @@
  * Copyright 2012 DEY Storage Systems, Inc.  All rights reserved.
  * Copyright 2018 Joyent, Inc.
  */
-/*
- * Copyright 2018 Joyent, Inc.
- */
 
 #include <struct_layout.h>
 
