@@ -68,6 +68,10 @@
 		<propval name='duration' type='astring' value='transient' />
 	</property_group>
 
+	<property_group name='config' type='application'>
+		<propval name='parallel' type='boolean' value='true' />
+	</property_group>
+
 	<stability value='Unstable' />
 
 	<template>
