@@ -87,6 +87,11 @@ fi
 # Mount all ZFS filesystems.
 
 if [ -x /usr/sbin/zfs ]; then
+	parallel=`svcprop -p config/parallel $SMF_FMRI`
+	if [ "$val" = "false" ]; then
+		ZFS_SERIAL_MOUNT=1
+		export ZFS_SERIAL_MOUNT
+	fi
 	/usr/sbin/zfs mount -va >/dev/msglog 2>&1
 	rc=$?
 	if [ $rc -ne 0 ]; then
