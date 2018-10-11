@@ -12,6 +12,8 @@
 #
 syntax: glob
 
+usr/src/uts/common/io/qede/*
+
 usr/src/data/ucode/amd/*
 usr/src/data/ucode/intel/*
 
