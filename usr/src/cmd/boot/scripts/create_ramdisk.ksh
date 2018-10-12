@@ -362,9 +362,7 @@ function create_ufs_archive
 
 function cpio_cleanup
 {
-	[ -f "$tarchive" ] && rm -f "$tarchive"
-	[ -f "$tarchive.cpio" ] && rm -f "$tarchive.cpio"
-	[ -f "$tarchive.hash" ] && rm -f "$tarchive.hash"
+	rm -f "$tarchive" "$tarchive.cpio" "$tarchive.hash"
 }
 
 function create_cpio_archive
