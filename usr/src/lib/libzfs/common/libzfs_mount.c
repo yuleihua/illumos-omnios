@@ -1403,6 +1403,10 @@ zfs_foreach_mountpoint(libzfs_handle_t *hdl, zfs_handle_t **handles,
 	 * The ZFS_SERIAL_MOUNT environment variable is an undocumented
 	 * variable that can be used as a convenience to do a/b comparison
 	 * of serial vs. parallel mounting.
+	 *
+	 * In OmniOS, this is set by /lib/svc/method/fs-local if the
+	 * config/parallel option of svc:/system/filesystem/local:default
+	 * is set to false.
 	 */
 	boolean_t serial_mount = !parallel ||
 	    (getenv("ZFS_SERIAL_MOUNT") != NULL);
