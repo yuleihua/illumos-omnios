@@ -23,6 +23,7 @@
 # Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
 # Copyright 2015, OmniTI Computer Consulting, Inc. All rights reserved.
 # Copyright 2015 Igor Kozhukhov <ikozhukhov@gmail.com>
+# Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
 #
 
 include $(SRC)/Makefile.master
@@ -190,7 +191,11 @@ PKGMOG_DEFINES= \
 	PERL_VERSION=$(PERL_VERSION) \
 	PERL_PKGVERS=$(PERL_PKGVERS) \
 	PYTHON_VERSION=$(PYTHON_VERSION) \
+	PYTHON3_VERSION=$(PYTHON3_VERSION) \
 	PYTHON_PKGVERS=$(PYTHON_PKGVERS) \
+	PYTHON3_PKGVERS=$(PYTHON3_PKGVERS) \
+	python2_ONLY=$(BUILDPY2) \
+	python3_ONLY=$(BUILDPY3) \
 	JAVA_8_ONLY=$(JAVA_8_ONLY) \
 	JAVA_7_ONLY=$(JAVA_7_ONLY)
 
@@ -231,7 +236,28 @@ CLOBBERFILES= $(PDIR) proto_list_$(PKGMACH) install-$(PKGMACH).out \
 # build environment and then reference (implicitly or explicitly) the all
 # or install targets.
 #
-MANIFESTS :sh= (cd manifests; print *.mf)
+# We want some manifests to optionally build based on environment options, so
+# those are excluded when generating the list of manifests and added back in if
+# necessary. We also want a relatively easy way to add files to the list of
+# manifests given special treatment. Add any other special ones to the
+# SPECIAL_MANIFESTS variable. It can contain wildcards in regexp form, i.e.
+# SUNW.* as one useful example.
+#
+SPECIAL_MANIFESTS = system-library-python-.*
+LIST_MANIFESTS_CMD = (cd manifests ; /usr/bin/ls -1 *.mf |\
+	$(SED) $(SPECIAL_MANIFESTS:%=-e '/^%$$/d') )
+MANIFESTS = $(LIST_MANIFESTS_CMD:sh)
+
+# Conditionally add back python modules
+$(BUILDPY2) MANIFESTS += \
+	system-library-python-libbe-2.mf \
+	system-library-python-solaris-2.mf \
+	system-library-python-zfs-2.mf
+$(BUILDPY3) MANIFESTS += \
+	system-library-python-libbe-3.mf \
+	system-library-python-solaris-3.mf \
+	system-library-python-zfs-3.mf
+
 PKGS= $(MANIFESTS:%.mf=%)
 DEP_PKGS= $(PKGS:%=$(PDIR)/%.dep)
 PROC_PKGS= $(PKGS:%=$(PDIR)/%.mog)
