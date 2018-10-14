@@ -21,7 +21,8 @@
 # Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # Copyright 2015 Nexenta Systems, Inc.  All rights reserved.
 # Copyright 2012 Joshua M. Clulow <josh@sysmgr.org>
-# Copyright 2016, OmniTI Computer Consulting, Inc. All rights reserved.
+# Copyright 2015, OmniTI Computer Consulting, Inc. All rights reserved.
+# Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
 #
 
 # Configuration variables for the runtime environment of the nightly
@@ -31,7 +32,7 @@
 # will contain the resulting archives. It is based off the onnv
 # release. It sets NIGHTLY_OPTIONS to make nightly do:
 #       DEBUG build only (-D, -F)
-#       do not bringover (aka. pull or clone) from the parent (-n)
+#       do not bringover from the parent (-n)
 #       runs 'make check' (-C)
 #       checks for new interfaces in libraries (-A)
 #       runs lint in usr/src (-l plus the LINTDIRS variable)
@@ -40,28 +41,16 @@
 #       checks for changes in ELF runpaths (-r)
 #       build and use this workspace's tools in $SRC/tools (-t)
 #
-# - This file is sourced by "bldenv.sh" and "nightly.sh" and should not 
+# - This file is sourced by "bldenv.sh" and "nightly.sh" and should not
 #   be executed directly.
 # - This script is only interpreted by ksh93 and explicitly allows the
 #   use of ksh93 language extensions.
 #
 export NIGHTLY_OPTIONS='-FnCDAlmprt'
 
-#
-# -- PLEASE READ THIS --
-#
-# The variables  GATE and CODEMGR_WS must always be customised to
-# match your workspace/gate location!!
-#
-# -- PLEASE READ THIS --
-#
-
-# This is a variable for the rest of the script - GATE doesn't matter to
-# nightly itself
-export GATE='testws'
-
-# CODEMGR_WS - where is your workspace at (or what should nightly name it)
-export CODEMGR_WS="$HOME/ws/$GATE"
+# CODEMGR_WS - where is your workspace at
+#export CODEMGR_WS="$HOME/ws/illumos-gate"
+export CODEMGR_WS="`git rev-parse --show-toplevel`"
 
 # Maximum number of dmake jobs.  The recommended number is 2 + NCPUS,
 # where NCPUS is the number of logical CPUs on your build system.
@@ -73,7 +62,7 @@ function maxjobs
 
 	ncpu=$(builtin getconf ; getconf 'NPROCESSORS_ONLN')
 	(( maxjobs=ncpu + 2 ))
-	
+
 	# Throttle number of parallel jobs launched by dmake to a value which
 	# gurantees that all jobs have enough memory. This was added to avoid
 	# excessive paging/swapping in cases of virtual machine installations
@@ -88,7 +77,7 @@ function maxjobs
 		# the value matched by ([[:digit:]]+), i.e. the amount of
 		# memory installed
 		physical_memory="10#${.sh.match[1]}"
-		
+
 		((
 			max_jobs_per_memory=round(physical_memory/min_mem_per_job) ,
 			maxjobs=fmax(2, fmin(maxjobs, max_jobs_per_memory))
@@ -108,6 +97,9 @@ ONBLD_BIN='/opt/onbld/bin'
 # for the options that deal with the parent workspace (such as where the
 # proto area will go).
 export PARENT_WS=''
+
+# CLONE_WS is the workspace nightly should do a bringover from.
+#export CLONE_WS='ssh://anonhg@hg.illumos.org/illumos-gate'
 
 # The bringover, if any, is done as STAFFER.
 # Set STAFFER to your own login as gatekeeper or developer
@@ -132,13 +124,11 @@ export LOGFILE="$ATLOG/nightly.log"
 export MACH="$(uname -p)"
 
 #
-#  The following two macros are the closed/crypto binaries.  Once
-#  Illumos has totally freed itself, we can remove these references.
-#  Until then, the developer/illumos-closed package in OmniOS places these
-#  in the location below.
+#  The following macro points to the closed binaries.  Once illumos has
+#  totally freed itself, we can remove this reference.
 #
 # Location of encumbered binaries.
-export ON_CLOSED_BINS="/opt/onbld/closed"
+export ON_CLOSED_BINS="$CODEMGR_WS/closed"
 
 # REF_PROTO_LIST - for comparing the list of stuff in your proto area
 # with. Generally this should be left alone, since you want to see differences
@@ -157,14 +147,7 @@ export MULTI_PROTO="no"
 # when the release slips (nah) or you move an environment file to a new
 # release
 #
-#VERSION=$GATE
-
-# VERSION for OmniOS uses the git ID of the repo. Don't use this if you aren't
-# using git for $GATE, or if $GATE isn't created yet.
-
-ref=`cd $CODEMGR_WS; git symbolic-ref --quiet HEAD`
-commit=`cd $CODEMGR_WS; git log --pretty=format:'%h' -n 1`
-export VERSION=`echo omnios-${ref#refs/heads/}-$commit | tr '/' '-'`
+export VERSION="`git describe --long --all HEAD | cut -d/ -f2-`"
 
 #
 # the RELEASE and RELEASE_DATE variables are set in Makefile.master;
@@ -209,17 +192,38 @@ export UT_NO_USAGE_TRACKING='1'
 # Alternately, you can set ONBLD_TOOLS to where you keep the contents of
 # SUNWonbld and SPRO_ROOT to where you keep the compilers.  SPRO_VROOT
 # exists to make it easier to test new versions of the compiler.
-#
-# In OmniOS, we only use SPRO_ROOT for lint, which is in the
-# developer/sunstudio12.1 package.
 export BUILD_TOOLS='/opt'
-export SPRO_ROOT='/opt/sunstudio12.1'
+#export ONBLD_TOOLS='/opt/onbld'
+export SPRO_ROOT='/opt/SUNWspro'
+export SPRO_VROOT="$SPRO_ROOT"
 
-# Since we only use SPRO_ROOT for lint, we need to tell nightly to use gcc.
-GNUC_ROOT=/opt/gcc-4.4.4/;           export GNUC_ROOT
-__GNUC="";           export __GNUC
-CW_NO_SHADOW=1;     export CW_NO_SHADOW
-ONLY_LINT_DEFS=-I${SPRO_ROOT}/sunstudio12.1/prod/include/lint; export ONLY_LINT_DEFS
+# Compilers may be specified using the following variables:
+# PRIMARY_CC	- primary C compiler
+# PRIMARY_CCC	- primary C++ compiler
+#
+# SHADOW_CCS    - list of shadow C compilers
+# SHADOW_CCCS	- list of shadow C++ compilers
+#
+# Each entry has the form <name>,<path to binary>,<style> where name is a
+# free-form name (possibly used in the makefiles to guard options), path is
+# the path to the executable.  style is the 'style' of command line taken by
+# the compiler, currently either gnu (or gcc) or sun (or cc), which is also
+# used by Makefiles to guard options.
+#
+# __SUNC and __GNUC must still be set to reflect the style of the primary
+# compiler (and to influence the default primary, otherwise)
+#
+# for example:
+# export PRIMARY_CC=gcc4,/opt/gcc/4.4.4/bin/gcc,gnu
+# export PRIMARY_CCC=gcc4,/opt/gcc/4.4.4/bin/g++,gnu
+# export SHADOW_CCS=studio12,/opt/SUNWspro/bin/cc,sun
+# export SHADOW_CCCS=studio12,/opt/SUNWspro/bin/CC,sun
+#
+# There can be several space-separated entries in SHADOW_* to run multiple
+# shadow compilers.
+#
+# To disable shadow compilation, unset SHADOW_* or set them to the empty string.
+#
 
 # This goes along with lint - it is a series of the form "A [y|n]" which
 # means "go to directory A and run 'make lint'" Then mail me (y) the
@@ -240,15 +244,31 @@ ONLY_LINT_DEFS=-I${SPRO_ROOT}/sunstudio12.1/prod/include/lint; export ONLY_LINT_
 # don't want to bother providing the CUPS headers this needs.
 #export ENABLE_SMB_PRINTING=
 
-# If your distro uses certain versions of Perl, make sure either
-# Makefile.master contains your new defaults OR your .env file sets them.
-# The OmniOS illumos version has these set already.
-#export PERL_VERSION=5.28
+# If your distro uses certain versions of Perl, make sure either Makefile.master
+# contains your new defaults OR your .env file sets them.
+# These are how you would override for building on OmniOS r151012, for example.
+#export PERL_VERSION=5.16.1
 #export PERL_ARCH=i86pc-solaris-thread-multi-64int
-#export PERL_PKGVERS=
+#export PERL_PKGVERS=-5161
 
-# To build IPS packages for the version you wish to update, ONNV_BUILDNUM must
-# match the version you're on.  Find this in /etc/release, and lose the 'r'.
+######################################################################
+# OmniOS-specific overrides
 
-# Current bloody is r151027, so use '151027'.
-export ONNV_BUILDNUM=151027
+export GNUC_ROOT=/opt/gcc-4.4.4/
+export SPRO_ROOT=/opt/sunstudio12.1
+export SPRO_VROOT="$SPRO_ROOT"
+export ONLY_LINT_DEFS="-I${SPRO_ROOT}/sunstudio12.1/prod/include/lint"
+export ON_CLOSED_BINS=/opt/onbld/closed
+
+export __GNUC=
+export PRIMARY_CC=gcc4,/opt/gcc-4.4.4/bin/gcc,gnu
+export PRIMARY_CCC=gcc4,/opt/gcc-4.4.4/bin/g++,gnu
+# export SHADOW_CCS=gcc7,/opt/gcc-7/bin/gcc,gnu
+# export SHADOW_CCCS=gcc7,/opt/gcc-7/bin/g++,gnu
+
+_branch=`git -C $CODEMGR_WS rev-parse --abbrev-ref HEAD`
+_hash=`git -C $CODEMGR_WS rev-parse --short HEAD`
+export VERSION=`echo omnios-$_branch-$_hash | tr '/' '-'`
+
+export ONNV_BUILDNUM=`grep '^VERSION=r' /etc/os-release | cut -c10-`
+
