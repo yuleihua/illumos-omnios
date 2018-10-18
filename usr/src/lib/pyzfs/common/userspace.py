@@ -115,7 +115,7 @@ def process_one_raw(acct, options, prop, elem):
 		except KeyError:
 			pass;
 	key = (isgroup, domain, rid)
-		
+
 	try:
 		v = acct[key]
 	except KeyError:
@@ -241,6 +241,6 @@ def do_userspace():
 		return l
 
 	t = zfs.table.Table(options.fields, rjustfields)
-	for val in acct.itervalues():
+	for val in acct.values():
 		t.addline(cmpkey(val), val)
 	t.printme(not options.noheaders)

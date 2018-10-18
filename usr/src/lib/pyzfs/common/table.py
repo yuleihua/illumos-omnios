@@ -34,7 +34,7 @@ class Table:
 		self.rjustfields = rjustfields
 		self.maxfieldlen = dict.fromkeys(fields, 0)
 		self.lines = list()
-	
+
 	def __updatemax(self, k, v):
 		self.maxfieldlen[k] = max(self.maxfieldlen.get(k, None), v)
 
@@ -46,6 +46,8 @@ class Table:
 			v = str(values[f])
 			va.append(v)
 			self.__updatemax(f, len(v))
+		if sortkey == None:
+			sortkey = []
 		self.lines.append((sortkey, va))
 
 	def printme(self, headers=True):
