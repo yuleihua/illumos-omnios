@@ -1771,7 +1771,7 @@ print_field(psinfo_t *psinfo, struct field *f, const char *ttyp)
 		char *path = NULL;
 		int fd;
 
-		if (asprintf(&path, "/proc/%d/lwp/%d/lwpname",
+		if (asprintf(&path, "%s/%d/lwp/%d/lwpname", procdir,
 		    (int)psinfo->pr_pid, (int)psinfo->pr_lwp.pr_lwpid) != -1 &&
 		    (fd = open(path, O_RDONLY)) != -1) {
 			(void) read(fd, lwpname, sizeof (lwpname));

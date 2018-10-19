@@ -25,8 +25,6 @@
  */
 /*
  * Copyright 2012 DEY Storage Systems, Inc.  All rights reserved.
- */
-/*
  * Copyright 2018 Joyent, Inc.
  */
 

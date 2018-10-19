@@ -2411,6 +2411,18 @@ __nthreads(void)
 	return (curthread->ul_uberdata->nthreads);
 }
 
+/* "/native/proc/self/lwp/%u/lwpname" w/o stdio */
+static void
+lwpname_path(pthread_t tid, char *buf, size_t bufsize)
+{
+	char *brand_root = curthread->ul_uberdata->ub_broot;
+
+	(void) strlcpy(buf, brand_root == NULL ? "" : brand_root, bufsize);
+	(void) strlcat(buf, "/proc/self/lwp/", bufsize);
+	ultos((uint64_t)tid, 10, buf + strlen(buf));
+	(void) strlcat(buf, "/lwpname", bufsize);
+}
+
 #pragma weak pthread_setname_np = thr_setname
 int
 thr_setname(pthread_t tid, const char *name)
@@ -2429,10 +2441,7 @@ thr_setname(pthread_t tid, const char *name)
 	if (len > THREAD_NAME_MAX)
 		return (ERANGE);
 
-	/* "/proc/self/lwp/%u/lwpname" w/o stdio */
-	(void) strlcpy(path, "/proc/self/lwp/", sizeof (path));
-	ultos((uint64_t)tid, 10, path + strlen(path));
-	(void) strlcat(path, "/lwpname", sizeof (path));
+	lwpname_path(tid, path, sizeof (path));
 
 	if ((fd = __open(path, O_WRONLY, 0)) < 0) {
 		if (errno == ENOENT)
@@ -2465,10 +2474,7 @@ thr_getname(pthread_t tid, char *buf, size_t bufsize)
 	if (buf == NULL)
 		return (EINVAL);
 
-	/* "/proc/self/lwp/%u/name" w/o stdio */
-	(void) strlcpy(path, "/proc/self/lwp/", sizeof (path));
-	ultos((uint64_t)tid, 10, path + strlen(path));
-	(void) strlcat(path, "/lwpname", sizeof (path));
+	lwpname_path(tid, path, sizeof (path));
 
 	if ((fd = __open(path, O_RDONLY, 0)) < 0) {
 		if (errno == ENOENT)

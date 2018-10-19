@@ -2195,7 +2195,7 @@ reaper(nsc_ctx_t *ctx)
 	ulong_t		nsc_entries;
 	char		*me = "reaper";
 
-	(void) thr_setname(thr_self(), "reaper");
+	(void) thr_setname(thr_self(), me);
 
 	for (;;) {
 		(void) mutex_lock(&ctx->stats_mutex);
