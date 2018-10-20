@@ -1181,9 +1181,9 @@ mountpoint_cmp(const void *arga, const void *argb)
 	zoneda = zfs_prop_get_int(za, ZFS_PROP_ZONED);
 	zonedb = zfs_prop_get_int(zb, ZFS_PROP_ZONED);
 	if (zoneda && !zonedb)
-		return 1;
+		return (1);
 	if (!zoneda && zonedb)
-		return -1;
+		return (-1);
 
 	gota = (zfs_get_type(za) == ZFS_TYPE_FILESYSTEM);
 	if (gota) {
