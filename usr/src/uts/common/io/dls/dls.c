@@ -251,6 +251,7 @@ dls_promisc(dld_str_t *dsp, uint32_t new_flags)
 	uint32_t new_type = new_flags &
 	    ~(DLS_PROMISC_RX_ONLY | DLS_PROMISC_FIXUPS);
 	mac_client_promisc_type_t mptype = MAC_CLIENT_PROMISC_ALL;
+	uint16_t mac_flags = 0;
 
 	ASSERT(MAC_PERIM_HELD(dsp->ds_mh));
 	ASSERT(!(new_flags & ~(DLS_PROMISC_SAP | DLS_PROMISC_MULTI |
@@ -297,9 +298,7 @@ dls_promisc(dld_str_t *dsp, uint32_t new_flags)
 		 */
 		dsp->ds_promisc = new_flags;
 		err = mac_promisc_add(dsp->ds_mch, mptype,
-		    dls_rx_promisc, dsp, &dsp->ds_mph,
-		    (new_flags != DLS_PROMISC_SAP) ? 0 :
-		    MAC_PROMISC_FLAGS_NO_PHYS);
+		    dls_rx_promisc, dsp, &dsp->ds_mph, mac_flags);
 		if (err != 0) {
 			dsp->ds_promisc = old_flags;
 			return (err);
@@ -337,7 +336,7 @@ dls_promisc(dld_str_t *dsp, uint32_t new_flags)
 		/* Honors both after-remove and before-add semantics! */
 		dsp->ds_promisc = new_flags;
 		err = mac_promisc_add(dsp->ds_mch, mptype,
-		    dls_rx_promisc, dsp, &dsp->ds_mph, 0);
+		    dls_rx_promisc, dsp, &dsp->ds_mph, mac_flags);
 		if (err != 0)
 			dsp->ds_promisc = old_flags;
 	} else {
