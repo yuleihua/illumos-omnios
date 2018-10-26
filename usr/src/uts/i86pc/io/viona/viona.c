@@ -279,6 +279,8 @@
 #define	VIRTIO_NET_HDR_F_NEEDS_CSUM	(1 << 0)
 #define	VIRTIO_NET_HDR_F_DATA_VALID	(1 << 1)
 
+#define	VIRTIO_NET_HDR_GSO_NONE		0
+#define	VIRTIO_NET_HDR_GSO_TCPV4	1
 
 #define	VRING_AVAIL_F_NO_INTERRUPT	1
 
@@ -287,20 +289,26 @@
 #define	BNXE_NIC_DRIVER		"bnxe"
 
 /*
- * Host capabilities
+ * Feature bits. See section 5.1.3 of the VIRTIO 1.0 spec.
  */
-#define	VIRTIO_NET_F_CSUM	(1 <<  0)
-#define	VIRTIO_NET_F_GUEST_CSUM	(1 <<  1)
-#define	VIRTIO_NET_F_MAC	(1 <<  5) /* host supplies MAC */
+#define	VIRTIO_NET_F_CSUM	(1 << 0)
+#define	VIRTIO_NET_F_GUEST_CSUM	(1 << 1)
+#define	VIRTIO_NET_F_MAC	(1 << 5) /* host supplies MAC */
+#define	VIRTIO_NET_F_GUEST_TSO4	(1 << 7) /* guest can accept TSO */
+#define	VIRTIO_NET_F_HOST_TSO4	(1 << 11) /* host can accept TSO */
 #define	VIRTIO_NET_F_MRG_RXBUF	(1 << 15) /* host can merge RX buffers */
 #define	VIRTIO_NET_F_STATUS	(1 << 16) /* config status field available */
 #define	VIRTIO_F_RING_NOTIFY_ON_EMPTY	(1 << 24)
 #define	VIRTIO_F_RING_INDIRECT_DESC	(1 << 28)
 #define	VIRTIO_F_RING_EVENT_IDX		(1 << 29)
 
+/*
+ * Host capabilities.
+ */
 #define	VIONA_S_HOSTCAPS	(	\
 	VIRTIO_NET_F_GUEST_CSUM |	\
 	VIRTIO_NET_F_MAC |		\
+	VIRTIO_NET_F_GUEST_TSO4 |	\
 	VIRTIO_NET_F_MRG_RXBUF |	\
 	VIRTIO_NET_F_STATUS |		\
 	VIRTIO_F_RING_NOTIFY_ON_EMPTY |	\
@@ -927,6 +935,13 @@ viona_ioctl(dev_t dev, int cmd, intptr_t data, int md, cred_t *cr, int *rv)
 			break;
 		}
 		val &= (VIONA_S_HOSTCAPS | link->l_features_hw);
+
+		if ((val & VIRTIO_NET_F_CSUM) == 0)
+			val &= ~VIRTIO_NET_F_HOST_TSO4;
+
+		if ((val & VIRTIO_NET_F_GUEST_CSUM) == 0)
+			val &= ~VIRTIO_NET_F_GUEST_TSO4;
+
 		link->l_features = val;
 		break;
 	case VNA_IOC_RING_INIT:
@@ -999,6 +1014,7 @@ viona_get_mac_capab(viona_link_t *link)
 {
 	mac_handle_t mh = link->l_mh;
 	uint32_t cap = 0;
+	mac_capab_lso_t lso_cap;
 
 	link->l_features_hw = 0;
 	if (mac_capab_get(mh, MAC_CAPAB_HCKSUM, &cap)) {
@@ -1010,6 +1026,19 @@ viona_get_mac_capab(viona_link_t *link)
 			link->l_features_hw |= VIRTIO_NET_F_CSUM;
 		}
 		link->l_cap_csum = cap;
+	}
+
+	if ((link->l_features_hw & VIRTIO_NET_F_CSUM) &&
+	    mac_capab_get(mh, MAC_CAPAB_LSO, &lso_cap)) {
+		/*
+		 * Virtio doesn't allow for negotiating a maximum LSO
+		 * packet size. We have to assume that the guest may
+		 * send a maximum length IP packet. Make sure the
+		 * underlying MAC can handle an LSO of this size.
+		 */
+		if ((lso_cap.lso_flags & LSO_TX_BASIC_TCP_IPV4) &&
+		    lso_cap.lso_basic_tcp_ipv4.lso_max >= IP_MAXPACKET)
+			link->l_features_hw |= VIRTIO_NET_F_HOST_TSO4;
 	}
 }
 
@@ -2054,6 +2083,7 @@ viona_recv_plain(viona_vring_t *ring, const mblk_t *mp, size_t msz)
 	size_t len, copied = 0;
 	caddr_t buf = NULL;
 	boolean_t end = B_FALSE;
+	const uint32_t features = ring->vr_link->l_features;
 
 	ASSERT(msz >= MIN_BUF_SIZE);
 
@@ -2108,8 +2138,14 @@ viona_recv_plain(viona_vring_t *ring, const mblk_t *mp, size_t msz)
 	copied += hdr_sz;
 
 	/* Add chksum bits, if needed */
-	if ((ring->vr_link->l_features & VIRTIO_NET_F_GUEST_CSUM) != 0) {
+	if ((features & VIRTIO_NET_F_GUEST_CSUM) != 0) {
 		uint32_t cksum_flags;
+
+		if (((features & VIRTIO_NET_F_GUEST_TSO4) != 0) &&
+		    ((DB_CKSUMFLAGS(mp) & HW_LSO) != 0)) {
+			hdr->vrh_gso_type |= VIRTIO_NET_HDR_GSO_TCPV4;
+			hdr->vrh_gso_size = DB_LSOMSS(mp);
+		}
 
 		mac_hcksum_get((mblk_t *)mp, NULL, NULL, NULL, NULL,
 		    &cksum_flags);
@@ -2143,6 +2179,7 @@ viona_recv_merged(viona_vring_t *ring, const mblk_t *mp, size_t msz)
 	struct virtio_net_mrgrxhdr *hdr = NULL;
 	const size_t hdr_sz = sizeof (struct virtio_net_mrgrxhdr);
 	boolean_t end = B_FALSE;
+	const uint32_t features = ring->vr_link->l_features;
 
 	ASSERT(msz >= MIN_BUF_SIZE);
 
@@ -2248,8 +2285,14 @@ viona_recv_merged(viona_vring_t *ring, const mblk_t *mp, size_t msz)
 	}
 
 	/* Add chksum bits, if needed */
-	if ((ring->vr_link->l_features & VIRTIO_NET_F_GUEST_CSUM) != 0) {
+	if ((features & VIRTIO_NET_F_GUEST_CSUM) != 0) {
 		uint32_t cksum_flags;
+
+		if (((features & VIRTIO_NET_F_GUEST_TSO4) != 0) &&
+		    ((DB_CKSUMFLAGS(mp) & HW_LSO) != 0)) {
+			hdr->vrh_gso_type |= VIRTIO_NET_HDR_GSO_TCPV4;
+			hdr->vrh_gso_size = DB_LSOMSS(mp);
+		}
 
 		mac_hcksum_get((mblk_t *)mp, NULL, NULL, NULL, NULL,
 		    &cksum_flags);
@@ -2293,7 +2336,28 @@ viona_rx_common(viona_vring_t *ring, mblk_t *mp, boolean_t is_loopback)
 	mblk_t *mpdrop = NULL, **mpdrop_prevp = &mpdrop;
 	const boolean_t do_merge =
 	    ((link->l_features & VIRTIO_NET_F_MRG_RXBUF) != 0);
+	const boolean_t guest_csum =
+	    ((link->l_features & VIRTIO_NET_F_GUEST_CSUM) != 0);
+	const boolean_t guest_tso4 =
+	    ((link->l_features & VIRTIO_NET_F_GUEST_TSO4) != 0);
+
 	size_t nrx = 0, ndrop = 0;
+
+	/*
+	 * The mac_hw_emul() function, by design, doesn't predicate on
+	 * HW_LOCAL_MAC. Since we are in Rx context we know that any
+	 * LSO packet must also be from a same-machine sender. We take
+	 * advantage of that and forgoe writing a manual loop to
+	 * predicate on HW_LOCAL_MAC.
+	 *
+	 * For checksum emulation we need to predicate on HW_LOCAL_MAC
+	 * to avoid calling mac_hw_emul() on packets that don't need
+	 * it (thanks to the fact that HCK_IPV4_HDRCKSUM and
+	 * HCK_IPV4_HDRCKSUM_OK use the same value). Therefore, we do
+	 * the checksum emulation in the second loop.
+	 */
+	if (!guest_tso4)
+		mac_hw_emul(&mp, NULL, NULL, MAC_LSO_EMUL);
 
 	while (mp != NULL) {
 		mblk_t *next, *pad = NULL;
@@ -2302,6 +2366,25 @@ viona_rx_common(viona_vring_t *ring, mblk_t *mp, boolean_t is_loopback)
 
 		next = mp->b_next;
 		mp->b_next = NULL;
+
+		if (DB_CKSUMFLAGS(mp) & HW_LOCAL_MAC) {
+			/*
+			 * The VIRTIO_NET_HDR_F_DATA_VALID flag only
+			 * covers the ULP checksum -- so we still have
+			 * to populate the IP header checksum.
+			 */
+			if (guest_csum) {
+				mac_hw_emul(&mp, NULL, NULL, MAC_IPCKSUM_EMUL);
+			} else {
+				mac_hw_emul(&mp, NULL, NULL, MAC_HWCKSUM_EMUL);
+			}
+
+			if (mp == NULL) {
+				mp = next;
+				continue;
+			}
+		}
+
 		size = msgsize(mp);
 
 		/*
@@ -2576,14 +2659,22 @@ viona_tx_csum(viona_vring_t *ring, const struct virtio_net_hdr *hdr,
 	const struct ether_header *eth;
 	uint_t eth_len = sizeof (struct ether_header);
 	ushort_t ftype;
+	ipha_t *ipha = NULL;
+	uint8_t ipproto = IPPROTO_NONE; /* NONE is not exactly right, but ok */
+	uint16_t flags = 0;
 
-	eth = (const struct ether_header *)mp->b_rptr;
 	if (MBLKL(mp) < sizeof (*eth)) {
 		/* Buffers shorter than an ethernet header are hopeless */
 		return (B_FALSE);
 	}
 
+	/*
+	 * This is guaranteed to be safe thanks to the header copying
+	 * done in viona_tx().
+	 */
+	eth = (const struct ether_header *)mp->b_rptr;
 	ftype = ntohs(eth->ether_type);
+
 	if (ftype == ETHERTYPE_VLAN) {
 		const struct ether_vlan_header *veth;
 
@@ -2593,22 +2684,97 @@ viona_tx_csum(viona_vring_t *ring, const struct virtio_net_hdr *hdr,
 		ftype = ntohs(veth->ether_type);
 	}
 
+	if (ftype == ETHERTYPE_IP) {
+		ipha = (ipha_t *)(mp->b_rptr + eth_len);
+
+		ipproto = ipha->ipha_protocol;
+	} else if (ftype == ETHERTYPE_IPV6) {
+		ip6_t *ip6h = (ip6_t *)(mp->b_rptr + eth_len);
+
+		ipproto = ip6h->ip6_nxt;
+	}
+
+	/*
+	 * We ignore hdr_len because the spec says it can't be
+	 * trusted. Besides, our own stack will determine the header
+	 * boundary.
+	 */
+	if ((link->l_cap_csum & HCKSUM_INET_PARTIAL) != 0 &&
+	    (hdr->vrh_gso_type & VIRTIO_NET_HDR_GSO_TCPV4) != 0 &&
+	    ftype == ETHERTYPE_IP) {
+		uint16_t	*cksump;
+		uint32_t	cksum;
+		ipaddr_t	src = ipha->ipha_src;
+		ipaddr_t	dst = ipha->ipha_dst;
+
+		/*
+		 * Our native IP stack doesn't set the L4 length field
+		 * of the pseudo header when LSO is in play. Other IP
+		 * stacks, e.g. Linux, do include the length field.
+		 * This is a problem because the hardware expects that
+		 * the length field is not set. When it is set it will
+		 * cause an incorrect TCP checksum to be generated.
+		 * The reason this works in Linux is because Linux
+		 * corrects the pseudo-header checksum in the driver
+		 * code. In order to get the correct HW checksum we
+		 * need to assume the guest's IP stack gave us a bogus
+		 * TCP partial checksum and calculate it ourselves.
+		 */
+		cksump = IPH_TCPH_CHECKSUMP(ipha, IPH_HDR_LENGTH(ipha));
+		cksum = IP_TCP_CSUM_COMP;
+		cksum += (dst >> 16) + (dst & 0xFFFF) +
+		    (src >> 16) + (src & 0xFFFF);
+		cksum = (cksum & 0xFFFF) + (cksum >> 16);
+		*(cksump) = (cksum & 0xFFFF) + (cksum >> 16);
+
+		/*
+		 * Since viona is a "legacy device", the data stored
+		 * by the driver will be in the guest's native endian
+		 * format (see sections 2.4.3 and 5.1.6.1 of the
+		 * VIRTIO 1.0 spec for more info). At this time the
+		 * only guests using viona are x86 and we can assume
+		 * little-endian.
+		 */
+		lso_info_set(mp, LE_16(hdr->vrh_gso_size), HW_LSO);
+
+		/*
+		 * Hardware, like ixgbe, expects the client to request
+		 * IP header checksum offload if it's sending LSO (see
+		 * ixgbe_get_context()). Unfortunately, virtio makes
+		 * no allowances for negotiating IP header checksum
+		 * and HW offload, only TCP checksum. We add the flag
+		 * and zero-out the checksum field. This mirrors the
+		 * behavior of our native IP stack (which does this in
+		 * the interest of HW that expects the field to be
+		 * zero).
+		 */
+		flags |= HCK_IPV4_HDRCKSUM;
+		ipha->ipha_hdr_checksum = 0;
+	}
+
+	/*
+	 * Use DB_CKSUMFLAGS instead of mac_hcksum_get() to make sure
+	 * HW_LSO, if present, is not lost.
+	 */
+	flags |= DB_CKSUMFLAGS(mp);
+
 	/*
 	 * Partial checksum support from the NIC is ideal, since it most
 	 * closely maps to the interface defined by virtio.
 	 */
-	if ((link->l_cap_csum & HCKSUM_INET_PARTIAL) != 0) {
+	if ((link->l_cap_csum & HCKSUM_INET_PARTIAL) != 0 &&
+	    (ipproto == IPPROTO_TCP || ipproto == IPPROTO_UDP)) {
 		uint_t start, stuff, end;
 
 		/*
-		 * The lower-level driver is expecting these offsets to be
-		 * relative to the start of the L3 header rather than the
-		 * ethernet frame.
+		 * MAC expects these offsets to be relative to the
+		 * start of the L3 header rather than the L2 frame.
 		 */
 		start = hdr->vrh_csum_start - eth_len;
 		stuff = start + hdr->vrh_csum_offset;
 		end = len - eth_len;
-		mac_hcksum_set(mp, start, stuff, end, 0, HCK_PARTIALCKSUM);
+		flags |= HCK_PARTIALCKSUM;
+		mac_hcksum_set(mp, start, stuff, end, 0, flags);
 		return (B_TRUE);
 	}
 
@@ -2618,8 +2784,10 @@ viona_tx_csum(viona_vring_t *ring, const struct virtio_net_hdr *hdr,
 	 * checksum will need to calculated inline.
 	 */
 	if (ftype == ETHERTYPE_IP) {
-		if ((link->l_cap_csum & HCKSUM_INET_FULL_V4) != 0) {
-			mac_hcksum_set(mp, 0, 0, 0, 0, HCK_FULLCKSUM);
+		if ((link->l_cap_csum & HCKSUM_INET_FULL_V4) != 0 &&
+		    (ipproto == IPPROTO_TCP || ipproto == IPPROTO_UDP)) {
+			flags |= HCK_FULLCKSUM;
+			mac_hcksum_set(mp, 0, 0, 0, 0, flags);
 			return (B_TRUE);
 		}
 
@@ -2628,8 +2796,10 @@ viona_tx_csum(viona_vring_t *ring, const struct virtio_net_hdr *hdr,
 		VIONA_RING_STAT_INCR(ring, fail_hcksum);
 		return (B_FALSE);
 	} else if (ftype == ETHERTYPE_IPV6) {
-		if ((link->l_cap_csum & HCKSUM_INET_FULL_V6) != 0) {
-			mac_hcksum_set(mp, 0, 0, 0, 0, HCK_FULLCKSUM);
+		if ((link->l_cap_csum & HCKSUM_INET_FULL_V6) != 0 &&
+		    (ipproto == IPPROTO_TCP || ipproto == IPPROTO_UDP)) {
+			flags |= HCK_FULLCKSUM;
+			mac_hcksum_set(mp, 0, 0, 0, 0, flags);
 			return (B_TRUE);
 		}
 
