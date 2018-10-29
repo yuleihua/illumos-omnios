@@ -2919,7 +2919,7 @@ pr_write_lwpname(prnode_t *pnp, uio_t *uiop)
 	VERIFY3U(lwpname[THREAD_NAME_MAX - 1], ==, '\0');
 
 	for (size_t i = 0; lwpname[i] != '\0'; i++) {
-		if (!isprint(lwpname[i])) {
+		if (!ISPRINT(lwpname[i])) {
 			kmem_free(lwpname, THREAD_NAME_MAX);
 			return (EINVAL);
 		}

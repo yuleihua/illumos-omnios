@@ -296,9 +296,9 @@ PUB_PKGS= $(SYNTH_PKGS:%=$(PDIR)/%.pub) $(PKGS:%=$(PDIR)/%.pub)
 #
 # The meanings of each package status are as follows:
 #
-# 	PKGSTAT		meaning
-# 	----------	----------------------------------------------------
-# 	noincorp	Do not include in incorporation or group package
+#	PKGSTAT		meaning
+#	----------	----------------------------------------------------
+#	noincorp	Do not include in incorporation or group package
 #	obsolete	Include in incorporation, but not group package
 #	renamed		Include in incorporation, but not group package
 #	current		Include in incorporation and group package
@@ -337,7 +337,7 @@ PKGLISTS= \
 #		| use pkgsend to publish the package
 #		|
 #	placeholder to indicate successful publication (mypkg.pub)
-#	
+#
 # * This may be suppressed via SUPPRESSPKGDEP.  The resulting
 #   packages will install correctly, but care must be taken to
 #   install all dependencies, because pkg will not have the input
@@ -377,16 +377,16 @@ PKGLISTS= \
 #		 |		|
 #		 |		| pkgsend publish
 #		 |		|
-#	  repositories 	    resolved dependencies
+#	  repositories	    resolved dependencies
 #		 |			|
 # pkgsend	 |			| pkgdepend resolve
-# create-repository	 	 	|
+# create-repository			|
 #		 |		generated dependencies
 #	 repo directories		|
 #					| pkgdepend
 #					|
 #				processed manifests
-# 
+#
 
 ALL_TARGETS= $(PROC_SYNTH_PKGS) proto_list_$(PKGMACH)
 
@@ -712,7 +712,7 @@ protocmp: makesilent
 
 pmodes: makesilent
 	@validate_pkg -a $(PKGMACH) -M -m $(PDIR) \
-		-e $(CODEMGR_WS)/exception_lists/pmodes 
+		-e $(CODEMGR_WS)/exception_lists/pmodes
 
 check: protocmp pmodes
 

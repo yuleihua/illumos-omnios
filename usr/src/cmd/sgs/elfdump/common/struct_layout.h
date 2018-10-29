@@ -29,10 +29,6 @@
  * Copyright 2018 Joyent, Inc.
  */
 
-/*
- * Copyright 2018 Joyent, Inc.
- */
-
 #ifndef	_STRUCT_LAYOUT_H
 #define	_STRUCT_LAYOUT_H
 
