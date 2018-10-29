@@ -247,7 +247,7 @@ ddi_device_acc_attr_t emlxs_data_acc_attr = {
  */
 #if (EMLXS_MODREV == EMLXS_MODREV5)
 	static fc_fca_tran_t emlxs_fca_tran = {
-	FCTL_FCA_MODREV_5, 		/* fca_version, with SUN NPIV support */
+	FCTL_FCA_MODREV_5,		/* fca_version, with SUN NPIV support */
 	MAX_VPORTS,			/* fca numerb of ports */
 	sizeof (emlxs_buf_t),		/* fca pkt size */
 	2048,				/* fca cmd max */
@@ -261,7 +261,7 @@ ddi_device_acc_attr_t emlxs_data_acc_attr = {
 	&emlxs_dma_attr_fcip_rsp,	/* fca dma fcip rsp attributes */
 	&emlxs_dma_attr_1sg,		/* fca dma fcsm cmd attributes */
 	&emlxs_dma_attr,		/* fca dma fcsm rsp attributes */
-	&emlxs_data_acc_attr,   	/* fca access atributes */
+	&emlxs_data_acc_attr,		/* fca access atributes */
 	0,				/* fca_num_npivports */
 	{0, 0, 0, 0, 0, 0, 0, 0},	/* Physical port WWPN */
 	emlxs_fca_bind_port,
@@ -493,8 +493,8 @@ static struct modlinkage emlxs_modlinkage = {
 /*		FC_EXPLN_NONE,		FC_ACTION_RETRYABLE */
 
 emlxs_xlat_err_t emlxs_iostat_tbl[] = {
-/* 	{f/w code, pkt_state, pkt_reason, 	*/
-/* 		pkt_expln, pkt_action}		*/
+/*	{f/w code, pkt_state, pkt_reason,	*/
+/*		pkt_expln, pkt_action}		*/
 
 	/* 0x00 - Do not remove */
 	{IOSTAT_SUCCESS, FC_PKT_SUCCESS, FC_REASON_NONE,
@@ -1647,6 +1647,10 @@ emlxs_fca_bind_port(dev_info_t *dip, fc_fca_port_info_t *port_info,
 			(void) strlcpy(linkspeed, "16Gb", sizeof (linkspeed));
 			port_info->pi_port_state |= FC_STATE_16GBIT_SPEED;
 			break;
+		case LA_32GHZ_LINK:
+			(void) strlcpy(linkspeed, "32Gb", sizeof (linkspeed));
+			port_info->pi_port_state |= FC_STATE_32GBIT_SPEED;
+			break;
 		default:
 			(void) snprintf(linkspeed, sizeof (linkspeed),
 			    "unknown(0x%x)", hba->linkspeed);
@@ -1764,7 +1768,8 @@ emlxs_fca_bind_port(dev_info_t *dip, fc_fca_port_info_t *port_info,
 	/* Initialize the port attributes */
 	bzero(&port_info->pi_attrs, sizeof (port_info->pi_attrs));
 
-	(void) strncpy(port_info->pi_attrs.manufacturer, "Emulex",
+	(void) strncpy(port_info->pi_attrs.manufacturer,
+	    hba->model_info.manufacturer,
 	    (sizeof (port_info->pi_attrs.manufacturer)-1));
 
 	port_info->pi_rnid_params.status = FC_SUCCESS;
@@ -4324,6 +4329,9 @@ emlxs_fca_port_manage(opaque_t fca_port_handle, fc_fca_pm_t *pm)
 				break;
 			case LA_16GHZ_LINK:
 				*link_state |= FC_STATE_16GBIT_SPEED;
+				break;
+			case LA_32GHZ_LINK:
+				*link_state |= FC_STATE_32GBIT_SPEED;
 				break;
 			case LA_1GHZ_LINK:
 			default:
@@ -8930,7 +8938,7 @@ emlxs_send_ip(emlxs_port_t *port, emlxs_buf_t *sbp)
 	uint32_t	i;
 	NODELIST	*ndlp;
 	uint32_t	did;
-	int32_t 	rval;
+	int32_t		rval;
 
 	pkt = PRIV2PKT(sbp);
 	cp = &hba->chan[hba->channel_ip];
@@ -9031,7 +9039,7 @@ emlxs_send_els(emlxs_port_t *port, emlxs_buf_t *sbp)
 	uint32_t	did;
 	char		fcsp_msg[32];
 	int		rc;
-	int32_t 	rval;
+	int32_t		rval;
 	emlxs_config_t  *cfg = &CFG;
 
 	fcsp_msg[0] = 0;
@@ -9945,7 +9953,7 @@ emlxs_send_ct(emlxs_port_t *port, emlxs_buf_t *sbp)
 	NODELIST	*ndlp;
 	uint32_t	did;
 	CHANNEL		*cp;
-	int32_t 	rval;
+	int32_t		rval;
 
 	pkt = PRIV2PKT(sbp);
 	did = LE_SWAP24_LO(pkt->pkt_cmd_fhdr.d_id);
@@ -10057,7 +10065,7 @@ emlxs_send_ct_rsp(emlxs_port_t *port, emlxs_buf_t *sbp)
 	IOCB		*iocb;
 	uint32_t	*cmd;
 	SLI_CT_REQUEST	*CtCmd;
-	int32_t 	rval;
+	int32_t		rval;
 
 	pkt = PRIV2PKT(sbp);
 	CtCmd = (SLI_CT_REQUEST *)pkt->pkt_cmd;

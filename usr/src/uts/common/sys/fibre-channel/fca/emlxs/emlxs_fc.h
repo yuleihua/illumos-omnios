@@ -22,6 +22,7 @@
 /*
  * Copyright (c) 2004-2012 Emulex. All rights reserved.
  * Use is subject to license terms.
+ * Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
  */
 
 #ifndef _EMLXS_FC_H
@@ -494,12 +495,15 @@ typedef emlxs_fcip_nethdr_t NETHDR;
 #define	MEM_IPBUF	5	/* memory segment to hold IP buffer data */
 #define	MEM_CTBUF	6	/* memory segment to hold CT buffer data */
 #define	MEM_FCTBUF	7	/* memory segment to hold FCT buffer data */
+#define MEM_SGL1K	8	/* memory segment to hold 1K SGL entries */
+#define MEM_SGL2K	9	/* memory segment to hold 2K SGL entries */
+#define MEM_SGL4K	10	/* memory segment to hold 4K SGL entries */
 
 #ifdef SFCT_SUPPORT
-#define	FC_MAX_SEG	8
-#define	MEM_FCTSEG	10 /* must be greater than FC_MAX_SEG */
+#define	FC_MAX_SEG	11
+#define	MEM_FCTSEG	13 /* must be greater than FC_MAX_SEG */
 #else
-#define	FC_MAX_SEG	7
+#define	FC_MAX_SEG	10
 #endif /* SFCT_SUPPORT */
 
 
@@ -1849,6 +1853,7 @@ typedef struct emlxs_hba
 #define	FC_DUMP_SAFE		0x00010000	/* Safe to DUMP */
 #define	FC_DUMP_ACTIVE		0x00020000	/* DUMP in progress */
 #define	FC_NEW_FABRIC		0x00040000
+#define	FC_GPIO_LINK_UP		0x00080000
 
 #define	FC_SLIM2_MODE		0x00100000	/* SLIM in host memory */
 #define	FC_INTERLOCKED		0x00200000
@@ -2011,6 +2016,26 @@ typedef struct emlxs_hba
 	uint32_t	linkup_timer;
 	uint32_t	discovery_timer;
 	uint32_t	pkt_timer;
+
+	/* GPIO Management */
+	uint8_t		gpio_desired;
+	uint8_t		gpio_current;
+	uint8_t		gpio_bit;
+#define	EMLXS_GPIO_LO		0x01
+#define	EMLXS_GPIO_HI		0x02
+#define	EMLXS_GPIO_ACT		0x04
+#define	EMLXS_GPIO_LASER	0x08
+#define	EMLXS_GPIO_LOC		0x10
+
+	uint8_t		gpio_pin[4];
+
+#define	EMLXS_GPIO_PIN_LO		0
+#define	EMLXS_GPIO_PIN_HI		1
+#define	EMLXS_GPIO_PIN_ACT		2
+#define	EMLXS_GPIO_PIN_LASER		3
+
+	kmutex_t	gpio_lock;		/* Timer lock */
+	timeout_id_t	gpio_timer;
 
 	/* Power Management */
 	uint32_t	pm_state;
