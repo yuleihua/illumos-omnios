@@ -22,6 +22,7 @@
 /*
  * Copyright (c) 2004-2012 Emulex. All rights reserved.
  * Use is subject to license terms.
+ * Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
  */
 
 #ifndef _EMLXS_ADAPTERS_H
@@ -100,7 +101,7 @@ typedef enum emlxs_adapter
 	OCe11101,	/* Generic Single Channel */
 	OCe11102,	/* Generic Dual Channel */
 
-	/* Lancer FC (45) */
+	/* Lancer FC Gen5 HBAs (45) */
 	LPe16000,	/* Generic Single Channel FC */
 	LPe1600X,	/* Generic Multi Channel FC */
 	LPem16002_FC_O,	/* Oracle branded */
@@ -108,7 +109,23 @@ typedef enum emlxs_adapter
 	LPe16002_FC_SP1, /* Oracle excluded - Spare */
 	LPe16002_FC_SP2, /* Oracle excluded - Spare */
 
-	/* Lancer FCoE (51) */
+	/* Lancer FC Gen6 HBAs */
+	LPe31000_M6_L,	/* Single port 16Gb, Lenovo-branded */
+	LPe32000,	/* Generic Single Channel FC */
+	LPe3200X,	/* Generic Multi Channel FC */
+
+	/* Celerity 16 FC Gen5 */
+	CelerityFC161E,
+	CelerityFC162E,
+	CelerityFC164E,
+
+	/* Celerity 16 FC Gen6 */
+	CelerityFC162P,
+	CelerityFC164P,
+	CelerityFC321E,
+	CelerityFC322E,
+
+	/* Lancer FCoE */
 	OCe15100,	/* Generic Single Channel FCOE */
 	OCe1510X,	/* Generic Multi Channel FCOE */
 	LPem16002_FE_O,	/* Oracle branded */
@@ -123,6 +140,7 @@ typedef enum emlxs_adapter
 
 
 #define	PCI_VENDOR_ID_EMULEX		0x10df
+#define	PCI_VENDOR_ID_ATTO		0x117c
 
 /* Subsystem Vendor IDs */
 #define	PCI_SSVID_EMULEX		0x10df
@@ -131,6 +149,7 @@ typedef enum emlxs_adapter
 #define	PCI_SSVID_FUJITSU		0x1734
 #define	PCI_SSVID_CISCO			0x1137
 #define	PCI_SSVID_HITACHI		0x1054
+#define	PCI_SSVID_ATTO			0x117c
 
 
 /* PCI_DEVICE_IDs & PCI_SSDIDs */
@@ -256,7 +275,7 @@ typedef enum emlxs_adapter
 #define	PCI_DEVICE_ID_BE4		0x0724
 #define	PCI_SSDID_OCe12104		0xEF81
 
-/* E200: Lancer FC */
+/* E200: Lancer FC Gen5 */
 #define	PCI_DEVICE_ID_LANCER_FC		0xE200
 #define	PCI_SSDID_LPe16000		0xE200
 #define	PCI_SSDID_LPe1600X		0xE200 /* Identified by cache_line */
@@ -264,6 +283,12 @@ typedef enum emlxs_adapter
 #define	PCI_SSDID_LPe16002_FC_O		0xE20E
 #define	PCI_SSDID_LPe16002_FC_SP1	0xE217
 #define	PCI_SSDID_LPe16002_FC_SP2	0xE219
+
+/* E300: Lancer FC Gen6 */
+#define	PCI_DEVICE_ID_LANCER_G6_FC	0xE300
+#define	PCI_SSDID_LPe31000_M6_L		0xE333
+#define	PCI_SSDID_LPe32000		0xE300
+#define	PCI_SSDID_LPe3200X		0xE300
 
 /* E260: Lancer FCoE */
 #define	PCI_DEVICE_ID_LANCER_FE		0xE260
@@ -274,6 +299,20 @@ typedef enum emlxs_adapter
 #define	PCI_SSDID_LPe16002_FE_SP1	0xE217
 #define	PCI_SSDID_LPe16002_FE_SP2	0xE219
 
+/* 0063: ATTO Celerity 16 FC Gen5 */
+#define	PCI_DEVICE_ID_CLRTY_FC_161E	0x0063
+#define	PCI_DEVICE_ID_CLRTY_FC_162E	0x0064
+#define	PCI_DEVICE_ID_CLRTY_FC_164E	0x0065
+#define	PCI_SSDID_CLRTY_FC_161E	0x0063
+#define	PCI_SSDID_CLRTY_FC_162E	0x0064
+#define	PCI_SSDID_CLRTY_FC_164E	0x0065
+
+/* 0094 ATTO Celerity 16 FC Gen6 */
+#define	PCI_DEVICE_ID_CLRTY_FC_G6	0x0094
+#define	PCI_SSDID_CLRTY_FC_162P	0x0094
+#define	PCI_SSDID_CLRTY_FC_164P	0x00A1
+#define	PCI_SSDID_CLRTY_FC_321E	0x00A2
+#define	PCI_SSDID_CLRTY_FC_322E	0x00A3
 
 
 /* JEDEC codes */
@@ -309,6 +348,8 @@ typedef struct emlxs_model
 #define	EMLXS_MSI_SUPPORTED	0x00000002
 #define	EMLXS_MSIX_SUPPORTED	0x00000004
 #define	EMLXS_E2E_SUPPORTED	0x00000010 /* End-to-end authentication */
+#define	EMLXS_FC_GEN6		0x00000020
+#define	EMLXS_GPIO_LEDS		0x00000040
 #define	EMLXS_ORACLE_BRANDED	0x10000000
 #define	EMLXS_ORACLE_EXCLUDED	0x20000000
 #define	EMLXS_NOT_SUPPORTED	0x80000000
@@ -1638,6 +1679,197 @@ emlxs_model_t   emlxs_pci_model[] =
 		EMLXS_INTR_NO_LIMIT,
 		EMLXS_SLI4_MASK,
 		EMLXS_MULTI_CHANNEL,
+		NULL_PROG_TYPES,
+	},
+
+	/* Lancer Gen6 16Gb FC Single-port, Lenovo-branded */
+	{
+		LPe31000_M6_L,
+		PCI_DEVICE_ID_LANCER_G6_FC,
+		PCI_SSDID_LPe31000_M6_L,
+		"LPe31000",
+		"PCI_SSDID_LPe31000_M6_L",
+		"Emulex",
+		EMLXS_INTX_SUPPORTED |
+			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
+			EMLXS_E2E_SUPPORTED | EMLXS_FC_GEN6,
+		EMLXS_LANCER_CHIP,
+		FW_NOT_PROVIDED,
+		EMLXS_INTR_NO_LIMIT,
+		EMLXS_SLI4_MASK,
+		EMLXS_SINGLE_CHANNEL,
+		NULL_PROG_TYPES,
+	},
+
+	/* Lancer Gen6 FC (Generic) */
+	{
+		LPe32000,
+		PCI_DEVICE_ID_LANCER_G6_FC,
+		PCI_SSDID_LPe32000,
+		"LPe32000",
+		"Emulex LightPulse LPe32000 32Gb 1-port FC HBA",
+		"Emulex",
+		EMLXS_INTX_SUPPORTED |
+			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
+			EMLXS_E2E_SUPPORTED | EMLXS_FC_GEN6,
+		EMLXS_LANCER_CHIP,
+		FW_NOT_PROVIDED,
+		EMLXS_INTR_NO_LIMIT,
+		EMLXS_SLI4_MASK,
+		EMLXS_SINGLE_CHANNEL,
+		NULL_PROG_TYPES,
+	},
+
+	/* Lancer Gen6 FC (Generic Multi-Channel) */
+	/* !! Must always follow the single channel entry in list */
+	{
+		LPe3200X,
+		PCI_DEVICE_ID_LANCER_G6_FC,
+		PCI_SSDID_LPe3200X,
+		"LPe32000",
+		"Emulex LightPulse LPe32000 32Gb Multi-port FC HBA",
+		"Emulex",
+		EMLXS_INTX_SUPPORTED |
+			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
+			EMLXS_E2E_SUPPORTED | EMLXS_FC_GEN6,
+		EMLXS_LANCER_CHIP,
+		FW_NOT_PROVIDED,
+		EMLXS_INTR_NO_LIMIT,
+		EMLXS_SLI4_MASK,
+		EMLXS_MULTI_CHANNEL,
+		NULL_PROG_TYPES,
+	},
+
+	/* ATTO Celerity 161E */
+	{
+		CelerityFC161E,
+		PCI_DEVICE_ID_CLRTY_FC_161E,
+		PCI_SSDID_CLRTY_FC_161E,
+		"Celerity FC 161E",
+		"ATTO Celerity 161E Single-Channel FC HBA",
+		"ATTO Technology",
+		EMLXS_INTX_SUPPORTED |
+			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
+			EMLXS_E2E_SUPPORTED | EMLXS_GPIO_LEDS,
+		EMLXS_LANCER_CHIP,
+		FW_NOT_PROVIDED,
+		EMLXS_INTR_NO_LIMIT,
+		EMLXS_SLI4_MASK,
+		EMLXS_SINGLE_CHANNEL,
+		NULL_PROG_TYPES,
+	},
+
+	/* ATTO Celerity 162E */
+	{
+		CelerityFC162E,
+		PCI_DEVICE_ID_CLRTY_FC_162E,
+		PCI_SSDID_CLRTY_FC_162E,
+		"Celerity FC 162E",
+		"ATTO Celerity 162E Dual-Channel FC HBA",
+		"ATTO Technology",
+		EMLXS_INTX_SUPPORTED |
+			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
+			EMLXS_E2E_SUPPORTED | EMLXS_GPIO_LEDS,
+		EMLXS_LANCER_CHIP,
+		FW_NOT_PROVIDED,
+		EMLXS_INTR_NO_LIMIT,
+		EMLXS_SLI4_MASK,
+		EMLXS_SINGLE_CHANNEL,
+		NULL_PROG_TYPES,
+	},
+
+	/* ATTO Celerity 164E */
+	{
+		CelerityFC164E,
+		PCI_DEVICE_ID_CLRTY_FC_164E,
+		PCI_SSDID_CLRTY_FC_164E,
+		"Celerity FC 164E",
+		"ATTO Celerity 164E Quad-Channel FC HBA",
+		"ATTO Technology",
+		EMLXS_INTX_SUPPORTED |
+			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
+			EMLXS_E2E_SUPPORTED | EMLXS_GPIO_LEDS,
+		EMLXS_LANCER_CHIP,
+		FW_NOT_PROVIDED,
+		EMLXS_INTR_NO_LIMIT,
+		EMLXS_SLI4_MASK,
+		EMLXS_SINGLE_CHANNEL,
+		NULL_PROG_TYPES,
+	},
+
+	/* ATTO Celerity 162P */
+	{
+		CelerityFC162P,
+		PCI_DEVICE_ID_CLRTY_FC_G6,
+		PCI_SSDID_CLRTY_FC_162P,
+		"Celerity FC 162P",
+		"ATTO Celerity 162P Dual-Channel FC HBA",
+		"ATTO Technology",
+		EMLXS_INTX_SUPPORTED |
+			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
+			EMLXS_E2E_SUPPORTED | EMLXS_FC_GEN6,
+		EMLXS_LANCER_CHIP,
+		FW_NOT_PROVIDED,
+		EMLXS_INTR_NO_LIMIT,
+		EMLXS_SLI4_MASK,
+		EMLXS_SINGLE_CHANNEL,
+		NULL_PROG_TYPES,
+	},
+
+	/* ATTO Celerity 164P */
+	{
+		CelerityFC164P,
+		PCI_DEVICE_ID_CLRTY_FC_G6,
+		PCI_SSDID_CLRTY_FC_164P,
+		"Celerity FC 164P",
+		"ATTO Celerity 164P Quad-Channel FC HBA",
+		"ATTO Technology",
+		EMLXS_INTX_SUPPORTED |
+			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
+			EMLXS_E2E_SUPPORTED | EMLXS_FC_GEN6,
+		EMLXS_LANCER_CHIP,
+		FW_NOT_PROVIDED,
+		EMLXS_INTR_NO_LIMIT,
+		EMLXS_SLI4_MASK,
+		EMLXS_SINGLE_CHANNEL,
+		NULL_PROG_TYPES,
+	},
+
+	/* ATTO Celerity 321E */
+	{
+		CelerityFC321E,
+		PCI_DEVICE_ID_CLRTY_FC_G6,
+		PCI_SSDID_CLRTY_FC_321E,
+		"Celerity FC 321E",
+		"ATTO Celerity 321E Single-Channel FC HBA",
+		"ATTO Technology",
+		EMLXS_INTX_SUPPORTED |
+			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
+			EMLXS_E2E_SUPPORTED | EMLXS_FC_GEN6,
+		EMLXS_LANCER_CHIP,
+		FW_NOT_PROVIDED,
+		EMLXS_INTR_NO_LIMIT,
+		EMLXS_SLI4_MASK,
+		EMLXS_SINGLE_CHANNEL,
+		NULL_PROG_TYPES,
+	},
+
+	/* ATTO Celerity 322E */
+	{
+		CelerityFC322E,
+		PCI_DEVICE_ID_CLRTY_FC_G6,
+		PCI_SSDID_CLRTY_FC_322E,
+		"Celerity FC 322E",
+		"ATTO Celerity 322E Dual-Channel FC HBA",
+		"ATTO Technology",
+		EMLXS_INTX_SUPPORTED |
+			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
+			EMLXS_E2E_SUPPORTED | EMLXS_FC_GEN6,
+		EMLXS_LANCER_CHIP,
+		FW_NOT_PROVIDED,
+		EMLXS_INTR_NO_LIMIT,
+		EMLXS_SLI4_MASK,
+		EMLXS_SINGLE_CHANNEL,
 		NULL_PROG_TYPES,
 	},
 
