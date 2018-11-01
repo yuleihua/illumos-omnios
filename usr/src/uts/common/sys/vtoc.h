@@ -93,7 +93,23 @@ extern "C" {
 #define	V_FREEBSD_VINUM	0x1c		/* FreeBSD VINUM */
 #define	V_FREEBSD_ZFS	0x1d		/* FreeBSD ZFS */
 
-#define	V_UNKNOWN	0xff		/* Unknown partition */
+#define	V_VXVM_PUB	0x0e		/* VxVM public region */
+#define	V_VXVM_PRIV	0x0f		/* VxVM private region */
+
+#define	V_BIOS_BOOT	0x18		/* Grub2 BIOS Boot partition */
+
+/* NetBSD/mips defines this */
+#define	V_NETBSD_FFS	0xff
+
+/* FreeBSD tags: the high byte equals ELFOSABI_FREEBSD */
+#define	V_FREEBSD_BOOT		0x0900
+#define	V_FREEBSD_SWAP		0x0901
+#define	V_FREEBSD_UFS		0x0902
+#define	V_FREEBSD_VINUM		0x0903
+#define	V_FREEBSD_ZFS		0x0904
+#define	V_FREEBSD_NANDFS	0x0905
+
+#define	V_UNKNOWN	0xffff		/* Unknown partition */
 
 /*
  * Partition permission flags
