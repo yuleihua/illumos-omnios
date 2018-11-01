@@ -8954,7 +8954,6 @@ ahci_mop_commands(ahci_ctl_t *ahci_ctlp,
 		}
 
 		satapkt = ahci_portp->ahciport_slot_pkts[tmp_slot];
-		ASSERT(satapkt != NULL);
 
 		AHCIDBG(AHCIDBG_ERRS, ahci_ctlp, "ahci_mop_commands: "
 		    "sending up pkt 0x%p with SATA_PKT_DEV_ERROR",
@@ -8965,9 +8964,11 @@ ahci_mop_commands(ahci_ctl_t *ahci_ctlp,
 			    tmp_slot);
 		CLEAR_BIT(ahci_portp->ahciport_pending_tags, tmp_slot);
 		CLEAR_BIT(failed_tags, tmp_slot);
-		ahci_portp->ahciport_slot_pkts[tmp_slot] = NULL;
 
-		ahci_add_doneq(ahci_portp, satapkt, SATA_PKT_DEV_ERROR);
+		if (satapkt != NULL) {
+			ahci_portp->ahciport_slot_pkts[tmp_slot] = NULL;
+			ahci_add_doneq(ahci_portp, satapkt, SATA_PKT_DEV_ERROR);
+		}
 	}
 
 	/* Send up timeout packets with SATA_PKT_TIMEOUT. */
@@ -9000,7 +9001,6 @@ ahci_mop_commands(ahci_ctl_t *ahci_ctlp,
 		}
 
 		satapkt = ahci_portp->ahciport_slot_pkts[tmp_slot];
-		ASSERT(satapkt != NULL);
 
 		AHCIDBG(AHCIDBG_ERRS, ahci_ctlp, "ahci_mop_commands: "
 		    "sending up pkt 0x%p with SATA_PKT_TIMEOUT",
@@ -9011,9 +9011,11 @@ ahci_mop_commands(ahci_ctl_t *ahci_ctlp,
 			    tmp_slot);
 		CLEAR_BIT(ahci_portp->ahciport_pending_tags, tmp_slot);
 		CLEAR_BIT(timeout_tags, tmp_slot);
-		ahci_portp->ahciport_slot_pkts[tmp_slot] = NULL;
 
-		ahci_add_doneq(ahci_portp, satapkt, SATA_PKT_TIMEOUT);
+		if (satapkt != NULL) {
+			ahci_portp->ahciport_slot_pkts[tmp_slot] = NULL;
+			ahci_add_doneq(ahci_portp, satapkt, SATA_PKT_TIMEOUT);
+		}
 	}
 
 	/* Send up aborted packets with SATA_PKT_ABORTED */
@@ -9047,7 +9049,6 @@ ahci_mop_commands(ahci_ctl_t *ahci_ctlp,
 		}
 
 		satapkt = ahci_portp->ahciport_slot_pkts[tmp_slot];
-		ASSERT(satapkt != NULL);
 
 		AHCIDBG(AHCIDBG_ERRS, ahci_ctlp, "ahci_mop_commands: "
 		    "sending up pkt 0x%p with SATA_PKT_ABORTED",
@@ -9058,9 +9059,11 @@ ahci_mop_commands(ahci_ctl_t *ahci_ctlp,
 			    tmp_slot);
 		CLEAR_BIT(ahci_portp->ahciport_pending_tags, tmp_slot);
 		CLEAR_BIT(aborted_tags, tmp_slot);
-		ahci_portp->ahciport_slot_pkts[tmp_slot] = NULL;
 
-		ahci_add_doneq(ahci_portp, satapkt, SATA_PKT_ABORTED);
+		if (satapkt != NULL) {
+			ahci_portp->ahciport_slot_pkts[tmp_slot] = NULL;
+			ahci_add_doneq(ahci_portp, satapkt, SATA_PKT_ABORTED);
+		}
 	}
 
 	/* Send up reset packets with SATA_PKT_RESET. */
@@ -9083,7 +9086,6 @@ ahci_mop_commands(ahci_ctl_t *ahci_ctlp,
 		}
 
 		satapkt = ahci_portp->ahciport_slot_pkts[tmp_slot];
-		ASSERT(satapkt != NULL);
 
 		AHCIDBG(AHCIDBG_ERRS, ahci_ctlp, "ahci_mop_commands: "
 		    "sending up pkt 0x%p with SATA_PKT_RESET",
@@ -9094,9 +9096,11 @@ ahci_mop_commands(ahci_ctl_t *ahci_ctlp,
 			    tmp_slot);
 		CLEAR_BIT(ahci_portp->ahciport_pending_tags, tmp_slot);
 		CLEAR_BIT(reset_tags, tmp_slot);
-		ahci_portp->ahciport_slot_pkts[tmp_slot] = NULL;
 
-		ahci_add_doneq(ahci_portp, satapkt, SATA_PKT_RESET);
+		if (satapkt != NULL) {
+			ahci_portp->ahciport_slot_pkts[tmp_slot] = NULL;
+			ahci_add_doneq(ahci_portp, satapkt, SATA_PKT_RESET);
+		}
 	}
 
 	/* Send up unfinished packets with SATA_PKT_RESET */
@@ -9107,7 +9111,6 @@ ahci_mop_commands(ahci_ctl_t *ahci_ctlp,
 		}
 
 		satapkt = ahci_portp->ahciport_slot_pkts[tmp_slot];
-		ASSERT(satapkt != NULL);
 
 		AHCIDBG(AHCIDBG_ERRS, ahci_ctlp, "ahci_mop_commands: "
 		    "sending up pkt 0x%p with SATA_PKT_RESET",
@@ -9118,9 +9121,11 @@ ahci_mop_commands(ahci_ctl_t *ahci_ctlp,
 			    tmp_slot);
 		CLEAR_BIT(ahci_portp->ahciport_pending_tags, tmp_slot);
 		CLEAR_BIT(unfinished_tags, tmp_slot);
-		ahci_portp->ahciport_slot_pkts[tmp_slot] = NULL;
 
-		ahci_add_doneq(ahci_portp, satapkt, SATA_PKT_RESET);
+		if (satapkt != NULL) {
+			ahci_portp->ahciport_slot_pkts[tmp_slot] = NULL;
+			ahci_add_doneq(ahci_portp, satapkt, SATA_PKT_RESET);
+		}
 	}
 
 	ahci_portp->ahciport_mop_in_progress--;
