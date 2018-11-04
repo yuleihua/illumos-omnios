@@ -114,6 +114,7 @@
 #include <sys/stream.h>
 #include <sys/strsun.h>
 #include <sys/strsubr.h>
+#include <sys/pattr.h>
 #include <sys/dlpi.h>
 #include <sys/modhash.h>
 #include <sys/mac_impl.h>
@@ -1353,7 +1354,7 @@ mac_client_open(mac_handle_t mh, mac_client_handle_t *mchp, char *name,
 
 	mcip->mci_mip = mip;
 	mcip->mci_upper_mip = NULL;
-	mcip->mci_rx_fn = mac_pkt_drop;
+	mcip->mci_rx_fn = mac_rx_def;
 	mcip->mci_rx_arg = NULL;
 	mcip->mci_rx_p_fn = NULL;
 	mcip->mci_rx_p_arg = NULL;
@@ -1623,7 +1624,7 @@ mac_rx_set(mac_client_handle_t mch, mac_rx_t rx_fn, void *arg)
 void
 mac_rx_clear(mac_client_handle_t mch)
 {
-	mac_rx_set(mch, mac_pkt_drop, NULL);
+	mac_rx_set(mch, mac_rx_def, NULL);
 }
 
 void
@@ -2918,7 +2919,7 @@ mac_client_datapath_teardown(mac_client_handle_t mch, mac_unicast_impl_t *muip,
 	mac_misc_stat_delete(flent);
 
 	/* Initialize the receiver function to a safe routine */
-	flent->fe_cb_fn = (flow_fn_t)mac_pkt_drop;
+	flent->fe_cb_fn = (flow_fn_t)mac_rx_def;
 	flent->fe_cb_arg1 = NULL;
 	flent->fe_cb_arg2 = NULL;
 
@@ -3264,6 +3265,11 @@ mac_promisc_add(mac_client_handle_t mch, mac_client_promisc_type_t type,
 	mac_cb_info_t	*mcbi;
 	int rc;
 
+	if ((flags & MAC_PROMISC_FLAGS_NO_COPY) &&
+	    (flags & MAC_PROMISC_FLAGS_DO_FIXUPS)) {
+		return (EINVAL);
+	}
+
 	i_mac_perim_enter(mip);
 
 	if ((rc = mac_start((mac_handle_t)mip)) != 0) {
@@ -3310,6 +3316,7 @@ mac_promisc_add(mac_client_handle_t mch, mac_client_promisc_type_t type,
 	mpip->mpi_strip_vlan_tag =
 	    ((flags & MAC_PROMISC_FLAGS_VLAN_TAG_STRIP) != 0);
 	mpip->mpi_no_copy = ((flags & MAC_PROMISC_FLAGS_NO_COPY) != 0);
+	mpip->mpi_do_fixups = ((flags & MAC_PROMISC_FLAGS_DO_FIXUPS) != 0);
 
 	mcbi = &mip->mi_promisc_cb_info;
 	mutex_enter(mcbi->mcbi_lockp);
@@ -3529,6 +3536,13 @@ mac_tx(mac_client_handle_t mch, mblk_t *mp_chain, uintptr_t hint,
 
 		obytes = (mp_chain->b_cont == NULL ? MBLKL(mp_chain) :
 		    msgdsize(mp_chain));
+
+		/*
+		 * There's a chance this primary client might be part
+		 * of a bridge and the packet forwarded to a local
+		 * receiver -- mark the packet accordingly.
+		 */
+		DB_CKSUMFLAGS(mp_chain) |= HW_LOCAL_MAC;
 
 		MAC_TX(mip, srs_tx->st_arg2, mp_chain, mcip);
 		if (mp_chain == NULL) {
@@ -3943,33 +3957,63 @@ mac_client_get_effective_resources(mac_client_handle_t mch,
  * The unicast packets of MAC_CLIENT_PROMISC_FILTER callbacks are dispatched
  * after classification by mac_rx_deliver().
  */
-
 static void
 mac_promisc_dispatch_one(mac_promisc_impl_t *mpip, mblk_t *mp,
     boolean_t loopback)
 {
-	mblk_t *mp_copy, *mp_next;
+	mblk_t *mp_next;
+	boolean_t local = (DB_CKSUMFLAGS(mp) & HW_LOCAL_MAC) != 0;
 
-	if (!mpip->mpi_no_copy || mpip->mpi_strip_vlan_tag) {
+	if (!mpip->mpi_no_copy || mpip->mpi_strip_vlan_tag ||
+	    (mpip->mpi_do_fixups && local)) {
+		mblk_t *mp_copy;
+
 		mp_copy = copymsg(mp);
 		if (mp_copy == NULL)
 			return;
+
+		/*
+		 * The consumer has requested we emulate HW offloads
+		 * for host-local packets.
+		 */
+		if (mpip->mpi_do_fixups && local) {
+			/*
+			 * Remember that copymsg() doesn't copy
+			 * b_next, so we are only passing a single
+			 * packet to mac_hw_emul(). Also keep in mind
+			 * that mp_copy will become an mblk chain if
+			 * the argument is an LSO message.
+			 */
+			mac_hw_emul(&mp_copy, NULL, NULL,
+			    MAC_HWCKSUM_EMUL | MAC_LSO_EMUL);
+
+			if (mp_copy == NULL)
+				return;
+		}
 
 		if (mpip->mpi_strip_vlan_tag) {
 			mp_copy = mac_strip_vlan_tag_chain(mp_copy);
 			if (mp_copy == NULL)
 				return;
 		}
-		mp_next = NULL;
-	} else {
-		mp_copy = mp;
-		mp_next = mp->b_next;
-	}
-	mp_copy->b_next = NULL;
 
-	mpip->mpi_fn(mpip->mpi_arg, NULL, mp_copy, loopback);
-	if (mp_copy == mp)
-		mp->b_next = mp_next;
+		/*
+		 * There is code upstack that can't deal with message
+		 * chains.
+		 */
+		for (mblk_t *tmp = mp_copy; tmp != NULL; tmp = mp_next) {
+			mp_next = tmp->b_next;
+			tmp->b_next = NULL;
+			mpip->mpi_fn(mpip->mpi_arg, NULL, tmp, loopback);
+		}
+
+		return;
+	}
+
+	mp_next = mp->b_next;
+	mp->b_next = NULL;
+	mpip->mpi_fn(mpip->mpi_arg, NULL, mp, loopback);
+	mp->b_next = mp_next;
 }
 
 /*
@@ -4051,8 +4095,9 @@ mac_promisc_dispatch(mac_impl_t *mip, mblk_t *mp_chain,
 
 			if (is_sender ||
 			    mpip->mpi_type == MAC_CLIENT_PROMISC_ALL ||
-			    is_mcast)
+			    is_mcast) {
 				mac_promisc_dispatch_one(mpip, mp, is_sender);
+			}
 		}
 	}
 	MAC_PROMISC_WALKER_DCR(mip);
@@ -4180,8 +4225,9 @@ mac_capab_get(mac_handle_t mh, mac_capab_t cap, void *cap_data)
 	mac_impl_t *mip = (mac_impl_t *)mh;
 
 	/*
-	 * if mi_nactiveclients > 1, only MAC_CAPAB_LEGACY, MAC_CAPAB_HCKSUM,
-	 * MAC_CAPAB_NO_NATIVEVLAN and MAC_CAPAB_NO_ZCOPY can be advertised.
+	 * Some capabilities are restricted when there are more than one active
+	 * clients on the MAC resource.  The ones noted below are safe,
+	 * independent of that count.
 	 */
 	if (mip->mi_nactiveclients > 1) {
 		switch (cap) {
@@ -4189,6 +4235,7 @@ mac_capab_get(mac_handle_t mh, mac_capab_t cap, void *cap_data)
 			return (B_TRUE);
 		case MAC_CAPAB_LEGACY:
 		case MAC_CAPAB_HCKSUM:
+		case MAC_CAPAB_LSO:
 		case MAC_CAPAB_NO_NATIVEVLAN:
 			break;
 		default:
