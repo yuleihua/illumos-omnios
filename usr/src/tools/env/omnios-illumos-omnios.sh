@@ -271,4 +271,5 @@ _hash=`git -C $CODEMGR_WS rev-parse --short HEAD`
 export VERSION=`echo omnios-$_branch-$_hash | tr '/' '-'`
 
 export ONNV_BUILDNUM=`grep '^VERSION=r' /etc/os-release | cut -c10-`
+export PKGVERS_BRANCH=$ONNV_BUILDNUM.0
 
