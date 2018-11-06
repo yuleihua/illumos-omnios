@@ -247,7 +247,6 @@ ONLY_LINT_DEFS=-I${SPRO_ROOT}/sunstudio12.1/prod/include/lint; export ONLY_LINT_
 #export PERL_ARCH=i86pc-solaris-thread-multi-64int
 #export PERL_PKGVERS=
 
-# To build IPS packages for the version you wish to update, ONNV_BUILDNUM must
-# match the version you're on.  Find this in /etc/release, and lose the 'r'.
+export ONNV_BUILDNUM=`grep '^VERSION=r' /etc/os-release | cut -c10-`
+export PKGVERS_BRANCH=$ONNV_BUILDNUM.0
 
-export ONNV_BUILDNUM=151028
