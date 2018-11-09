@@ -245,6 +245,8 @@ mhash_store_entry(scf_handle_t *hndl, const char *name, const char *fname,
 	scf_transaction_entry_t *fe = NULL;
 	scf_error_t err;
 	int ret, result = 0;
+	char *base;
+	size_t base_sz = 0;
 
 	int i;
 
@@ -366,9 +368,17 @@ mhash_store_entry(scf_handle_t *hndl, const char *name, const char *fname,
 		goto out;
 	}
 
+	/*
+	 * Remove any PKG_INSTALL_ROOT from the manifest filename so that it
+	 * points to the correct location following installation.
+	 */
+	base = getenv("PKG_INSTALL_ROOT");
+	if (base != NULL && strncmp(fname, base, strlen(base)) == 0)
+		base_sz = strlen(base);
+
 	ret = scf_value_set_opaque(val, hash, MHASH_SIZE);
 	assert(ret == SCF_SUCCESS);
-	ret = scf_value_set_astring(fval, fname);
+	ret = scf_value_set_astring(fval, fname + base_sz);
 	assert(ret == SCF_SUCCESS);
 	if (apply_late == APPLY_LATE) {
 		scf_value_set_boolean(aval, 1);
