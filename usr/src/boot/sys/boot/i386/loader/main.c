@@ -192,11 +192,7 @@ main(void)
     setenv("LINES", "24", 1);			/* optional */
     setenv("COLUMNS", "80", 1);			/* optional */
 
-    if (bi_checkcpu())
-	setenv("ISADIR", "amd64", 1);
-    else
-	setenv("ISADIR", "", 1);
-
+    bi_isadir();
     bios_getsmap();
 
     interact(NULL);
@@ -216,7 +212,6 @@ extract_currdev(void)
 {
     struct i386_devdesc		new_currdev;
 #ifdef LOADER_ZFS_SUPPORT
-    char			buf[20];
     struct zfs_boot_args	*zargs;
 #endif
     int				biosdev = -1;
@@ -252,12 +247,6 @@ extract_currdev(void)
 	    /* sufficient data is provided */
 	    new_currdev.d_kind.zfs.pool_guid = zargs->pool;
 	    new_currdev.d_kind.zfs.root_guid = zargs->root;
-	    if (zargs->size >= sizeof(*zargs) && zargs->primary_vdev != 0) {
-		sprintf(buf, "%llu", zargs->primary_pool);
-		setenv("vfs.zfs.boot.primary_pool", buf, 1);
-		sprintf(buf, "%llu", zargs->primary_vdev);
-		setenv("vfs.zfs.boot.primary_vdev", buf, 1);
-	    }
 	} else {
 	    /* old style zfsboot block */
 	    new_currdev.d_kind.zfs.pool_guid = kargs->zfspool;
