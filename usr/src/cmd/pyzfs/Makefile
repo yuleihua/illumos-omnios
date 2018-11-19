@@ -20,6 +20,7 @@
 #
 #
 # Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
 #
 
 include ../Makefile.cmd
@@ -28,14 +29,14 @@ ROOTCMDDIR=	$(ROOTLIB)/zfs
 
 PYSRCS=		pyzfs.py
 PYOBJS=		$(PYSRCS:%.py=%.pyc)
-PYFILES=	$(PYSRCS) $(PYOBJS)
+PYFILES=	$(PYSRCS)
 POFILE=		pyzfs.po
 
 ROOTLIBZFSFILES= $(PYFILES:%=$(ROOTLIB)/zfs/%)
 
 .KEEP_STATE:
 
-all: $(PYOBJS)
+all:
 
 install: all $(ROOTLIBZFSFILES)
 
