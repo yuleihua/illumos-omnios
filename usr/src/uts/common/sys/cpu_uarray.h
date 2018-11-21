@@ -60,7 +60,7 @@ extern "C" {
 typedef struct {
 	uint64_t cu_nr_items;
 	char cu_pad[CUA_ALIGN - sizeof (uint64_t)];
-	volatile uint64_t cu_vals[];
+	volatile uint64_t *cu_vals;
 } cpu_uarray_t __aligned(CUA_ALIGN);
 
 extern cpu_uarray_t *cpu_uarray_zalloc(size_t, int);
