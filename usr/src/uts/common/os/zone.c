@@ -170,7 +170,7 @@
  *
  *   Ordering requirements:
  *       pool_lock --> cpu_lock --> zonehash_lock --> zone_status_lock -->
- *       	zone_lock --> zsd_key_lock --> pidlock --> p_lock
+ *       zone_lock --> zsd_key_lock --> pidlock --> p_lock
  *
  *   When taking zone_mem_lock or zone_nlwps_lock, the lock ordering is:
  *	zonehash_lock --> a_lock --> pidlock --> p_lock --> zone_mem_lock
@@ -2821,6 +2821,8 @@ zone_free(zone_t *zone)
 	}
 	list_destroy(&zone->zone_dl_list);
 
+	cpu_uarray_free(zone->zone_ustate);
+
 	if (zone->zone_rootvp != NULL)
 		VN_RELE(zone->zone_rootvp);
 	if (zone->zone_rootpath)
@@ -5034,6 +5036,8 @@ zone_create(const char *zone_name, const char *zone_root,
 	zone_pdata[zoneid].zpers_zfsp =
 	    kmem_zalloc(sizeof (zone_zfs_io_t), KM_SLEEP);
 	zone_pdata[zoneid].zpers_zfsp->zpers_zfs_io_pri = 1;
+
+	zone->zone_ustate = cpu_uarray_zalloc(ZONE_USTATE_MAX, KM_SLEEP);
 
 	zone->zone_ustate = cpu_uarray_zalloc(ZONE_USTATE_MAX, KM_SLEEP);
 
