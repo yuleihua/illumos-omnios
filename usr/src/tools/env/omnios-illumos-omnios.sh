@@ -35,7 +35,6 @@
 #       do not bringover from the parent (-n)
 #       runs 'make check' (-C)
 #       checks for new interfaces in libraries (-A)
-#       runs lint in usr/src (-l plus the LINTDIRS variable)
 #       sends mail on completion (-m and the MAILTO variable)
 #       creates packages for PIT/RE (-p)
 #       checks for changes in ELF runpaths (-r)
@@ -46,7 +45,7 @@
 # - This script is only interpreted by ksh93 and explicitly allows the
 #   use of ksh93 language extensions.
 #
-export NIGHTLY_OPTIONS='-FnCDAlmprt'
+export NIGHTLY_OPTIONS='-FnCDAmprt'
 
 # CODEMGR_WS - where is your workspace at
 #export CODEMGR_WS="$HOME/ws/illumos-gate"
@@ -263,8 +262,8 @@ export ON_CLOSED_BINS=/opt/onbld/closed
 export __GNUC=
 export PRIMARY_CC=gcc4,/opt/gcc-4.4.4/bin/gcc,gnu
 export PRIMARY_CCC=gcc4,/opt/gcc-4.4.4/bin/g++,gnu
-# export SHADOW_CCS=gcc7,/opt/gcc-7/bin/gcc,gnu
-# export SHADOW_CCCS=gcc7,/opt/gcc-7/bin/g++,gnu
+export SHADOW_CCS=gcc7,/opt/gcc-7/bin/gcc,gnu
+export SHADOW_CCCS=gcc7,/opt/gcc-7/bin/g++,gnu
 
 _branch=`git -C $CODEMGR_WS rev-parse --abbrev-ref HEAD`
 _hash=`git -C $CODEMGR_WS rev-parse --short HEAD`
