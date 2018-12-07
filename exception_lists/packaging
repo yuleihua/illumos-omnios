@@ -983,7 +983,6 @@ usr/bin/test-getdc
 # LX Brand internals
 #
 
-usr/include/sys/inotify.h
 usr/include/sys/zfd.h
 
 #
