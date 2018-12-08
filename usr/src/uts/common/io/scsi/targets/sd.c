@@ -6722,7 +6722,7 @@ sdpower(dev_info_t *devi, int component, int level)
 	time_t		intvlp;
 	struct pm_trans_data	sd_pm_tran_data;
 	uchar_t		save_state = SD_STATE_NORMAL;
-	int		sval;
+	int		sval, tursval = 0;
 	uchar_t		state_before_pm;
 	int		got_semaphore_here;
 	sd_ssc_t	*ssc;
@@ -7039,13 +7039,26 @@ sdpower(dev_info_t *devi, int component, int level)
 	 * a deadlock on un_pm_busy_cv will occur.
 	 */
 	if (SD_PM_IS_IO_CAPABLE(un, level)) {
-		sval = sd_send_scsi_TEST_UNIT_READY(ssc,
+		tursval = sd_send_scsi_TEST_UNIT_READY(ssc,
 		    SD_DONT_RETRY_TUR | SD_BYPASS_PM);
-		if (sval != 0)
+		if (tursval != 0)
 			sd_ssc_assessment(ssc, SD_FMT_IGNORE);
 	}
 
-	if (un->un_f_power_condition_supported) {
+	/*
+	 * We've encountered certain classes of drives that pass a TUR, but fail
+	 * the START STOP UNIT when using power conditions, or worse leave the
+	 * drive in an unusable state despite passing SSU. Strictly speaking,
+	 * for SPC-4 or greater, no additional actions are required to make the
+	 * drive operational when a TUR passes. If we have something that
+	 * matches this condition, we continue on and presume the drive is
+	 * successfully powered on.
+	 */
+	if (un->un_f_power_condition_supported &&
+	    SD_SCSI_VERS_IS_GE_SPC_4(un) && SD_PM_IS_IO_CAPABLE(un, level) &&
+	    level == SD_SPINDLE_ACTIVE && tursval == 0) {
+		sval = 0;
+	} else if (un->un_f_power_condition_supported) {
 		char *pm_condition_name[] = {"STOPPED", "STANDBY",
 		    "IDLE", "ACTIVE"};
 		SD_TRACE(SD_LOG_IO_PM, un,
@@ -7065,6 +7078,7 @@ sdpower(dev_info_t *devi, int component, int level)
 			sd_ssc_assessment(ssc, SD_FMT_STATUS_CHECK);
 		else
 			sd_ssc_assessment(ssc, SD_FMT_IGNORE);
+
 	}
 
 	/* Command failed, check for media present. */
@@ -31297,7 +31311,7 @@ sd_set_unit_attributes(struct sd_lun *un, dev_info_t *devi)
 		if (SD_PM_CAPABLE_IS_UNDEFINED(pm_cap)) {
 			un->un_f_log_sense_supported = TRUE;
 			if (!un->un_f_power_condition_disabled &&
-			    SD_INQUIRY(un)->inq_ansi == 6) {
+			    SD_SCSI_VERS_IS_GE_SPC_4(un)) {
 				un->un_f_power_condition_supported = TRUE;
 			}
 		} else {
@@ -31315,7 +31329,7 @@ sd_set_unit_attributes(struct sd_lun *un, dev_info_t *devi)
 				/* SD_PM_CAPABLE_IS_TRUE case */
 				un->un_f_pm_supported = TRUE;
 				if (!un->un_f_power_condition_disabled &&
-				    SD_PM_CAPABLE_IS_SPC_4(pm_cap)) {
+				    (SD_PM_CAPABLE_IS_GE_SPC_4(pm_cap))) {
 					un->un_f_power_condition_supported =
 					    TRUE;
 				}

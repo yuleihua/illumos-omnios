@@ -38,7 +38,7 @@
  * http://www.illumos.org/license/CDDL.
  *
  * Copyright 2014 Pluribus Networks Inc.
- * Copyright 2017 Joyent, Inc.
+ * Copyright 2018 Joyent, Inc.
  * Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
  */
 
@@ -128,9 +128,9 @@ struct virtio_blk_hdr {
 #define	VBH_OP_WRITE		1
 #define	VBH_OP_FLUSH		4
 #define	VBH_OP_FLUSH_OUT	5
-#define	VBH_OP_IDENT		8		
+#define	VBH_OP_IDENT		8
 #define	VBH_FLAG_BARRIER	0x80000000	/* OR'ed into vbh_type */
-	uint32_t       	vbh_type;
+	uint32_t	vbh_type;
 	uint32_t	vbh_ioprio;
 	uint64_t	vbh_sector;
 } __packed;
@@ -144,8 +144,8 @@ static int pci_vtblk_debug;
 
 struct pci_vtblk_ioreq {
 	struct blockif_req		io_req;
-	struct pci_vtblk_softc	       *io_sc;
-	uint8_t			       *io_status;
+	struct pci_vtblk_softc		*io_sc;
+	uint8_t				*io_status;
 	uint16_t			io_idx;
 };
 
@@ -158,6 +158,9 @@ struct pci_vtblk_softc {
 	struct vqueue_info vbsc_vq;
 	struct vtblk_config vbsc_cfg;
 	struct blockif_ctxt *bc;
+#ifndef __FreeBSD__
+	int vbsc_wce;
+#endif
 	char vbsc_ident[VTBLK_BLK_ID_BYTES];
 	struct pci_vtblk_ioreq vbsc_ios[VTBLK_RINGSZ];
 };
@@ -166,16 +169,23 @@ static void pci_vtblk_reset(void *);
 static void pci_vtblk_notify(void *, struct vqueue_info *);
 static int pci_vtblk_cfgread(void *, int, int, uint32_t *);
 static int pci_vtblk_cfgwrite(void *, int, int, uint32_t);
+#ifndef __FreeBSD__
+static void pci_vtblk_apply_feats(void *, uint64_t);
+#endif
 
 static struct virtio_consts vtblk_vi_consts = {
 	"vtblk",		/* our name */
 	1,			/* we support 1 virtqueue */
-	sizeof(struct vtblk_config), /* config reg size */
+	sizeof(struct vtblk_config),	/* config reg size */
 	pci_vtblk_reset,	/* reset */
 	pci_vtblk_notify,	/* device-wide qnotify */
 	pci_vtblk_cfgread,	/* read PCI config */
 	pci_vtblk_cfgwrite,	/* write PCI config */
+#ifndef __FreeBSD__
+	pci_vtblk_apply_feats,	/* apply negotiated features */
+#else
 	NULL,			/* apply negotiated features */
+#endif
 	VTBLK_S_HOSTCAPS,	/* our capabilities */
 };
 
@@ -186,6 +196,11 @@ pci_vtblk_reset(void *vsc)
 
 	DPRINTF(("vtblk: device reset requested !\n"));
 	vi_reset_dev(&sc->vbsc_vs);
+#ifndef __FreeBSD__
+	/* Disable write cache until FLUSH feature is negotiated */
+	(void) blockif_set_wce(sc->bc, 0);
+	sc->vbsc_wce = 0;
+#endif
 }
 
 static void
@@ -276,7 +291,7 @@ pci_vtblk_proc(struct pci_vtblk_softc *sc, struct vqueue_info *vq)
 	}
 	io->io_req.br_resid = iolen;
 
-	DPRINTF(("virtio-block: %s op, %zd bytes, %d segs, offset %ld\n\r", 
+	DPRINTF(("virtio-block: %s op, %zd bytes, %d segs, offset %ld\n\r",
 		 writeop ? "write" : "read/ident", iolen, i - 1,
 		 io->io_req.br_offset));
 
@@ -285,12 +300,7 @@ pci_vtblk_proc(struct pci_vtblk_softc *sc, struct vqueue_info *vq)
 		err = blockif_read(sc->bc, &io->io_req);
 		break;
 	case VBH_OP_WRITE:
-#ifdef __FreeBSD__
 		err = blockif_write(sc->bc, &io->io_req);
-#else
-		err = blockif_write(sc->bc, &io->io_req,
-		    (sc->vbsc_vs.vs_negotiated_caps & VTBLK_F_FLUSH) == 0);
-#endif
 		break;
 	case VBH_OP_FLUSH:
 	case VBH_OP_FLUSH_OUT:
@@ -375,7 +385,7 @@ pci_vtblk_init(struct vmctx *ctx, struct pci_devinst *pi, char *opts)
 #else
 	bctxt = blockif_open(opts, bident);
 #endif
-	if (bctxt == NULL) {       	
+	if (bctxt == NULL) {
 		perror("Could not open backing file");
 		return (1);
 	}
@@ -394,6 +404,12 @@ pci_vtblk_init(struct vmctx *ctx, struct pci_devinst *pi, char *opts)
 		io->io_idx = i;
 	}
 
+#ifndef __FreeBSD__
+	/* Disable write cache until FLUSH feature is negotiated */
+	(void) blockif_set_wce(sc->bc, 0);
+	sc->vbsc_wce = 0;
+#endif
+
 	pthread_mutex_init(&sc->vsc_mtx, NULL);
 
 	/* init virtio softc and virtqueues */
@@ -409,7 +425,7 @@ pci_vtblk_init(struct vmctx *ctx, struct pci_devinst *pi, char *opts)
 	 */
 	MD5Init(&mdctx);
 	MD5Update(&mdctx, opts, strlen(opts));
-	MD5Final(digest, &mdctx);	
+	MD5Final(digest, &mdctx);
 	sprintf(sc->vbsc_ident, "BHYVE-%02X%02X-%02X%02X-%02X%02X",
 	    digest[0], digest[1], digest[2], digest[3], digest[4], digest[5]);
 #if !defined(__FreeBSD__) && !defined(__JOYENT__)
@@ -485,6 +501,20 @@ pci_vtblk_cfgread(void *vsc, int offset, int size, uint32_t *retval)
 	memcpy(retval, ptr, size);
 	return (0);
 }
+
+#ifndef __FreeBSD__
+void
+pci_vtblk_apply_feats(void *vsc, uint64_t caps)
+{
+	struct pci_vtblk_softc *sc = vsc;
+	const int wce_next = ((caps & VTBLK_F_FLUSH) != 0) ? 1 : 0;
+
+	if (sc->vbsc_wce != wce_next) {
+		(void) blockif_set_wce(sc->bc, wce_next);
+		sc->vbsc_wce = wce_next;
+	}
+}
+#endif /* __FreeBSD__ */
 
 struct pci_devemu pci_de_vblk = {
 	.pe_emu =	"virtio-blk",
