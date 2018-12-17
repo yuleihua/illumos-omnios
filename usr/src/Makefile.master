@@ -127,10 +127,10 @@ ONBLD_TOOLS=		$(BUILD_TOOLS)/onbld
 JAVA_HOME=	/usr/java
 # define buildtime JAVA_ROOT
 JAVA_ROOT=	/usr/java
-# Build uses java7 by default.  Pass one the variables below set to empty
+# Build uses java8 by default.  Pass one the variables below set to empty
 # string in the environment to override.
 BLD_JAVA_6=	$(POUND_SIGN)
-BLD_JAVA_8=	$(POUND_SIGN)
+BLD_JAVA_7=	$(POUND_SIGN)
 
 # The python 2 modules are not built by default in OmniOS
 BUILDPY2=	$(POUND_SIGN)
