@@ -275,6 +275,7 @@ SUBDIRS +=				\
 i386_SUBDIRS=		\
 	libfdisk	\
 	libsaveargs	\
+	libvmm		\
 	libvmmapi
 
 sparc_SUBDIRS=		\
@@ -499,6 +500,7 @@ HDRSUBDIRS=				\
 i386_HDRSUBDIRS=	\
 	libfdisk	\
 	libsaveargs	\
+	libvmm		\
 	libvmmapi
 
 sparc_HDRSUBDIRS=	\
