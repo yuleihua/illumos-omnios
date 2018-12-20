@@ -278,6 +278,11 @@ INSLINKTARGET=	$<
 INS.link=	$(RM) $@; $(LN) $(INSLINKTARGET) $@
 INS.symlink=	$(RM) $@; $(SYMLINK) $(INSLINKTARGET) $@
 
+# The path to python that will be used for the shebang line when installing
+# python scripts to the proto area. This is overridden by makefiles to
+# select to the correct version.
+PYSHEBANG=	$(PYTHON)
+
 #
 # Python bakes the mtime of the .py file into the compiled .pyc and
 # rebuilds if the baked-in mtime != the mtime of the source file
@@ -286,7 +291,7 @@ INS.symlink=	$(RM) $@; $(SYMLINK) $(INSLINKTARGET) $@
 # (.py) file.
 #
 INS.pyfile=	$(RM) $@; $(SED) \
-		-e "1s:^\#!@PYTHON@:\#!$(PYTHON):" \
+		-e "1s:^\#!@PYTHON@:\#!$(PYSHEBANG):" \
 		-e "1s:^\#!@PYTHON3@:\#!$(PYTHON3):" \
 		-e "1s:^\#!@TOOLS_PYTHON@:\#!$(TOOLS_PYTHON):" \
 		< $< > $@; $(CHMOD) $(FILEMODE) $@; $(TOUCH) -r $< $@
@@ -1140,7 +1145,7 @@ PKGPUBLISHER_NONREDIST=	on-extra
 
 .py:
 	$(RM) $@; $(SED) \
-		-e "1s:^\#!@PYTHON@:\#!$(PYTHON):" \
+		-e "1s:^\#!@PYTHON@:\#!$(PYSHEBANG):" \
 		-e "1s:^\#!@PYTHON3@:\#!$(PYTHON3):" \
 		-e "1s:^\#!@TOOLS_PYTHON@:\#!$(TOOLS_PYTHON):" \
 		< $< > $@; $(CHMOD) +x $@
