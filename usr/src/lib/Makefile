@@ -275,6 +275,7 @@ SUBDIRS +=				\
 i386_SUBDIRS=		\
 	libfdisk	\
 	libsaveargs	\
+	libvmm		\
 	libvmmapi
 
 sparc_SUBDIRS=		\
@@ -499,6 +500,7 @@ HDRSUBDIRS=				\
 i386_HDRSUBDIRS=	\
 	libfdisk	\
 	libsaveargs	\
+	libvmm		\
 	libvmmapi
 
 sparc_HDRSUBDIRS=	\
@@ -671,6 +673,7 @@ libtsnet:	libtsol libsecdb
 libtsol:	libsecdb
 libuuid:	libdlpi
 libv12n:	libds libuuid
+libvmm:		libvmmapi
 libvolmgt:	libadm
 libvrrpadm:	libdladm libscf
 libvscan:	libscf libsecdb
