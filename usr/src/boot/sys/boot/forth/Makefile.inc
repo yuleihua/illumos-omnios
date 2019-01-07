@@ -27,3 +27,4 @@ FORTH +=	shortcuts.4th
 FORTH +=	support.4th
 FORTH +=	version.4th
 FILES +=	illumos.png
+FILES +=	omnios.png
