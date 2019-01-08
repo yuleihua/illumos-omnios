@@ -148,6 +148,7 @@ COMMON_SUBDIRS=		\
 	enhance		\
 	env		\
 	eqn		\
+	etdump		\
 	expand		\
 	expr		\
 	exstr		\
@@ -780,7 +781,7 @@ AUDITSUBDIRS=		\
 	auditreduce	\
 	auditset	\
 	auditstat	\
-	praudit		
+	praudit
 
 #
 # commands not owned by the systems group
