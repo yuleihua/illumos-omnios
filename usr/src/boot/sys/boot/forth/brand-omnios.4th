@@ -1,6 +1,7 @@
 \ Copyright (c) 2006-2015 Devin Teske <dteske@FreeBSD.org>
+\ Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
 \ All rights reserved.
-\ 
+\
 \ Redistribution and use in source and binary forms, with or without
 \ modification, are permitted provided that the following conditions
 \ are met:
@@ -9,7 +10,7 @@
 \ 2. Redistributions in binary form must reproduce the above copyright
 \    notice, this list of conditions and the following disclaimer in the
 \    documentation and/or other materials provided with the distribution.
-\ 
+\
 \ THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 \ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 \ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -21,8 +22,6 @@
 \ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 \ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 \ SUCH DAMAGE.
-\ 
-\ $FreeBSD$
 
 2 brandX ! 1 brandY ! \ Initialize brand placement defaults
 
@@ -33,16 +32,32 @@
 	1+ \ increase y for next time we're called
 ;
 
-: brand ( x y -- ) \ "omnios" [wide] logo in B/W (8 rows x 36 columns)
-
-	s"    ____   __  __  _   _  _         "                         brand+
-	s"   / __ \ |  \/  || \ | || |        "                         brand+
-	s"  | |  | ||      ||  \| || |        "                         brand+
-	s"  | |__| || |\/| || , `@[33m_@[m||@[33m_@[m|  @[33m____@[m  " brand+
-	s"   \____/ |_|  |_||_|\@[33m/ __ \ / ___| "                    brand+
-	s"                     | |  | ||(__   "                         brand+
-	s"         @[30;1mcommunity@[33m   | |__| | ___)|@[30;1m "      brand+
-	s"              edition@[33m \____/ |____/@[m "                 brand+
-
-	2drop
+: asciitop ( x y -- x y' )
+    s" @[m   ____   __  __  _   _  _         "                      brand+
+    s"   / __ \ |  \/  || \ | || |        "                         brand+
+    s"  | |  | ||      ||  \| || |        "                         brand+
+    s"  | |__| || |\/| || , `@[33m_@[m||@[33m_@[m|  @[33m____@[m  " brand+
+    s"   \____/ |_|  |_||_|\@[33m/ __ \ / ___| "                    brand+
+    s"                     | |  | ||(__   "                         brand+
+    s"         @[30;1mcommunity@[0;33m   | |__| | ___)| "           brand+
+    s"              @[30;1medition@[0;33m \____/ |____/@[m "        brand+
 ;
+
+: ooceversion ( -- )
+	s" ooce_version" getenv dup -1 = if
+		drop	 			\ ooce_version not set
+	else
+		dup 80 swap - 2 / 1 at-xy	\ Centre on row 1
+		2 fg b 				\ Green bold
+		type				\ Output
+		me				\ Mode end
+	then
+;
+
+: brand ( x y -- )
+	\ Show the ASCII logo if the PNG logo was not shown
+	PNGLogo @ 0= if asciitop then
+	2drop
+	ooceversion
+;
+
