@@ -32,7 +32,7 @@
  * Portions Copyright 2009 Advanced Micro Devices, Inc.
  */
 /*
- * Copyright 2018 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 /*
  * Various routines to handle identification
@@ -219,7 +219,15 @@ static char *x86_feature_names[NUM_X86_FEATURES] = {
 	"ssb_no",
 	"stibp_all",
 	"flush_cmd",
-	"l1d_vmentry_no"
+	"l1d_vmentry_no",
+	"fsgsbase",
+	"clflushopt",
+	"clwb",
+	"monitorx",
+	"clzero",
+	"xop",
+	"fma4",
+	"tbm"
 };
 
 boolean_t
@@ -1480,12 +1488,21 @@ cpuid_pass1(cpu_t *cpu, uchar_t *featureset)
 		if (ecp->cp_ebx & CPUID_INTC_EBX_7_0_ADX)
 			add_x86_feature(featureset, X86FSET_ADX);
 
+		if (ecp->cp_ebx & CPUID_INTC_EBX_7_0_FSGSBASE)
+			add_x86_feature(featureset, X86FSET_FSGSBASE);
+
+		if (ecp->cp_ebx & CPUID_INTC_EBX_7_0_CLFLUSHOPT)
+			add_x86_feature(featureset, X86FSET_CLFLUSHOPT);
+
 		if (cpi->cpi_vendor == X86_VENDOR_Intel) {
 			if (ecp->cp_ebx & CPUID_INTC_EBX_7_0_INVPCID)
 				add_x86_feature(featureset, X86FSET_INVPCID);
 
 			if (ecp->cp_ebx & CPUID_INTC_EBX_7_0_MPX)
 				add_x86_feature(featureset, X86FSET_MPX);
+
+			if (ecp->cp_ebx & CPUID_INTC_EBX_7_0_CLWB)
+				add_x86_feature(featureset, X86FSET_CLWB);
 		}
 	}
 
@@ -1849,12 +1866,10 @@ cpuid_pass1(cpu_t *cpu, uchar_t *featureset)
 				add_x86_feature(featureset, X86FSET_64);
 			}
 
-#if defined(__amd64)
 			/* 1 GB large page - enable only for 64 bit kernel */
 			if (cp->cp_edx & CPUID_AMD_EDX_1GPG) {
 				add_x86_feature(featureset, X86FSET_1GPG);
 			}
-#endif
 
 			if ((cpi->cpi_vendor == X86_VENDOR_AMD) &&
 			    (cpi->cpi_std[1].cp_edx & CPUID_INTC_EDX_FXSR) &&
@@ -1873,7 +1888,7 @@ cpuid_pass1(cpu_t *cpu, uchar_t *featureset)
 				remove_x86_feature(featureset, X86FSET_HTT);
 				add_x86_feature(featureset, X86FSET_CMP);
 			}
-#if defined(__amd64)
+
 			/*
 			 * It's really tricky to support syscall/sysret in
 			 * the i386 kernel; we rely on sysenter/sysexit
@@ -1892,7 +1907,7 @@ cpuid_pass1(cpu_t *cpu, uchar_t *featureset)
 			if (x86_vendor == X86_VENDOR_AMD) {
 				remove_x86_feature(featureset, X86FSET_SEP);
 			}
-#endif
+
 			if (cp->cp_edx & CPUID_AMD_EDX_TSCP) {
 				add_x86_feature(featureset, X86FSET_TSCP);
 			}
@@ -1903,6 +1918,22 @@ cpuid_pass1(cpu_t *cpu, uchar_t *featureset)
 
 			if (cp->cp_ecx & CPUID_AMD_ECX_TOPOEXT) {
 				add_x86_feature(featureset, X86FSET_TOPOEXT);
+			}
+
+			if (cp->cp_ecx & CPUID_AMD_ECX_XOP) {
+				add_x86_feature(featureset, X86FSET_XOP);
+			}
+
+			if (cp->cp_ecx & CPUID_AMD_ECX_FMA4) {
+				add_x86_feature(featureset, X86FSET_FMA4);
+			}
+
+			if (cp->cp_ecx & CPUID_AMD_ECX_TBM) {
+				add_x86_feature(featureset, X86FSET_TBM);
+			}
+
+			if (cp->cp_ecx & CPUID_AMD_ECX_MONITORX) {
+				add_x86_feature(featureset, X86FSET_MONITORX);
 			}
 			break;
 		default:
@@ -1929,6 +1960,28 @@ cpuid_pass1(cpu_t *cpu, uchar_t *featureset)
 			cp->cp_eax = 0x80000008;
 			(void) __cpuid_insn(cp);
 			platform_cpuid_mangle(cpi->cpi_vendor, 0x80000008, cp);
+
+			/*
+			 * AMD uses ebx for some extended functions.
+			 */
+			if (cpi->cpi_vendor == X86_VENDOR_AMD) {
+				/*
+				 * While we're here, check for the AMD "Error
+				 * Pointer Zero/Restore" feature. This can be
+				 * used to setup the FP save handlers
+				 * appropriately.
+				 */
+				if (cp->cp_ebx & CPUID_AMD_EBX_ERR_PTR_ZERO) {
+					cpi->cpi_fp_amd_save = 0;
+				} else {
+					cpi->cpi_fp_amd_save = 1;
+				}
+
+				if (cp->cp_ebx & CPUID_AMD_EBX_CLZERO) {
+					add_x86_feature(featureset,
+					    X86FSET_CLZERO);
+				}
+			}
 
 			/*
 			 * Virtual and physical address limits from
@@ -1981,6 +2034,7 @@ cpuid_pass1(cpu_t *cpu, uchar_t *featureset)
 		 */
 		switch (cpi->cpi_vendor) {
 		case X86_VENDOR_Intel:
+		case X86_VENDOR_AMD:
 			if (cpi->cpi_maxeax >= 7) {
 				cp = &cpi->cpi_extd[7];
 				cp->cp_eax = 0x80000007;
@@ -2053,11 +2107,6 @@ cpuid_pass1(cpu_t *cpu, uchar_t *featureset)
 	cpi->cpi_socket = _cpuid_skt(cpi->cpi_vendor, cpi->cpi_family,
 	    cpi->cpi_model, cpi->cpi_step);
 
-	/*
-	 * While we're here, check for the AMD "Error Pointer Zero/Restore"
-	 * feature. This can be used to setup the FP save handlers
-	 * appropriately.
-	 */
 	if (cpi->cpi_vendor == X86_VENDOR_AMD) {
 		if (cpi->cpi_xmaxeax >= 0x80000008 &&
 		    cpi->cpi_extd[8].cp_ebx & CPUID_AMD_EBX_ERR_PTR_ZERO) {
@@ -3286,6 +3335,12 @@ cpuid_pass4(cpu_t *cpu, uint_t *hwcap_out)
 			hwcap_flags_2 |= AV_386_2_RDSEED;
 		if (*ebx & CPUID_INTC_EBX_7_0_SHA)
 			hwcap_flags_2 |= AV_386_2_SHA;
+		if (*ebx & CPUID_INTC_EBX_7_0_FSGSBASE)
+			hwcap_flags_2 |= AV_386_2_FSGSBASE;
+		if (*ebx & CPUID_INTC_EBX_7_0_CLWB)
+			hwcap_flags_2 |= AV_386_2_CLWB;
+		if (*ebx & CPUID_INTC_EBX_7_0_CLFLUSHOPT)
+			hwcap_flags_2 |= AV_386_2_CLFLUSHOPT;
 
 	}
 
@@ -3295,6 +3350,11 @@ cpuid_pass4(cpu_t *cpu, uint_t *hwcap_out)
 		    "see the CPUID(7D) man page for details\n");
 	}
 
+	/*
+	 * Check a few miscilaneous features.
+	 */
+	if (is_x86_feature(x86_featureset, X86FSET_CLZERO))
+		hwcap_flags_2 |= AV_386_2_CLZERO;
 
 	if (cpi->cpi_xmaxeax < 0x80000001)
 		goto pass4_done;
@@ -3379,6 +3439,8 @@ cpuid_pass4(cpu_t *cpu, uint_t *hwcap_out)
 				hwcap_flags |= AV_386_AMD_SSE4A;
 			if (*ecx & CPUID_AMD_ECX_LZCNT)
 				hwcap_flags |= AV_386_AMD_LZCNT;
+			if (*ecx & CPUID_AMD_ECX_MONITORX)
+				hwcap_flags_2 |= AV_386_2_MONITORX;
 			break;
 
 		case X86_VENDOR_Intel:
@@ -3878,9 +3940,9 @@ cpuid_opteron_erratum(cpu_t *cpu, uint_t erratum)
 	 */
 	if (cpi->cpi_vendor != X86_VENDOR_AMD ||
 	    cpi->cpi_family == 4 || cpi->cpi_family == 5 ||
-	    cpi->cpi_family == 6)
-
+	    cpi->cpi_family == 6) {
 		return (0);
+	}
 
 	eax = cpi->cpi_std[1].cp_eax;
 
@@ -4041,10 +4103,21 @@ cpuid_opteron_erratum(cpu_t *cpu, uint_t erratum)
 	case 131:
 		return (cpi->cpi_family < 0x10);
 	case 6336786:
+
 		/*
 		 * Test for AdvPowerMgmtInfo.TscPStateInvariant
-		 * if this is a K8 family or newer processor
+		 * if this is a K8 family or newer processor. We're testing for
+		 * this 'erratum' to determine whether or not we have a constant
+		 * TSC.
+		 *
+		 * Our current fix for this is to disable the C1-Clock ramping.
+		 * However, this doesn't work on newer processor families nor
+		 * does it work when virtualized as those devices don't exist.
 		 */
+		if (cpi->cpi_family >= 0x12 || get_hwenv() != HW_NATIVE) {
+			return (0);
+		}
+
 		if (CPI_FAMILY(cpi) == 0xf) {
 			struct cpuid_regs regs;
 			regs.cp_eax = 0x80000007;
@@ -4053,6 +4126,12 @@ cpuid_opteron_erratum(cpu_t *cpu, uint_t erratum)
 		}
 		return (0);
 	case 6323525:
+		/*
+		 * This erratum (K8 #147) is not present on family 10 and newer.
+		 */
+		if (cpi->cpi_family >= 0x10) {
+			return (0);
+		}
 		return (((((eax >> 12) & 0xff00) + (eax & 0xf00)) |
 		    (((eax >> 4) & 0xf) | ((eax >> 12) & 0xf0))) < 0xf40);
 
