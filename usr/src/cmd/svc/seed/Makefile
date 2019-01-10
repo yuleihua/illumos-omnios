@@ -129,47 +129,39 @@ $(SVCCFG): FRC
 	@cd ../milestone; pwd; $(MAKE) $(MFLAGS) console-login.xml
 
 common.db: $(COMMON_DESCRIPTIONS) $(CONFIGD) $(SVCCFG)
-	$(RM) -f common.db common.db-journal
-	for m in $(COMMON_DESCRIPTIONS); do \
-		echo $$m; \
-		SVCCFG_DTD=../dtd/service_bundle.dtd.1 \
-		SVCCFG_REPOSITORY=$(SRC)/cmd/svc/seed/common.db \
-		SVCCFG_CONFIGD_PATH=$(CONFIGD) \
-		$(SVCCFG) import $$m; \
-	done
+	$(RM) -f $@
+	mf=$$(mktemp /tmp/$@.XXXXXXXXXX);\
+	SVCCFG_DTD=../dtd/service_bundle.dtd.1 \
+	SVCCFG_REPOSITORY=$$mf SVCCFG_CONFIGD_PATH=$(CONFIGD) \
+	$(SVCCFG) import $(COMMON_DESCRIPTIONS); \
+	mv $$mf $@
 
 global.db: common.db $(GLOBAL_ZONE_DESCRIPTIONS) $(CONFIGD) $(SVCCFG)
-	$(RM) -f global.db global.db-journal
-	$(CP) common.db global.db
-	for m in $(GLOBAL_ZONE_DESCRIPTIONS); do \
-		echo $$m; \
-		SVCCFG_DTD=../dtd/service_bundle.dtd.1 \
-		SVCCFG_REPOSITORY=$(SRC)/cmd/svc/seed/global.db \
-		SVCCFG_CONFIGD_PATH=$(CONFIGD) \
-		$(SVCCFG) import $$m; \
-	done
+	$(RM) -f $@
+	mf=$$(mktemp /tmp/$@.XXXXXXXXXX);\
+	$(CP) common.db $$mf; \
+	SVCCFG_DTD=../dtd/service_bundle.dtd.1 \
+	SVCCFG_REPOSITORY=$$mf SVCCFG_CONFIGD_PATH=$(CONFIGD) \
+	$(SVCCFG) import $(GLOBAL_ZONE_DESCRIPTIONS); \
+	mv $$mf $@
 
 nonglobal.db: common.db $(NONGLOBAL_ZONE_DESCRIPTIONS) $(CONFIGD) $(SVCCFG)
-	$(RM) -f nonglobal.db nonglobal.db-journal
-	$(CP) common.db nonglobal.db
-	for m in $(NONGLOBAL_ZONE_DESCRIPTIONS); do \
-		echo $$m; \
-		SVCCFG_DTD=../dtd/service_bundle.dtd.1 \
-		SVCCFG_REPOSITORY=$(SRC)/cmd/svc/seed/nonglobal.db \
-		SVCCFG_CONFIGD_PATH=$(CONFIGD) \
-		$(SVCCFG) import $$m; \
-	done
+	$(RM) -f $@
+	mf=$$(mktemp /tmp/$@.XXXXXXXXXX);\
+	$(CP) common.db $$mf; \
+	SVCCFG_DTD=../dtd/service_bundle.dtd.1 \
+	SVCCFG_REPOSITORY=$$mf SVCCFG_CONFIGD_PATH=$(CONFIGD) \
+	$(SVCCFG) import $(NONGLOBAL_ZONE_DESCRIPTIONS); \
+	mv $$mf $@
 
 miniroot.db: common.db $(MINIROOT_DESCRIPTIONS) $(CONFIGD) $(SVCCFG)
-	$(RM) -f miniroot.db miniroot.db-journal
-	$(CP) common.db miniroot.db
-	for m in $(MINIROOT_DESCRIPTIONS); do \
-		echo $$m; \
-		SVCCFG_DTD=../dtd/service_bundle.dtd.1 \
-		SVCCFG_REPOSITORY=$(SRC)/cmd/svc/seed/miniroot.db \
-		SVCCFG_CONFIGD_PATH=$(CONFIGD) \
-		$(SVCCFG) import $$m; \
-	done
+	$(RM) -f $@
+	mf=$$(mktemp /tmp/$@.XXXXXXXXXX);\
+	$(CP) common.db $$mf; \
+	SVCCFG_DTD=../dtd/service_bundle.dtd.1 \
+	SVCCFG_REPOSITORY=$$mf SVCCFG_CONFIGD_PATH=$(CONFIGD) \
+	$(SVCCFG) import $(MINIROOT_DESCRIPTIONS); \
+	mv $$mf $@
 	#
 	# Make sure the miniroot's syslogd and rpcbind do not respond
 	# to packets from outside the machine. Since we cannot set property
@@ -177,14 +169,12 @@ miniroot.db: common.db $(MINIROOT_DESCRIPTIONS) $(CONFIGD) $(SVCCFG)
 	# with svccfg commands.
 	#
 	SVCCFG_DTD=../dtd/service_bundle.dtd.1 \
-	SVCCFG_REPOSITORY=$(SRC)/cmd/svc/seed/miniroot.db \
-	SVCCFG_CONFIGD_PATH=$(CONFIGD) \
+	SVCCFG_REPOSITORY=$@ SVCCFG_CONFIGD_PATH=$(CONFIGD) \
 	$(SVCCFG) -s svc:/system/system-log \
 	    setprop config/log_from_remote = false
 	#
 	SVCCFG_DTD=../dtd/service_bundle.dtd.1 \
-	SVCCFG_REPOSITORY=$(SRC)/cmd/svc/seed/miniroot.db \
-	SVCCFG_CONFIGD_PATH=$(CONFIGD) \
+	SVCCFG_REPOSITORY=$@ SVCCFG_CONFIGD_PATH=$(CONFIGD) \
 	$(SVCCFG) -s svc:/network/rpc/bind setprop config/local_only = true
 
 install: install_global install_nonglobal install_miniroot
