@@ -27,7 +27,7 @@
  * All rights reserved.
  */
 /*
- * Copyright 2018 Joyent, Inc.
+ * Copyright (c) 2019, Joyent, Inc.
  * Copyright 2012 Jens Elkner <jel+illumos@cs.uni-magdeburg.de>
  * Copyright 2012 Hans Rosenfeld <rosenfeld@grumpf.hope-2000.org>
  * Copyright 2014 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
@@ -851,6 +851,19 @@ extern "C" {
 #define	X86_SOCKET_SP3		_X86_SOCKET_MKVAL(X86_VENDOR_AMD, 0x1f)
 #define	X86_SOCKET_SP3R2	_X86_SOCKET_MKVAL(X86_VENDOR_AMD, 0x20)
 #define	X86_NUM_SOCKETS_AMD	0x21
+
+
+/*
+ * Definitions for Intel processor models. Note, these model values can overlap
+ * in a given family. Processor models are added here on an as needed basis. The
+ * Xeon extension here is to refer to what has been called the EP/EX lines or
+ * E5/E7, generally multi-socket capable processors.
+ */
+#define	INTC_MODEL_IVYBRIDGE_XEON	0x3E
+#define	INTC_MODEL_HASWELL_XEON		0x3F
+#define	INTC_MODEL_BROADWELL_XEON	0x4F
+#define	INTC_MODEL_BROADWELL_XEON_D	0x56
+#define	INTC_MODEL_SKYLAKE_XEON		0x55
 
 /*
  * xgetbv/xsetbv support

@@ -26,6 +26,7 @@
 # Copyright (c) 2016, Chris Fraire <cfraire@me.com>.
 # Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
 # Copyright (c) 2019, Joyent, Inc.
+# Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
 #
 
 include ../Makefile.master

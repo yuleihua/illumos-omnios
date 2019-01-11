@@ -64,14 +64,14 @@
 
 PYFILES = $(PYSRCS) $(PYOBJS)
 
-ROOTPYDIR = $(PYTOPDIR)/python$(PYTHON_VERSION)/$(PYMODDIR)
+ROOTPYDIR = $(PYTOPDIR)/python$(PYVER)/$(PYMODDIR)
 ROOTPYFILES	= $(PYFILES:%=$(ROOTPYDIR)/%)
 
 $(ROOTPYFILES) := FILEMODE = 0444
 
-PYVERSDIRS = python$(PYTHON_VERSION)
+PYVERSDIRS = python$(PYVER)
 
-PYVERSOBJS = $(PYOBJS:%=python$(PYTHON_VERSION)/%)
+PYVERSOBJS = $(PYOBJS:%=python$(PYVER)/%)
 
 CLOBBERFILES += $(PYVERSOBJS)
 CLOBBERDIRS += $(PYVERSDIRS)
@@ -87,23 +87,23 @@ pyclobber:
 
 # Python 2 module compilation
 
-python$(PYTHON_VERSION)/%.pyc: ../%.py
+python$(PYVER)/%.pyc: ../%.py
 	@[ -d $(@D) ] || mkdir $(@D)
 	$(RM) $@
 	$(PYTHON) -mpy_compile $<
 	$(MV) ../$(*).pyc $@
 
-$(ROOTPYDIR)/%.pyc: python$(PYTHON_VERSION)/%.pyc
+$(ROOTPYDIR)/%.pyc: python$(PYVER)/%.pyc
 	$(INS.pyfile)
 
 # Python 3 module compilation
 
-python$(PYTHON_VERSION)/__pycache__/%.cpython$(PYTHON_PKGVERS).pyc: ../%.py
+python$(PYVER)/__pycache__/%.cpython$(PYPKGVERS).pyc: ../%.py
 	@[ -d $(@D) ] || mkdir -p $(@D)
 	$(RM) $@
 	$(PYTHON3) -mpy_compile $<
-	$(MV) ../__pycache__/$(*).cpython$(PYTHON_PKGVERS).pyc $@
+	$(MV) ../__pycache__/$(*).cpython$(PYPKGVERS).pyc $@
 
-$(ROOTPYDIR)/__pycache__/%.pyc: python$(PYTHON_VERSION)/__pycache__/%.pyc
+$(ROOTPYDIR)/__pycache__/%.pyc: python$(PYVER)/__pycache__/%.pyc
 	$(INS.pyfile)
 

@@ -179,10 +179,12 @@ MCS=		/usr/ccs/bin/mcs
 CAT=            /usr/bin/cat
 ELFDUMP=	/usr/ccs/bin/elfdump
 M4=		/usr/bin/m4
+GM4=		/usr/bin/gm4
 STRIP=		/usr/ccs/bin/strip
 LEX=		/usr/ccs/bin/lex
 FLEX=		/usr/bin/flex
 YACC=		/usr/ccs/bin/yacc
+BISON=		/usr/bin/bison
 CPP=		/usr/lib/cpp
 ANSI_CPP=	$(GNUC_ROOT)/bin/cpp
 JAVAC=		$(JAVA_ROOT)/bin/javac
@@ -214,7 +216,8 @@ PYTHON3_VERSION=	3.5
 PYTHON3_PKGVERS=	-35
 PYTHON3_SUFFIX=		m
 PYTHON3=		/usr/bin/python$(PYTHON3_VERSION)
-TOOLS_PYTHON=		$(PYTHON3)
+$(BUILDPY3TOOLS)TOOLS_PYTHON=		$(PYTHON3)
+$(BUILDPY2TOOLS)TOOLS_PYTHON=		$(PYTHON)
 SORT=		/usr/bin/sort
 TR=		/usr/bin/tr
 TOUCH=		/usr/bin/touch
@@ -293,7 +296,6 @@ PYSHEBANG=	$(PYTHON)
 #
 INS.pyfile=	$(RM) $@; $(SED) \
 		-e "1s:^\#!@PYTHON@:\#!$(PYSHEBANG):" \
-		-e "1s:^\#!@PYTHON3@:\#!$(PYTHON3):" \
 		-e "1s:^\#!@TOOLS_PYTHON@:\#!$(TOOLS_PYTHON):" \
 		< $< > $@; $(CHMOD) $(FILEMODE) $@; $(TOUCH) -r $< $@
 
@@ -1150,7 +1152,6 @@ PKGPUBLISHER_NONREDIST=	on-extra
 .py:
 	$(RM) $@; $(SED) \
 		-e "1s:^\#!@PYTHON@:\#!$(PYSHEBANG):" \
-		-e "1s:^\#!@PYTHON3@:\#!$(PYTHON3):" \
 		-e "1s:^\#!@TOOLS_PYTHON@:\#!$(TOOLS_PYTHON):" \
 		< $< > $@; $(CHMOD) +x $@
 
