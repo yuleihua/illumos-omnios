@@ -32,7 +32,7 @@
  * Portions Copyright 2009 Advanced Micro Devices, Inc.
  */
 /*
- * Copyright 2019 Joyent, Inc.
+ * Copyright (c) 2019, Joyent, Inc.
  */
 /*
  * Various routines to handle identification

@@ -1,4 +1,4 @@
-#!@PYTHON3@ -S
+#!@TOOLS_PYTHON@ -S
 #
 # CDDL HEADER START
 #
