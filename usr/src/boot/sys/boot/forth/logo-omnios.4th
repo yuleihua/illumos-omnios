@@ -45,7 +45,11 @@ variable PNGLogo
 	n2s s" loader_menu_y" setenv
 ;
 
-: asciilogo ( x y -- x y' )
+: ooce        0  30  20   0   0	s" /boot/ooce.png" fb-putimage ;
+: dragon      0 530  30   0   0	s" /boot/dragon.png" fb-putimage ;
+: illumos_png 0   0   0 118   0	s" /boot/illumos.png" fb-putimage ;
+
+: asciidragon ( x y -- x y' )
 	s"     @[30;1m.:   ..                 " logo+
 	s"    .o,  .o.                 "        logo+
 	s"    :d.  ld.   .'            "        logo+
@@ -73,13 +77,15 @@ variable PNGLogo
 
 : logo ( x y -- )
 	framebuffer? if
-		s" framebuffer set 640x480" evaluate
-		s" loadfont /boot/fonts/8x16.fnt" evaluate
-		\ Check that the screen height is now 480
-		s" screen-height" getenv s" 480" compare invert if
+		s" framebuffer set 800x600" evaluate
+		s" loadfont /boot/fonts/10x18.fnt" evaluate
+		\ Check that the screen height is now 600
+		s" screen-height" getenv s" 600" compare invert if
 			clear
 			at-bl
-			s" /boot/omnios.png" fb-putimage if
+			ooce if
+				dragon drop
+				illumos_png drop
 				1 PNGLogo !
 				13 menupos
 				2drop
@@ -90,7 +96,7 @@ variable PNGLogo
 
 	0 PNGLogo !
 	11 menupos
-	asciilogo
+	asciidragon
 	at-bl
 
 	2drop
