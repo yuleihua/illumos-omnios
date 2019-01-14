@@ -165,6 +165,19 @@ command_include(int argc, char *argv[])
     return(res);
 }
 
+COMMAND_SET(sifting, "sifting", "find words", command_sifting);
+
+static int
+command_sifting(int argc, char *argv[])
+{
+	if (argc != 2) {
+		command_errmsg = "wrong number of arguments";
+		return (CMD_ERROR);
+	}
+	ficlPrimitiveSiftingImpl(bf_vm, argv[1]);
+	return (CMD_OK);
+}
+
 /*
  * Header prepended to each line. The text immediately follows the header.
  * We try to make this short in order to save memory -- the loader has

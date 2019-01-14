@@ -45,10 +45,10 @@
 
 : ooceversion ( -- )
 	s" ooce_version" getenv dup -1 = if
-		drop	 			\ ooce_version not set
+		drop				\ ooce_version not set
 	else
-		dup 80 swap - 2 / 1 at-xy	\ Centre on row 1
-		2 fg b 				\ Green bold
+		dup sc swap - 2/ 1 at-xy	\ Centre on row 1
+		2 fg b				\ Green bold
 		type				\ Output
 		me				\ Mode end
 	then

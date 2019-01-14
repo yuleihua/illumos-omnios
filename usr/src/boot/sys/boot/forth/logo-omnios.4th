@@ -39,17 +39,10 @@ variable PNGLogo
 	1+			\ increase y for next time we're called
 ;
 
-: ntos ( n -- c-addr/u )	\ Convert number to a string
-	s>d	\ convert to signed double
-	<#	\ start conversion
-	#s	\ convert all digits
-	#>	\ complete conversion
-;
-
 : menupos ( y -- )	\ Adjust menu position
 	dup 14 +	\ timeout is 14 lines below menu start
-	ntos s" loader_menu_timeout_y" setenv
-	ntos s" loader_menu_y" setenv
+	n2s s" loader_menu_timeout_y" setenv
+	n2s s" loader_menu_y" setenv
 ;
 
 : asciilogo ( x y -- x y' )
@@ -79,25 +72,26 @@ variable PNGLogo
 ;
 
 : logo ( x y -- )
-	\ Check for framebuffer using "screen-height" as a proxy
-	s" screen-height" getenv -1 <> if
-		drop \ c-addr
-		s" framebuffer set 640x480x32" evaluate
+	framebuffer? if
+		s" framebuffer set 640x480" evaluate
 		s" loadfont /boot/fonts/8x16.fnt" evaluate
 		\ Check that the screen height is now 480
 		s" screen-height" getenv s" 480" compare invert if
+			clear
+			at-bl
 			s" /boot/omnios.png" fb-putimage if
 				1 PNGLogo !
 				13 menupos
-				2drop exit
+				2drop
+				exit
 			then
 		then
 	then
 
-	clear
 	0 PNGLogo !
 	11 menupos
 	asciilogo
+	at-bl
 
 	2drop
 ;
