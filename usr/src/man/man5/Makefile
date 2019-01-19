@@ -137,7 +137,8 @@ _MANFILES=	Intro.5			\
 
 sparc_MANFILES=
 
-i386_MANFILES=	brand.4th.5		\
+i386_MANFILES=	beastie.4th.5		\
+		brand.4th.5		\
 		check-password.4th.5	\
 		color.4th.5		\
 		delay.4th.5		\

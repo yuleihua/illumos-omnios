@@ -1035,3 +1035,12 @@ usr/include/vmmapi.h
 usr/platform/i86pc/include/sys/vmm.h
 usr/platform/i86pc/include/sys/vmm_impl.h
 usr/platform/i86pc/include/sys/vmm_instruction_emul.h
+
+#
+# foreign loader brands not shipped
+#
+boot/forth/logo-beastie.4th
+boot/forth/logo-beastiebw.4th
+boot/forth/logo-fbsdbw.4th
+boot/forth/logo-orb.4th
+boot/forth/logo-orbbw.4th
