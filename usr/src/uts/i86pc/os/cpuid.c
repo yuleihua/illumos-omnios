@@ -3343,6 +3343,11 @@ cpuid_pass4(cpu_t *cpu, uint_t *hwcap_out)
 			hwcap_flags_2 |= AV_386_2_CLFLUSHOPT;
 
 	}
+	/*
+	 * Check a few miscilaneous features.
+	 */
+	if (is_x86_feature(x86_featureset, X86FSET_CLZERO))
+		hwcap_flags_2 |= AV_386_2_CLZERO;
 
 	/* Detect systems with a potential CPUID limit  */
 	if (cpi->cpi_vendor == X86_VENDOR_Intel && cpi->cpi_maxeax < 4) {

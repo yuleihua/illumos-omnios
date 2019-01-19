@@ -21,7 +21,7 @@
 /*
  * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, Nexenta Systems, Inc. All rights reserved.
- * Copyright 2017 Joyent, Inc.
+ * Copyright (c) 2018, Joyent, Inc.
  */
 
 /*
@@ -841,7 +841,7 @@ proto_disabmulti_req(dld_str_t *dsp, mblk_t *mp)
 	mac_perim_exit(mph);
 
 	if (err != 0) {
-	switch (err) {
+		switch (err) {
 		case EINVAL:
 			dl_err = DL_BADADDR;
 			err = 0;

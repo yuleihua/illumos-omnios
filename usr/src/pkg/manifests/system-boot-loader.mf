@@ -21,6 +21,7 @@
 
 #
 # Copyright 2016, Toomas Soome <tsoome@me.com>
+# Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
 #
 
 #
