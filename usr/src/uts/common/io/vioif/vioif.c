@@ -927,6 +927,7 @@ vioif_reclaim_used_tx(struct vioif_softc *sc)
 			for (uint_t i = 0; i < buf->tb_external_num; i++) {
 				(void) ddi_dma_unbind_handle(
 				    buf->tb_external_mapping[i].vbm_dmah);
+			}
 		}
 
 		virtio_free_chain(ve);
