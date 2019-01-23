@@ -19,7 +19,7 @@ COMMON_SUBDIRS=	consfonts \
 		terminfo \
 		zoneinfo
 
-i386_SUBDIRS=	ucode
+i386_SUBDIRS=	perfmon ucode
 
 SUBDIRS = $(COMMON_SUBDIRS) $($(MACH)_SUBDIRS)
 
