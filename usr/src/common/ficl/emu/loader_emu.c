@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1998 Michael Smith <msmith@freebsd.org>
+ * Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
