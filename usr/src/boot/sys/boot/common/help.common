@@ -304,7 +304,8 @@
 
 	sifting <substring>
 
-	Displays defined words containing the provided <substring>.
+	Displays words in the search order list containing the provided
+	<substring>.
 
 ################################################################################
 # Tinclude DRead commands from a script file

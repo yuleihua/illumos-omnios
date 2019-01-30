@@ -1112,6 +1112,12 @@ gfx_fb_putimage(png_t *png, uint32_t ux1, uint32_t uy1, uint32_t ux2,
 		return (1);
 	}
 
+	if (png->width < 1 || png->height < 1) {
+		if (trace)
+			printf("Image too small.\n");
+		return (1);
+	}
+
 	/*
 	 * If 0 was passed for either ux2 or uy2, then calculate the missing
 	 * part of the bottom right coordinate.
@@ -1170,6 +1176,12 @@ gfx_fb_putimage(png_t *png, uint32_t ux1, uint32_t uy1, uint32_t ux2,
 	if (ux1 >= ux2 || uy1 >= uy2) {
 		if (trace)
 			printf("Image dimensions reversed.\n");
+		return (1);
+	}
+
+	if (fwidth < 2 || fheight < 2) {
+		if (trace)
+			printf("Target area too small\n");
 		return (1);
 	}
 
@@ -1270,9 +1282,9 @@ gfx_fb_putimage(png_t *png, uint32_t ux1, uint32_t uy1, uint32_t ux2,
 				 * wc1 and wc2 for the weightings.
 				 *
 				 * Since hc1 and hc2 are chosen so that
-				 * hc1 + hc2 == 128, the >> 14 below is a
-				 * quick way to divide by
-				 * (hc1 + hc2) * (hc1 + hc2)
+				 * hc1 + hc2 == 128 (and same for wc1 + wc2),
+				 * the >> 14 below is a quick way to divide by
+				 * (hc1 + hc2) * (wc1 + wc2)
 				 */
 				for (i = 0; i < 4; i++)
 					pixel[i] = (
