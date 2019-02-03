@@ -1766,10 +1766,8 @@ usr/src/cmd/sgs/ldprof/amd64/msg.c
 usr/src/cmd/sgs/ldprof/amd64/msg.h
 usr/src/cmd/sgs/ldprof/i386/msg.c
 usr/src/cmd/sgs/ldprof/i386/msg.h
-usr/src/cmd/sgs/lex/amd64/llib-ll.ln
 usr/src/cmd/sgs/lex/common/parser.c
 usr/src/cmd/sgs/lex/i386/lex
-usr/src/cmd/sgs/lex/i386/llib-ll.ln
 usr/src/cmd/sgs/libconv/amd64/arch_msg.c
 usr/src/cmd/sgs/libconv/amd64/arch_msg.h
 usr/src/cmd/sgs/libconv/amd64/audit_msg.c
@@ -1900,16 +1898,10 @@ usr/src/cmd/sgs/libcrle/amd64/msg.c
 usr/src/cmd/sgs/libcrle/amd64/msg.h
 usr/src/cmd/sgs/libcrle/i386/msg.c
 usr/src/cmd/sgs/libcrle/i386/msg.h
-usr/src/cmd/sgs/libdl/amd64/llib-ldl.ln
-usr/src/cmd/sgs/libdl/i386/llib-ldl.ln
-usr/src/cmd/sgs/libelf/amd64/lint.out.1
-usr/src/cmd/sgs/libelf/amd64/llib-lelf.ln
 usr/src/cmd/sgs/libelf/amd64/msg.c
 usr/src/cmd/sgs/libelf/amd64/msg.h
 usr/src/cmd/sgs/libelf/amd64/xlate.c
 usr/src/cmd/sgs/libelf/amd64/xlate64.c
-usr/src/cmd/sgs/libelf/i386/lint.out.1
-usr/src/cmd/sgs/libelf/i386/llib-lelf.ln
 usr/src/cmd/sgs/libelf/i386/msg.c
 usr/src/cmd/sgs/libelf/i386/msg.h
 usr/src/cmd/sgs/libelf/i386/xlate.c
@@ -1930,8 +1922,6 @@ usr/src/cmd/sgs/librtld/amd64/msg.c
 usr/src/cmd/sgs/librtld/amd64/msg.h
 usr/src/cmd/sgs/librtld/i386/msg.c
 usr/src/cmd/sgs/librtld/i386/msg.h
-usr/src/cmd/sgs/librtld_db/amd64/lint.out.1
-usr/src/cmd/sgs/librtld_db/amd64/llib-lrtld_db.ln
 usr/src/cmd/sgs/librtld_db/amd64/msg.c
 usr/src/cmd/sgs/librtld_db/amd64/msg.h
 usr/src/cmd/sgs/librtld_db/demo/Makefile.com.demo
@@ -1940,8 +1930,6 @@ usr/src/cmd/sgs/librtld_db/demo/amd64/Makefile.demo
 usr/src/cmd/sgs/librtld_db/demo/i386/Makefile.demo
 usr/src/cmd/sgs/librtld_db/demo/sparc/Makefile.demo
 usr/src/cmd/sgs/librtld_db/demo/sparcv9/Makefile.demo
-usr/src/cmd/sgs/librtld_db/i386/lint.out.1
-usr/src/cmd/sgs/librtld_db/i386/llib-lrtld_db.ln
 usr/src/cmd/sgs/librtld_db/i386/msg.c
 usr/src/cmd/sgs/librtld_db/i386/msg.h
 usr/src/cmd/sgs/link_audit/amd64/perfcnt
@@ -2016,8 +2004,6 @@ usr/src/cmd/sgs/tools/i386/piglatin
 usr/src/cmd/sgs/tools/i386/sgsmsg
 usr/src/cmd/sgs/tsort/i386/tsort
 usr/src/cmd/sgs/unifdef/i386/unifdef
-usr/src/cmd/sgs/yacc/amd64/llib-ly.ln
-usr/src/cmd/sgs/yacc/i386/llib-ly.ln
 usr/src/cmd/sgs/yacc/i386/yacc
 usr/src/cmd/sh/sh
 usr/src/cmd/shcomp/shcomp
