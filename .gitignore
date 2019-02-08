@@ -3137,14 +3137,12 @@ usr/src/lib/libc/THIRDPARTYLICENSE
 usr/src/lib/libc/amd64/assym.h
 usr/src/lib/libc/amd64/cp_offsets.h
 usr/src/lib/libc/amd64/genassym
-usr/src/lib/libc/amd64/llib-lc.ln
 usr/src/lib/libc/extract-copyright
 usr/src/lib/libc/i386/assym.h
 usr/src/lib/libc/i386/cp_offsets.h
 usr/src/lib/libc/i386/crt/_rtbootld.s
 usr/src/lib/libc/i386/etc/caplib
 usr/src/lib/libc/i386/genassym
-usr/src/lib/libc/i386/llib-lc.ln
 usr/src/lib/libc/i386_hwcap1/assym.h
 usr/src/lib/libc/i386_hwcap1/cp_offsets.h
 usr/src/lib/libc/i386_hwcap1/genassym
