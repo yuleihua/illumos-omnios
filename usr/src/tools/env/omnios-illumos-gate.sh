@@ -279,6 +279,8 @@ export SPRO_VROOT="$SPRO_ROOT"
 
 export PERL_VERSION=5.28
 export PERL_ARCH=i86pc-solaris-thread-multi-64int
+export BLD_JAVA_7='#'
+export BLD_JAVA_8=
 export PERL_PKGVERS=
 export GNUC_ROOT=/opt/gcc-4.4.4/
 export SPRO_ROOT=/opt/sunstudio12.1
@@ -292,6 +294,6 @@ export PRIMARY_CCC=gcc4,/opt/gcc-4.4.4/bin/g++,gnu
 export SHADOW_CCS=gcc7,/opt/gcc-7/bin/gcc,gnu
 export SHADOW_CCCS=gcc7,/opt/gcc-7/bin/g++,gnu
 
-export ONNV_BUILDNUM=`grep '^VERSION=r' /etc/os-release | cut -c10-`
+export ONNV_BUILDNUM=`grep '^VERSION=r' /etc/os-release | cut -c10-15`
 export PKGVERS_BRANCH=$ONNV_BUILDNUM.0
 
