@@ -5,7 +5,7 @@
 .\" The contents of this file are subject to the terms of the Common Development and Distribution License (the "License"). You may not use this file except in compliance with the License. You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE or http://www.opensolaris.org/os/licensing.
 .\" See the License for the specific language governing permissions and limitations under the License. When distributing Covered Code, include this CDDL HEADER in each file and include the License file at usr/src/OPENSOLARIS.LICENSE. If applicable, add the following below this CDDL HEADER, with the
 .\" fields enclosed by brackets "[]" replaced with your own identifying information: Portions Copyright [yyyy] [name of copyright owner]
-.TH ZONECFG 1M "Jul 24, 2017"
+.TH ZONECFG 1M "Feb 13, 2019"
 .SH NAME
 zonecfg \- set up zone configuration
 .SH SYNOPSIS
@@ -369,7 +369,7 @@ The following properties are supported:
 .ad
 .sp .6
 .RS 4n
-\fBaddress\fR, \fBallowed-address\fR, \fBphysical\fR, \fBdefrouter\fR
+\fBaddress\fR, \fBallowed-address\fR, \fBdefrouter\fR, \fBglobal-nic\fR, \fBmac-addr\fR, \fBphysical\fR, \fBvlan-id\fR
 .RE
 
 .sp
@@ -652,7 +652,7 @@ Values needed to determine how, where, and so forth to mount file systems. See
 .sp
 .ne 2
 .na
-\fB\fBnet\fR: address, allowed-address, physical, defrouter\fR
+\fB\fBnet\fR: address, allowed-address, defrouter, global-nic, mac-addr, physical, vlan-id\fR
 .ad
 .sp .6
 .RS 4n
@@ -690,6 +690,8 @@ property must be plumbed in the global zone prior to booting the non-global
 zone. However, if the interface is not used by the global zone, it should be
 configured \fBdown\fR in the global zone, and the default router for the
 interface should be specified here.
+.sp
+The global-nic is used for exclusive stack zones which will use a VNIC on-demand.  When the zone boots, a VNIC named using the physical property will be created on the global NIC.  If provided, the mac-addr and vlan-id will be set on this VNIC.
 .sp
 For an exclusive-IP zone, the physical property must be set and the address and
 default router properties cannot be set.
@@ -990,6 +992,10 @@ fs                dir             simple
                    type            simple
                    options         list of simple
 net               address         simple
+                   allowed-address simple
+                   defrouter       simple
+                   global-nic      simple
+                   mac-addr        simple
                    physical        simple
 device            match           simple
 rctl              name            simple
