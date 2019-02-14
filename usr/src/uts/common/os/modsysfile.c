@@ -22,8 +22,8 @@
 /*
  * Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
- * Copyright 2017 Nexenta Systems, Inc.
  * Copyright 2018 Joyent, Inc.
+ * Copyright 2017 Nexenta Systems, Inc.
  */
 
 #include <sys/types.h>

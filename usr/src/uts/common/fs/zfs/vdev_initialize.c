@@ -474,7 +474,7 @@ vdev_initialize_calculate_progress(vdev_t *vd)
 		 * metaslab. Load it and walk the free tree for more accurate
 		 * progress estimation.
 		 */
-		VERIFY0(metaslab_load(msp));
+		VERIFY0(metaslab_load(msp, spa_syncing_txg(vd->vdev_spa)));
 
 		for (range_seg_t *rs = avl_first(&msp->ms_allocatable->rt_root);
 		    rs; rs = AVL_NEXT(&msp->ms_allocatable->rt_root, rs)) {
@@ -605,7 +605,7 @@ vdev_initialize_thread(void *arg)
 
 		vdev_initialize_ms_mark(msp);
 		mutex_enter(&msp->ms_lock);
-		VERIFY0(metaslab_load(msp));
+		VERIFY0(metaslab_load(msp, spa_syncing_txg(spa)));
 
 		range_tree_walk(msp->ms_allocatable, vdev_initialize_range_add,
 		    vd);

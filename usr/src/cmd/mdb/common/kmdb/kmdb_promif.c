@@ -755,13 +755,6 @@ kmdb_prom_assfail(const char *assertion, const char *file, int line)
 	return (0);
 }
 
-int
-assfail(const char *assertion, const char *file, int line)
-{
-    return kmdb_prom_assfail(assertion, file, line);
-}
-#endif
-
 /*
  * Begin the initialization of the debugger/PROM interface.  Initialization is
  * performed in two steps due to interlocking dependencies between promif and

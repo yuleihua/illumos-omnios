@@ -2425,8 +2425,6 @@ cmpstat(
 	if (is_flag_on(IS_SPARC_TARGET) &&
 	    is_dir_flag_on(NEED_UPDATE) && !bam_nowrite())
 		return (0);
-
-
 	/*
 	 * File exists in old archive. Check if file has changed
 	 */
