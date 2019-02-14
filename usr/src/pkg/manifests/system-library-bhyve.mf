@@ -27,14 +27,10 @@ dir path=usr group=sys
 dir path=usr/lib group=bin
 file path=lib/$(ARCH64)/libvmm.so.1
 file path=lib/$(ARCH64)/libvmmapi.so.1
-file path=lib/$(ARCH64)/llib-lvmmapi.ln
 file path=usr/include/libppt.h
 file path=usr/include/libvmm.h
 file path=usr/lib/$(ARCH64)/libppt.so.1
-file path=usr/lib/$(ARCH64)/llib-lppt.ln
 file path=usr/lib/libppt.so.1
-file path=usr/lib/llib-lppt
-file path=usr/lib/llib-lppt.ln
 license lic_CDDL license=lic_CDDL
 link path=lib/$(ARCH64)/libvmm.so target=./libvmm.so.1
 link path=lib/$(ARCH64)/libvmmapi.so target=./libvmmapi.so.1
