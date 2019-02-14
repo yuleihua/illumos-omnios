@@ -22,8 +22,8 @@
 /*
  * Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
- * Copyright 2017 Nexenta Systems, Inc.
  * Copyright 2018 Joyent, Inc.
+ * Copyright 2017 Nexenta Systems, Inc.
  */
 
 #include <sys/types.h>
@@ -2411,16 +2411,16 @@ read_binding_file(char *bindfile, struct bind **hashtab,
 
 /*
  * read_dacf_binding_file()
- * 	Read the /etc/dacf.conf file and build the dacf_rule_t database from it.
+ *	Read the /etc/dacf.conf file and build the dacf_rule_t database from it.
  *
  * The syntax of a line in the dacf.conf file is:
- *   dev-spec 	[module:]op-set	operation options 	[config-args];
+ *   dev-spec	[module:]op-set	operation options	[config-args];
  *
  * Where:
- *   	1. dev-spec is of the format: name="data"
- *   	2. operation is the operation that this rule matches. (i.e. pre-detach)
- *   	3. options is a comma delimited list of options (i.e. debug,foobar)
- *   	4. config-data is a whitespace delimited list of the format: name="data"
+ *	1. dev-spec is of the format: name="data"
+ *	2. operation is the operation that this rule matches. (i.e. pre-detach)
+ *	3. options is a comma delimited list of options (i.e. debug,foobar)
+ *	4. config-data is a whitespace delimited list of the format: name="data"
  */
 int
 read_dacf_binding_file(char *filename)

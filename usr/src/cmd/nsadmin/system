@@ -83,7 +83,7 @@
 *
 *	Cause these modules to be loaded at boot time, (just before mounting
 *	the root filesystem) rather than at first reference. Note that
-* 	forceload expects a filename which includes the directory. Also
+*	forceload expects a filename which includes the directory. Also
 *	note that loading a module does not necessarily imply that it will
 *	be installed.
 *

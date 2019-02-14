@@ -1234,7 +1234,7 @@ modctl_get_devid(dev_t dev, uint_t len, ddi_devid_t udevid)
 /*ARGSUSED*/
 static int
 modctl_devid2paths(ddi_devid_t udevid, char *uminor_name, uint_t flag,
-	size_t *ulensp, char *upaths)
+    size_t *ulensp, char *upaths)
 {
 	ddi_devid_t	devid = NULL;
 	int		devid_len;
