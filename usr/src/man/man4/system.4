@@ -28,6 +28,11 @@ the package which is delivering the file with '\fB/\fR' characters replaced
 by '\fB:\fR'; file names that start with a dot (\fB.\fR) will be ignored.
 .sp
 .LP
+If \fB/etc/system.d/\fR exists and contains any fragment files,
+then the directory must also be writable or it will not be possible to
+create or update the system boot archive.
+.sp
+.LP
 The \fBsystem\fR file contains commands which are read by the kernel during
 initialization and used to customize the operation of your system. These
 commands are useful for modifying the system's treatment of its loadable kernel
@@ -299,9 +304,9 @@ escape sequences are supported within the quoted string:
 .sp
 .in +2
 .nf
-\en 	(newline)
-\et 	(tab)
-\eb 	(backspace)
+\en	(newline)
+\et	(tab)
+\eb	(backspace)
 .fi
 .in -2
 .sp

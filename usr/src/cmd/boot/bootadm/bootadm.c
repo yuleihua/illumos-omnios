@@ -3882,6 +3882,8 @@ build_etc_system_dir(char *root)
 		return (BAM_ERROR);
 	}
 
+	(void) unlink(tmpfile);
+
 	for (i = 0; i < files; i++) {
 		char	filepath[PATH_MAX];
 		char	*fname;
@@ -4298,7 +4300,7 @@ update_archive(char *root, char *opt)
 	}
 
 	/*
-	 * Process the /etc/system.d/self-assembly file.
+	 * Process the /etc/system.d/.self-assembly file.
 	 */
 	if (build_etc_system_dir(bam_root) == BAM_ERROR)
 		return (BAM_ERROR);

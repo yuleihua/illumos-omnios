@@ -742,10 +742,10 @@ kmdb_prom_debugger_exit(void)
 	mdb.m_pio = NULL;
 }
 
-#ifdef DEBUG
 /*
- * The prom_* files use ASSERT, which is #defined as assfail().
- * We need to redirect that to our assert function.
+ * The prom_* files use ASSERT, which is #defined as assfail().  We need to
+ * redirect that to our assert function. This is also used by the various STAND
+ * libraries.
  */
 int
 kmdb_prom_assfail(const char *assertion, const char *file, int line)
