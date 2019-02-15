@@ -24,6 +24,7 @@
  * Copyright 2014 Nexenta Systems, Inc.  All rights reserved.
  * Copyright 2014 Gary Mills
  * Copyright 2016, Joyent Inc.
+ * Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
  */
 
 /*
@@ -1778,8 +1779,12 @@ create_func(cmd_t *cmd)
 			force = B_TRUE;
 			break;
 		case 't':
-			(void) strlcpy(zone_template, optarg,
-			    sizeof (zone_template));
+			if (isupper(optarg[0]))
+				(void) strlcpy(zone_template, optarg,
+				    sizeof (zone_template));
+			else
+				(void) snprintf(zone_template,
+				    sizeof (zone_template), "OMNI%s", optarg);
 			break;
 		case 'X':
 			(void) snprintf(zone_template, sizeof (zone_template),

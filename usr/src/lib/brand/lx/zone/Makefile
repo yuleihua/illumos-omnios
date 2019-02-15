@@ -30,7 +30,7 @@ PROGS =	lx_install lx_boot
 PROGS += lx_boot_zone_redhat lx_boot_zone_ubuntu lx_boot_zone_debian
 PROGS += lx_boot_zone_busybox lx_boot_zone_suse
 XMLDOCS =	config.xml platform.xml
-TEMPLATES =	SUNWlx.xml SUNWlx26.xml
+TEMPLATES =	OMNIlx.xml OMNIlx26.xml
 
 all:	$(PROGS)
 
