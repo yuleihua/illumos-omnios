@@ -21,6 +21,7 @@
 
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
  */
 
 /*
@@ -1257,9 +1258,19 @@ dlmgmt_setzoneid(void *argp, void *retp, size_t *sz, zoneid_t zoneid,
 	/*
 	 * Before we remove the link from its current zone, make sure that
 	 * there isn't a link with the same name in the destination zone.
+	 * If the link is moving to the global zone, then check whether the
+	 * detected duplicate link is on loan since this means it is
+	 * not a real duplicate in the destination zone.
+	 *
+	 * This situation can occur when a link is created then given to a
+	 * zone and then a link with a duplicate name is created. When the
+	 * first zone is halted the link cannot be moved back to the global
+	 * zone as it would then be a duplicate. Returning EEXIST here
+	 * results in the zone remaining in the 'down' state.
 	 */
-	if (zoneid != GLOBAL_ZONEID &&
-	    link_by_name(linkp->ll_link, newzoneid) != NULL) {
+	dlmgmt_link_t *dup = link_by_name(linkp->ll_link, newzoneid);
+	if (dup != NULL && dup != linkp &&
+	    (newzoneid != GLOBAL_ZONEID || !dup->ll_onloan)) {
 		err = EEXIST;
 		goto done;
 	}
