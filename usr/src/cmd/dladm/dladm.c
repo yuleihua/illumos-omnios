@@ -22,6 +22,7 @@
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2016 Nexenta Systems, Inc.
+ * Copyright (c) 2011 Joyent Inc. All rights reserved.
  */
 
 #include <stdio.h>
@@ -1012,21 +1013,24 @@ typedef struct vnic_fields_buf_s
 	char vnic_macaddr[18];
 	char vnic_macaddrtype[19];
 	char vnic_vid[6];
+	char vnic_zone[ZONENAME_MAX];
 } vnic_fields_buf_t;
 
 static const ofmt_field_t vnic_fields[] = {
 { "LINK",		13,
 	offsetof(vnic_fields_buf_t, vnic_link),	print_default_cb},
-{ "OVER",		13,
+{ "OVER",		11,
 	offsetof(vnic_fields_buf_t, vnic_over),	print_default_cb},
-{ "SPEED",		7,
+{ "SPEED",		6,
 	offsetof(vnic_fields_buf_t, vnic_speed), print_default_cb},
 { "MACADDRESS",		18,
 	offsetof(vnic_fields_buf_t, vnic_macaddr), print_default_cb},
-{ "MACADDRTYPE",	20,
+{ "MACADDRTYPE",	12,
 	offsetof(vnic_fields_buf_t, vnic_macaddrtype), print_default_cb},
-{ "VID",		7,
+{ "VID",		5,
 	offsetof(vnic_fields_buf_t, vnic_vid), print_default_cb},
+{ "ZONE",		20,
+	offsetof(vnic_fields_buf_t, vnic_zone), print_default_cb},
 { NULL,			0, 0, NULL}}
 ;
 
@@ -4980,6 +4984,9 @@ print_vnic(show_vnic_state_t *state, datalink_id_t linkid)
 	char			vnic_name[MAXLINKNAMELEN];
 	char			mstr[MAXMACADDRLEN * 3];
 	vnic_fields_buf_t	vbuf;
+	uint_t			valcnt = 1;
+	char			zonename[DLADM_PROP_VAL_MAX + 1];
+	char			*valptr[1];
 
 	if ((status = dladm_vnic_info(handle, linkid, vnic, state->vs_flags)) !=
 	    DLADM_STATUS_OK)
@@ -5008,6 +5015,13 @@ print_vnic(show_vnic_state_t *state, datalink_id_t linkid)
 	    dladm_datalink_id2info(handle, vnic->va_link_id, NULL, NULL,
 	    NULL, devname, sizeof (devname)) != DLADM_STATUS_OK)
 		(void) sprintf(devname, "?");
+
+	zonename[0] = '\0';
+	if (!is_etherstub) {
+		valptr[0] = zonename;
+		(void) dladm_get_linkprop(handle, linkid,
+		    DLADM_PROP_VAL_CURRENT, "zone", (char **)valptr, &valcnt);
+	}
 
 	state->vs_found = B_TRUE;
 	if (state->vs_stats) {
@@ -5084,6 +5098,13 @@ print_vnic(show_vnic_state_t *state, datalink_id_t linkid)
 
 			(void) snprintf(vbuf.vnic_vid, sizeof (vbuf.vnic_vid),
 			    "%d", vnic->va_vid);
+
+			if (zonename[0] != '\0')
+				(void) snprintf(vbuf.vnic_zone,
+				    sizeof (vbuf.vnic_zone), "%s", zonename);
+			else
+				(void) strlcpy(vbuf.vnic_zone, "--",
+				     sizeof (vbuf.vnic_zone));
 		}
 
 		ofmt_print(state->vs_ofmt, &vbuf);
