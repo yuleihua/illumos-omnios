@@ -41,7 +41,7 @@
 	<install>/usr/lib/brand/ipkg/pkgcreatezone -z %z -R %R</install>
 	<installopts>a:c:d:e:hk:P:p:suv</installopts>
 	<boot></boot>
-	<sysboot>/usr/lib/brand/ipkg/prestate %z %R 2 0</sysboot>
+	<sysboot>/usr/lib/brand/ipkg/prestate %z %R 99 0</sysboot>
 	<halt></halt>
 	<shutdown>/usr/sbin/shutdown -y -g0 -i5</shutdown>
 	<verify_cfg></verify_cfg>
