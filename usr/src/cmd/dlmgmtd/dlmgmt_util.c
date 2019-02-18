@@ -21,6 +21,7 @@
 
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
  */
 
 /*
@@ -463,7 +464,8 @@ dlmgmt_create_common(const char *name, datalink_class_t class, uint32_t media,
 	linkp->ll_gen = 0;
 	linkp->ll_tomb = B_FALSE;
 
-	if (avl_find(&dlmgmt_name_avl, linkp, &name_where) != NULL ||
+	if (link_by_name(name, zoneid) != NULL ||
+	    avl_find(&dlmgmt_name_avl, linkp, &name_where) != NULL ||
 	    avl_find(&dlmgmt_id_avl, linkp, &id_where) != NULL) {
 		err = EEXIST;
 		goto done;

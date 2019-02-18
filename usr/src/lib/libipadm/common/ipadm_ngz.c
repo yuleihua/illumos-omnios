@@ -347,6 +347,7 @@ i_ipadm_zone_get_network(zoneid_t zoneid, datalink_id_t linkid, int type,
     void *buf, size_t *bufsize)
 {
 	zone_net_data_t *zndata;
+	ipadm_status_t ret = IPADM_SUCCESS;
 
 	zndata = calloc(1, sizeof (*zndata) + *bufsize);
 	if (zndata == NULL)
@@ -357,11 +358,14 @@ i_ipadm_zone_get_network(zoneid_t zoneid, datalink_id_t linkid, int type,
 
 	if (zone_getattr(zoneid, ZONE_ATTR_NETWORK, zndata,
 	    sizeof (*zndata) + *bufsize) < 0) {
-		return (ipadm_errno2status(errno));
+		ret = ipadm_errno2status(errno);
+		goto out;
 	}
 	*bufsize = zndata->zn_len;
 	bcopy(zndata->zn_val, buf, *bufsize);
-	return (IPADM_SUCCESS);
+out:
+	free(zndata);
+	return (ret);
 }
 
 /*
@@ -480,7 +484,7 @@ ipadm_init_net_from_gz(ipadm_handle_t iph, char *ifname,
 	} else {
 		(void) dladm_walk_datalink_id(i_ipadm_zone_network_attr, dlh,
 		    &nwd, DATALINK_CLASS_ALL, DATALINK_ANY_MEDIATYPE,
-		    DLADM_OPT_PERSIST);
+		    DLADM_OPT_ACTIVE | DLADM_OPT_PERSIST);
 	}
 	return (nwd.ngz_ipstatus);
 }

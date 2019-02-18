@@ -2729,7 +2729,7 @@ add_net_for_linkid(zlog_t *zlogp, zoneid_t zoneid, zone_addr_list_t *start)
 		goto done;
 
 	/* over-write last ',' with '\0' */
-	zaddr[strnlen(zaddr, zlen) + 1] = '\0';
+	zaddr[strnlen(zaddr, zlen) - 1] = '\0';
 
 	/*
 	 * First make sure L3 protection is not already set on the link.
