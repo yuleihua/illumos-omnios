@@ -480,7 +480,7 @@ ipadm_init_net_from_gz(ipadm_handle_t iph, char *ifname,
 	} else {
 		(void) dladm_walk_datalink_id(i_ipadm_zone_network_attr, dlh,
 		    &nwd, DATALINK_CLASS_ALL, DATALINK_ANY_MEDIATYPE,
-		    DLADM_OPT_PERSIST);
+		    DLADM_OPT_ACTIVE | DLADM_OPT_PERSIST);
 	}
 	return (nwd.ngz_ipstatus);
 }
