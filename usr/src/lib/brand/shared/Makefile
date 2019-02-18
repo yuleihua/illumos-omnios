@@ -20,6 +20,7 @@
 #
 #
 # Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
 #
 
 default: all
@@ -27,7 +28,7 @@ default: all
 # Build everything in parallel; use .WAIT for dependencies
 .PARALLEL:
 
-SUBDIRS =	brand zone
+SUBDIRS =	brand zone zadump
 MSGSUBDIRS =	zone
 
 all :=		TARGET= all

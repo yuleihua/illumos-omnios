@@ -21,6 +21,7 @@
 
 #
 # Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
 #
 
 set name=pkg.fmri value=pkg:/system/zones@$(PKGVERS)
@@ -89,6 +90,7 @@ file path=usr/lib/brand/lipkg/platform.xml mode=0444
 file path=usr/lib/brand/shared/common.ksh mode=0444
 file path=usr/lib/brand/shared/query mode=0755
 file path=usr/lib/brand/shared/uninstall.ksh mode=0444
+file path=usr/lib/brand/shared/zadump mode=0755
 file path=usr/lib/libbrand.so.1
 file path=usr/lib/libzonecfg.so.1
 file path=usr/lib/libzonestat.so.1
