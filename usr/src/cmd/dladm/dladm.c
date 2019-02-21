@@ -23,6 +23,7 @@
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2016 Nexenta Systems, Inc.
  * Copyright (c) 2011 Joyent Inc. All rights reserved.
+ * Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
  */
 
 #include <stdio.h>
@@ -1475,10 +1476,19 @@ main(int argc, char *argv[])
 #endif
 	(void) textdomain(TEXT_DOMAIN);
 
-	progname = argv[0];
+	if ((progname = strrchr(argv[0], '/')) == NULL)
+		progname = argv[0];
+	else
+		progname++;
 
-	if (argc < 2)
-		usage();
+	if (argc < 2) {
+		/*
+		 * do_show_link() does not care if argv is null terminated
+		 * so replace the null with "show-link" as the default command.
+		 */
+		argv[1] = "show-link";
+		argc = 2;
+	}
 
 	for (i = 0; i < sizeof (cmds) / sizeof (cmds[0]); i++) {
 		cmdp = &cmds[i];

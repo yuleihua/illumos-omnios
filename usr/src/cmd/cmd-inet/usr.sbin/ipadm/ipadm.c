@@ -25,6 +25,7 @@
  * Copyright 2017 Joyent, Inc.
  * Copyright 2017 Gary Mills
  * Copyright (c) 2016, Chris Fraire <cfraire@me.com>.
+ * Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
  */
 
 #include <arpa/inet.h>
@@ -380,8 +381,14 @@ main(int argc, char *argv[])
 	else
 		progname++;
 
-	if (argc < 2)
-		usage();
+	if (argc < 2) {
+		/*
+		 * do_show_addr() does not care if argv is null terminated
+		 * so replace the null with "show-addr" as the default command.
+		 */
+		argv[1] = "show-addr";
+		argc = 2;
+	}
 
 	status = ipadm_open(&iph, 0);
 	if (status != IPADM_SUCCESS) {
