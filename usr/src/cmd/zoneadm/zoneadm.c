@@ -557,6 +557,7 @@ lookup_zone_info(const char *zone_name, zoneid_t zid, zone_entry_t *zent)
 	 * Note for global zone, ZS_SHARED is set always.
 	 */
 	if (zid == GLOBAL_ZONEID) {
+		(void) strlcpy(zent->zbrand, "ipkg", sizeof (zent->zbrand));
 		zent->ziptype = ZS_SHARED;
 		return (Z_OK);
 	}
