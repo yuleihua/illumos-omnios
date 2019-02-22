@@ -34,7 +34,7 @@ DEFAULTONPUB="omnios"
 DEFAULTCONS="osnet"
 NATIVE_BRAND="ipkg"
 # Keep the leading and trailing spaces in this definition
-LINKED_BRANDS=" lipkg sparse "
+LINKED_BRANDS=" lipkg sparse pkgsrc "
 
 banner()
 {
@@ -118,6 +118,7 @@ configure_publishers()
 		set -- $zone
 		zone=$2; state=$3; path=$4; brand=$6
 		IFS="$OIFS"
+		[ "$zone" = "global" ] && continue
 		[ "$state" = "incomplete" ] && continue
 		[ "$state" = "configured" ] && continue
 		if [[ $LINKED_BRANDS = *" $brand "* ]]; then
