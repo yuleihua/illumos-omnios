@@ -13,13 +13,13 @@ are included at the end of this file.
 
 =======================================================================
 
-## 9941 Noise from cfgadm plugins
+## 10187 ses enumerator blows chunks on US60+8
 
 Packages:
- > system/library
+ > service/fault-management
 
 Archive:
- > https://downloads.omniosce.org/pkg/r151028/9941_backport_r28.p5p
+ > https://hf.omnios.org/r151028/10187_fmd.p5p
 
 =======================================================================
 
