@@ -155,7 +155,7 @@ smf_netstrategy () {
 #
 #   Example, send SIGTERM to contract 200:
 #
-#       smf_kill_contract 200 TERM 
+#       smf_kill_contract 200 TERM
 #
 #   Since killing a contract with pkill(1) is not atomic,
 #   smf_kill_contract will continue to send SIGNAL to CONTRACT
@@ -202,7 +202,7 @@ smf_kill_contract() {
 	# Return if WAIT is not set or is "0"
 	[ -z "$3" ] && return 0
 	[ "$3" -eq 0 ] && return 0
- 
+
 	# If contract does not empty, keep killing the contract to catch
 	# any child processes missed because they were forking
 	/usr/bin/pgrep -c $1 > /dev/null 2>&1

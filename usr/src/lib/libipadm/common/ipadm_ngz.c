@@ -20,6 +20,7 @@
  */
 /*
  * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
  */
 
 #include <errno.h>
@@ -451,7 +452,7 @@ fail:
  */
 ipadm_status_t
 ipadm_init_net_from_gz(ipadm_handle_t iph, char *ifname,
-	void (*persist_if)(char *, boolean_t, boolean_t))
+    void (*persist_if)(char *, boolean_t, boolean_t))
 {
 	ngz_walk_data_t nwd;
 	uint64_t flags;
