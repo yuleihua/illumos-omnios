@@ -34,6 +34,11 @@ all: $(PROG)
 
 $(PROG): $(OBJS)
 	$(LINK.c) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)
+	$(POST_PROCESS)
+
+%.o: %.c
+	$(COMPILE.c) $<
+	$(POST_PROCESS_O)
 
 $(ROOTSHARED) :=        FILEMODE = 755
 install: all $(ROOTSHARED)
