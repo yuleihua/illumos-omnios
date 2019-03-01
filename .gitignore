@@ -131,10 +131,6 @@ usr/src/boot/sys/boot/libstand/i386/libstand_gzguts.h
 usr/src/boot/sys/boot/libstand/i386/libstand_zutil.h
 usr/src/boot/sys/boot/libstand/i386/machine
 usr/src/boot/sys/boot/libstand/i386/x86
-usr/src/boot/sys/boot/zfs/amd64/machine
-usr/src/boot/sys/boot/zfs/amd64/x86
-usr/src/boot/sys/boot/zfs/i386/machine
-usr/src/boot/sys/boot/zfs/i386/x86
 usr/src/cmd/Adm/sun/motd
 usr/src/cmd/Adm/sun/smbpasswd
 usr/src/cmd/abi/appcert/etc/etc.alt
@@ -2508,6 +2504,7 @@ usr/src/lib/brand/lx/zone/lx_boot_zone_ubuntu
 usr/src/lib/brand/lx/zone/lx_install
 usr/src/lib/brand/shared/brand/amd64/assym.h
 usr/src/lib/brand/shared/brand/i386/assym.h
+usr/src/lib/brand/shared/zadump/zadump
 usr/src/lib/brand/shared/zone/query
 usr/src/lib/brand/sn1/zone/sn1_boot
 usr/src/lib/brand/solaris10/cmd/s10_isaexec_wrapper
