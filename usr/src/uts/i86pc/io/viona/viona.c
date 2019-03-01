@@ -1537,7 +1537,7 @@ viona_worker_rx(viona_vring_t *ring, viona_link_t *link)
 	ASSERT(MUTEX_HELD(&ring->vr_lock));
 	ASSERT3U(ring->vr_state, ==, VRS_RUN);
 
-	atomic_or_16(ring->vr_used_flags, VRING_USED_F_NO_NOTIFY);
+	*ring->vr_used_flags |= VRING_USED_F_NO_NOTIFY;
 	mac_rx_set(link->l_mch, viona_rx, link);
 
 	do {
@@ -1578,7 +1578,7 @@ viona_worker_tx(viona_vring_t *ring, viona_link_t *link)
 		boolean_t bail = B_FALSE;
 		uint_t ntx = 0;
 
-		atomic_or_16(ring->vr_used_flags, VRING_USED_F_NO_NOTIFY);
+		*ring->vr_used_flags |= VRING_USED_F_NO_NOTIFY;
 		while (viona_vr_num_avail(ring)) {
 			viona_tx(link, ring);
 
@@ -1590,14 +1590,18 @@ viona_worker_tx(viona_vring_t *ring, viona_link_t *link)
 			if (ntx++ >= ring->vr_size)
 				break;
 		}
-		atomic_and_16(ring->vr_used_flags, ~VRING_USED_F_NO_NOTIFY);
+		*ring->vr_used_flags &= ~VRING_USED_F_NO_NOTIFY;
 
 		VIONA_PROBE2(tx, viona_link_t *, link, uint_t, ntx);
 
 		/*
 		 * Check for available descriptors on the ring once more in
 		 * case a late addition raced with the NO_NOTIFY flag toggle.
+		 *
+		 * The barrier ensures that visibility of the vr_used_flags
+		 * store does not cross the viona_vr_num_avail() check below.
 		 */
+		membar_enter();
 		bail = VRING_NEED_BAIL(ring, p);
 		if (!bail && viona_vr_num_avail(ring)) {
 			continue;
@@ -2457,6 +2461,7 @@ pad_drop:
 		mp = next;
 	}
 
+	membar_enter();
 	if ((*ring->vr_avail_flags & VRING_AVAIL_F_NO_INTERRUPT) == 0) {
 		viona_intr_ring(ring);
 	}
@@ -2484,6 +2489,7 @@ viona_tx_done(viona_vring_t *ring, uint32_t len, uint16_t cookie)
 {
 	vq_pushchain(ring, len, cookie);
 
+	membar_enter();
 	if ((*ring->vr_avail_flags & VRING_AVAIL_F_NO_INTERRUPT) == 0) {
 		viona_intr_ring(ring);
 	}
@@ -2532,9 +2538,18 @@ viona_tx_csum(viona_vring_t *ring, const struct virtio_net_hdr *hdr,
 	ipha_t *ipha = NULL;
 	uint8_t ipproto = IPPROTO_NONE; /* NONE is not exactly right, but ok */
 	uint16_t flags = 0;
+	const uint_t csum_start = hdr->vrh_csum_start;
+	const uint_t csum_stuff = hdr->vrh_csum_offset + csum_start;
 
-	if (MBLKL(mp) < sizeof (*eth)) {
-		/* Buffers shorter than an ethernet header are hopeless */
+	/*
+	 * Validate that the checksum offsets provided by the guest are within
+	 * the bounds of the packet.  Additionally, ensure that the checksum
+	 * contents field is within the headers mblk copied by viona_tx().
+	 */
+	if (csum_start >= len || csum_start < eth_len || csum_stuff >= len ||
+	    (csum_stuff + sizeof (uint16_t)) > MBLKL(mp)) {
+		VIONA_PROBE2(fail_hcksum, viona_link_t *, link, mblk_t *, mp);
+		VIONA_RING_STAT_INCR(ring, fail_hcksum);
 		return (B_FALSE);
 	}
 
@@ -2634,17 +2649,13 @@ viona_tx_csum(viona_vring_t *ring, const struct virtio_net_hdr *hdr,
 	 */
 	if ((link->l_cap_csum & HCKSUM_INET_PARTIAL) != 0 &&
 	    (ipproto == IPPROTO_TCP || ipproto == IPPROTO_UDP)) {
-		uint_t start, stuff, end;
-
 		/*
 		 * MAC expects these offsets to be relative to the
 		 * start of the L3 header rather than the L2 frame.
 		 */
-		start = hdr->vrh_csum_start - eth_len;
-		stuff = start + hdr->vrh_csum_offset;
-		end = len - eth_len;
 		flags |= HCK_PARTIALCKSUM;
-		mac_hcksum_set(mp, start, stuff, end, 0, flags);
+		mac_hcksum_set(mp, csum_start - eth_len, csum_stuff - eth_len,
+		    len - eth_len, 0, flags);
 		return (B_TRUE);
 	}
 
@@ -2656,6 +2667,8 @@ viona_tx_csum(viona_vring_t *ring, const struct virtio_net_hdr *hdr,
 	if (ftype == ETHERTYPE_IP) {
 		if ((link->l_cap_csum & HCKSUM_INET_FULL_V4) != 0 &&
 		    (ipproto == IPPROTO_TCP || ipproto == IPPROTO_UDP)) {
+			uint16_t *csump = (uint16_t *)(mp->b_rptr + csum_stuff);
+			*csump = 0;
 			flags |= HCK_FULLCKSUM;
 			mac_hcksum_set(mp, 0, 0, 0, 0, flags);
 			return (B_TRUE);
@@ -2668,6 +2681,8 @@ viona_tx_csum(viona_vring_t *ring, const struct virtio_net_hdr *hdr,
 	} else if (ftype == ETHERTYPE_IPV6) {
 		if ((link->l_cap_csum & HCKSUM_INET_FULL_V6) != 0 &&
 		    (ipproto == IPPROTO_TCP || ipproto == IPPROTO_UDP)) {
+			uint16_t *csump = (uint16_t *)(mp->b_rptr + csum_stuff);
+			*csump = 0;
 			flags |= HCK_FULLCKSUM;
 			mac_hcksum_set(mp, 0, 0, 0, 0, flags);
 			return (B_TRUE);

@@ -24,7 +24,7 @@
  */
 
 /*
- * Copyright (c) 2012, Joyent, Inc. All rights reserved.
+ * Copyright (c) 2019, Joyent, Inc. All rights reserved.
  * Copyright (c) 2016 by Delphix. All rights reserved.
  */
 
@@ -155,14 +155,21 @@ typedef struct {
 #define	CTRL(c)	((c) & 0x01f)
 #endif
 
+#define	IOB_AUTOWRAP(iob)	\
+	((mdb.m_flags & MDB_FL_AUTOWRAP) && \
+	((iob)->iob_flags & MDB_IOB_AUTOWRAP))
+
 /*
  * Define macro for determining if we should automatically wrap to the next
  * line of output, based on the amount of consumed buffer space and the
- * specified size of the next thing to be inserted (n).
+ * specified size of the next thing to be inserted (n) -- being careful to
+ * not force a spurious wrap if we're autoindented and already at the margin.
  */
 #define	IOB_WRAPNOW(iob, n)	\
-	(((iob)->iob_flags & MDB_IOB_AUTOWRAP) && ((iob)->iob_nbytes != 0) && \
-	((n) + (iob)->iob_nbytes > (iob)->iob_cols))
+	(IOB_AUTOWRAP(iob) && (iob)->iob_nbytes != 0 && \
+	((n) + (iob)->iob_nbytes > (iob)->iob_cols) &&  \
+	!(((iob)->iob_flags & MDB_IOB_INDENT) && \
+	(iob)->iob_nbytes == (iob)->iob_margin))
 
 /*
  * Define prompt string and string to erase prompt string for iob_pager
@@ -414,7 +421,7 @@ void
 mdb_iob_destroy(mdb_iob_t *iob)
 {
 	/*
-	 * Don't flush a pipe, since it may cause a context swith when the
+	 * Don't flush a pipe, since it may cause a context switch when the
 	 * other side has already been destroyed.
 	 */
 	if (!mdb_iob_isapipe(iob))
@@ -1809,7 +1816,7 @@ mdb_iob_nputs(mdb_iob_t *iob, const char *s, size_t nbytes)
 	 * flush the buffer if we reach the end of a line.
 	 */
 	while (nleft != 0) {
-		if (iob->iob_flags & MDB_IOB_AUTOWRAP) {
+		if (IOB_AUTOWRAP(iob)) {
 			ASSERT(iob->iob_cols >= iob->iob_nbytes);
 			n = iob->iob_cols - iob->iob_nbytes;
 		} else {
@@ -1827,10 +1834,11 @@ mdb_iob_nputs(mdb_iob_t *iob, const char *s, size_t nbytes)
 		iob->iob_nbytes += m;
 
 		if (m == n && nleft != 0) {
-			if (iob->iob_flags & MDB_IOB_AUTOWRAP)
+			if (IOB_AUTOWRAP(iob)) {
 				mdb_iob_nl(iob);
-			else
+			} else {
 				mdb_iob_flush(iob);
+			}
 		}
 	}
 }
@@ -1876,7 +1884,7 @@ mdb_iob_fill(mdb_iob_t *iob, int c, size_t nfill)
 	ASSERT(iob->iob_flags & MDB_IOB_WRONLY);
 
 	while (nfill != 0) {
-		if (iob->iob_flags & MDB_IOB_AUTOWRAP) {
+		if (IOB_AUTOWRAP(iob)) {
 			ASSERT(iob->iob_cols >= iob->iob_nbytes);
 			n = iob->iob_cols - iob->iob_nbytes;
 		} else {
@@ -1893,10 +1901,11 @@ mdb_iob_fill(mdb_iob_t *iob, int c, size_t nfill)
 		nfill -= m;
 
 		if (m == n && nfill != 0) {
-			if (iob->iob_flags & MDB_IOB_AUTOWRAP)
+			if (IOB_AUTOWRAP(iob)) {
 				mdb_iob_nl(iob);
-			else
+			} else {
 				mdb_iob_flush(iob);
+			}
 		}
 	}
 }
@@ -1904,7 +1913,7 @@ mdb_iob_fill(mdb_iob_t *iob, int c, size_t nfill)
 void
 mdb_iob_ws(mdb_iob_t *iob, size_t n)
 {
-	if (iob->iob_nbytes + n < iob->iob_cols)
+	if (!IOB_AUTOWRAP(iob) || iob->iob_nbytes + n < iob->iob_cols)
 		mdb_iob_fill(iob, ' ', n);
 	else
 		mdb_iob_nl(iob);
