@@ -1,12 +1,17 @@
 '\" te
 .\" Copyright 2015, 2018, 2019, Meisaka Yukara and Prominic.NET Inc., Rights Reserved.
-.TH in.cdpd 1M "Jan 29, 2019"
+.\" Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+.\" The contents of this file are subject to the terms of the Common Development and Distribution License (the "License").  You may not use this file except in compliance with the License.
+.\" You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE or http://www.opensolaris.org/os/licensing.  See the License for the specific language governing permissions and limitations under the License.
+.\" When distributing Covered Code, include this CDDL HEADER in each file and include the License file at usr/src/OPENSOLARIS.LICENSE.  If applicable, add the following below this CDDL HEADER, with the fields enclosed by brackets "[]" replaced with your own identifying information: Portions Copyright [yyyy] [name of copyright owner]
+.TH in.cdpd 1M "Mar 07, 2019"
 .SH NAME
-cdp, in.cdpd \- datalink softswitch and Cisco discovery agent
+in.cdpd \- Cisco discovery agent
 .SH SYNOPSIS
+
 .LP
 .nf
-\fBin.cdpd\fR [\fB-fm\fR | \fB\-fj\fR | \fB\-fx\fR] \fIsub\-command\fR [\fIargs\fR]
+\fBin.cdpd\fR [\fB\-v\fR ...] [\fB\-d\fR] \fB\-R\fR | \fB\-r\fR [\fIdevice\fR]
 .fi
 
 .LP
@@ -14,88 +19,30 @@ cdp, in.cdpd \- datalink softswitch and Cisco discovery agent
 \fBin.cdpd\fR \fB\-l\fR
 .fi
 
-.LP
-.nf
-\fBin.cdpd\fR [\fB\-v\fR ...] [\fB\-d\fR] [\fB\-p\fR \fImode\fR ...] \fB\-R\fR | \fB\-r\fR [\fIdevice\fR]
-.fi
-
 .SH DESCRIPTION
 .sp
 .LP
-\fBin.cdpd\fR is both a service and utility to interface with that service.
-.sp
-.LP
-\fBin.cdpd\fR when running in service mode, actively listens for other hosts, and
-advertises the local machine to connected network interfaces using the
-\fBCisco Discovery Protocol (CDP)\fR. Local network interfaces available for use are
-those which implement \fBdlpi\fR(7P) and act as Ethernet provider nodes. \fBin.cdpd\fR
+\fBin.cdpd\fR actively listens for other hosts, and advertises the local
+machine to connected network interfaces using the
+\fBCisco Discovery Protocol (CDP)\fR.
+Local network interfaces available for use are those which implement
+\fBdlpi\fR(7P) and act as Ethernet provider nodes. \fBin.cdpd\fR
 will connect to each provider node, and register with it to read raw datalink
-frames and the ability to parse CDP.
+frames in order to parse CDP.
 .sp
 .LP
 When the \fBin.cdpd\fR service starts, it requests multicast promiscuous mode on
 all Ethernet style interfaces, and begins processing raw multicast frames,
 scanning for those that match the CDP multicast address and LLC header.
 The DLPI layer does not explicitly specify the ability to bind to, and listen
-for LLC frames, so \fBin.cdpd\fR binds to the typically unused SAP address of 0x0000,
-and enables raw mode processing.
+for LLC frames, so \fBin.cdpd\fR binds to the typically unused SAP address of
+0x0000, and enables raw mode processing.
 .sp
 .LP
-The \fBin.cdpd\fR service opens a local domain socket for control information.
-Providing basic operation and access to status data, allowed for
-non-privileged users. This means \fBin.cdpd\fR can also be invoked with commands,
-which it will send to the service mode instance and retrieve the results from.
+The associated \fBcdpadm\fR utility can be used to display status data from
+the running daemon.
 .bp
 .SH OPTIONS
-.sp
-.ne 7
-.na
-\fB\fB-pmulti\fR\fR
-.br
-\fB\fB-p\fR \fBmulti\fR\fR
-.br
-\fB\fB-pm\fR\fR
-.ad
-.RS 10n
-Enables multicast promiscuous mode, this is enabled by default.
-But the option to enable it is documented for completeness.
-.RE
-
-.sp
-.ne 6
-.na
-\fB\fB-pphys\fR\fR
-.br
-\fB\fB-p\fR \fBphys\fR\fR
-.br
-\fB\fB-pp\fR\fR
-.ad
-.RS 10n
-Enables physical and unicast promiscuous mode, this allows
-\fBin.cdpd\fR to read all frames being received, including those
-being sent from the local machine. It is typically only useful
-when combined with SAP promiscuous mode or dump frames option.
-The \fBin.cdpd\fR switching service mode enables this option,
-This mode is disabled by default.
-.RE
-
-.sp
-.ne 6
-.na
-\fB\fB-psap\fR\fR
-.br
-\fB\fB-p\fR \fBsap\fR\fR
-.br
-\fB\fB-ps\fR\fR
-.ad
-.RS 10n
-Enables SAP promiscuous mode, this allows \fBin.cdpd\fR to read
-frames received for other services, such as IP, IPv6, and VLANs
-It is typically only useful when combined with physical
-promiscuous mode or dump frames option.
-The \fBin.cdpd\fR switching service mode enables this option,
-This mode is disabled by default.
-.RE
 
 .sp
 .ne 3
@@ -142,87 +89,11 @@ Starts the service in background mode.
 .ad
 .RS 10n
 Starts the service in forground mode. This is mainly used for verbose
-diagnostics, testing, frame dumps, and debugging perposes.
+diagnostics, testing, frame dumps, and debugging purposes.
 .RE
-
-.sp
-.SS "Subcommands"
-.sp
-.LP
-The following subcommands are supported:
-.sp
-.ne 3
-.na
-\fB\fBshow\fR \fBcdp\fR\fR
-.ad
-.RS 10n
-Outputs the current CDP info table. Supports output formats.
-.RE
-
-.ne 2
-.SS "Output Formats"
-.LP
-The \fBshow\fR commands accept one of various output format specifiers.
-These are used for data exchange with external programs and/or scripts.
-A format specifier can appear anywhere in the arguments, both before, after,
-or even in the middle of a command. Multiple specifers can included on the
-command line, but only the last one will be used.
-.sp
-.TS
-c c
-l l .
-Format	Output Type
-_
-\fInone\fR	\fBConsole formatted output\fR
-\fB-fm\fR	\fBSemicolon seperated fields, no headers\fR
-\fB-fj\fR	\fBJSON style array of objects, one object per entry\fR
-\fB-fx\fR	\fBXML formatted blocks\fR
-.TE
-
-.ne 2
-.SS "Compatibility"
-.sp
-.LP
-Earlier development versions ran in an immediate mode and required devices
-be explicitly specified by path. This is no longer the case.
-.sp
-Support for devices specified by paths still exists, this allows use of
-non-physical interfaces, such as crossbow VNICs.
-.sp
-For the current version: the immediate mode no longer exists, command switches
-have different meanings, the previously used \fB-l\fR switch for immediate mode
-now lists devices and exits. Devices can be specified by name instead of path.
-.sp
-The default current output format is a formatted table, a previous version
-outputted a space delimited line per entry, a similar output can be obtained
-with the \fB-fm\fR flag, although, this uses semicolons instead of spaces, as it
-now includes fields that may typically contain a space.
 
 .bp
 .SH FILES
-.sp
-.ne 2
-.na
-\fB\fB/dev/igb*\fR\fR
-.ad
-.na
-\fB\fB/dev/e1000g*\fR\fR
-.ad
-.na
-\fB\fB/dev/ixgbe*\fR\fR
-.ad
-.RS 12n
-Examples of device nodes, many types exist and are searched here.
-.RE
-
-.sp
-.ne 2
-.na
-\fB\fB/dev/network/*\fR\fR
-.ad
-.RS 12n
-Instances of all network device nodes, including virtual ones.
-.RE
 
 .sp
 .ne 2
@@ -239,8 +110,7 @@ Files used by the service instance.
 .SH SEE ALSO
 .sp
 .LP
-\fBuname\fR(1), \fBdladm\fR(1M), \fBsnoop\fR(1M), \fBioctl\fR(2), \fBinet_addr\fR(3SOCKET),
-\fBattributes\fR(5), \fBigb\fR(7D), \fBixgbe\fR(7D), \fBARP\fR(7P), \fBdlpi\fR(7P)
+\fBcdpadm\fR(1M), \fBuname\fR(1), \fBdlpi\fR(7P)
 .SH DIAGNOSTICS
 .sp
 .LP
@@ -253,24 +123,3 @@ Files used by the service instance.
 \fBin.cdpd\fR failed to start because the calling process
 does not have appropriate privileges.
 .RE
-
-.sp
-.LP
-.ne 2
-.na
-\fB\fBservice not running or started incorrectly\fR\fR
-.ad
-.sp .6
-.RS 4n
-The process failed to connect to the IPC socket, because it does not exist.
-\fBin.cdpd\fR is most likely not running.
-.RE
-
-.SH BUGS
-.sp
-.LP
-Report bugs directly to jschindler@prominic.net.
-.br
-Preferably with output from \fB-v\fR repeated 6 times with \fBin.cdpd\fR in the
-foreground service mode, and details of the deployed environment.
-

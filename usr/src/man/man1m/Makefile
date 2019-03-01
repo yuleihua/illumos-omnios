@@ -58,6 +58,7 @@ _MANFILES=	6to4relay.1m		\
 		busstat.1m		\
 		captoinfo.1m		\
 		catman.1m		\
+		cdpadm.1m		\
 		cfgadm.1m		\
 		cfgadm_ac.1m		\
 		cfgadm_cardbus.1m	\
@@ -567,7 +568,6 @@ MANLINKS=	acctcon1.1m			\
 		acctwtmp.1m			\
 		audlinks.1m			\
 		bootparamd.1m			\
-		cdp.1m				\
 		cdpd.1m				\
 		chargefee.1m			\
 		ckpacct.1m			\
@@ -682,7 +682,6 @@ hal-set-property.1m		:= LINKSRC = hal-get-property.1m
 
 poweroff.1m			:= LINKSRC = halt.1m
 
-cdp.1m				:= LINKSRC = in.cdpd.1m
 cdpd.1m				:= LINKSRC = in.cdpd.1m
 comsat.1m			:= LINKSRC = in.comsat.1m
 fingerd.1m			:= LINKSRC = in.fingerd.1m

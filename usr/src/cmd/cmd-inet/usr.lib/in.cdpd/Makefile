@@ -12,38 +12,33 @@
 #
 # CDDL HEADER END
 #
+
 #
 # Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
 #
 
 PROG=		in.cdpd
-UTIL=		cdp
-SRCS=		cdp.c dlenum.c dlpi.c yuka.c
+SRCS=		cdp.c dlenum.c dlpi.c ipc.c yuka.c
 OBJS=		$(SRCS:.c=.o)
 MANIFEST=	cdpd.xml
 
-ROOTUSRSBINUTIL=$(UTIL:%=$(ROOTUSRSBIN)/%)
+include ../../../Makefile.cmd
+include ../../../Makefile.cmd.64
 
-include ../Makefile.cmd
-include ../cmd-inet/usr.lib/Makefile.lib
+include ../Makefile.lib
 
 ROOTMANIFESTDIR=	$(ROOTSVCNETWORK)
 
 CSTD=		$(CSTD_GNU99)
 
-#
-# We need access to the ancillary data features which are only available
-# via the SUS standards.  Further, C99 support requires SUSv3 or higher.
-#
-CPPFLAGS += -D_XOPEN_SOURCE=600 -D__EXTENSIONS__
-LDLIBS += -lsocket -lnsl -ldladm
+LDLIBS += -lsocket -ldladm -ldlpi
 
 #
 # Instrument with CTF data to ease debugging.
 #
 CTFCONVERT_HOOK = && $(CTFCONVERT_O)
 CTFMERGE_HOOK = && $(CTFMERGE) -L VERSION -o $@ $(OBJS)
-$(OBJS) := CFLAGS += $(CTF_FLAGS)
+$(OBJS) := CFLAGS64 += $(CTF_FLAGS)
 
 .KEEP_STATE:
 
@@ -53,15 +48,11 @@ $(PROG): $(OBJS)
 	$(LINK.c) -o $@ $(OBJS) $(LDLIBS) $(CTFMERGE_HOOK)
 	$(POST_PROCESS)
 
-install: all $(ROOTMANIFEST) $(ROOTLIBINETPROG) $(ROOTUSRSBINUTIL)
-
-$(ROOTUSRSBINUTIL):
-	$(RM) $(ROOTUSRSBINUTIL)
-	$(SYMLINK) ../lib/inet/$(PROG) $(ROOTUSRSBINUTIL)
+install: all $(ROOTMANIFEST) $(ROOTLIBINETPROG)
 
 check:	$(CHKMANIFEST)
 
 clean:
 	$(RM) $(OBJS)
 
-include ../Makefile.targ
+include ../../../Makefile.targ
