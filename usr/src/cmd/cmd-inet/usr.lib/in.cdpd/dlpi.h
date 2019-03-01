@@ -18,25 +18,26 @@
  *
  * CDDL HEADER END
  */
+
 /*
  * Copyright 2015, 2018, 2019, Meisaka Yukara
  * Copyright 2018, 2019 Prominic.NET Inc. All Rights reserved.
  */
+
 #ifndef YUKA_DLPI_H_INC
-#define YUKA_DLPI_H_INC
+#define	YUKA_DLPI_H_INC
 
 #include "yuka.h"
 
-void dlsap_to_dl_plus_sap(yuka_session const *ses, uint8_t const *dlsap, t_data_link_addr *dl_addr, t_uscalar_t *psap);
-void dl_plus_sap_to_dlsap(yuka_session const *ses, const t_data_link_addr *dl_addr, t_uscalar_t sap, uint8_t *dlsap);
-t_uscalar_t bytes_to_uscalar(uchar_t const *p, int l);
-void uscalar_to_bytes(uchar_t *p, int l, t_uscalar_t u);
+void DlpiSnd(yuka_session_t *, data_link_addr_t, uchar_t *, int);
+boolean_t DlpiRcv(yuka_session_t *, yuka_packet_t *,
+    dlsap_addr_t, dlsap_addr_t);
+void DlpiOpenSession(yuka_session_t *);
+void DlpiCloseSession(yuka_session_t *);
 
-void yuka_list_links();
-void yuka_get_links(struct yuka_string_list ** slist);
-void yuka_free_links(struct yuka_string_list * slist);
-void DlpiSnd(yuka_session *ses, t_dlsap_addr dlsap_addr, uchar_t *buf, int len);
-void DlpiRcv(yuka_session *ses, t_dlsap_addr src_addr, t_dlsap_addr dest_addr);
+char *get_ether_type(int);
+void yuka_list_links(void);
+void yuka_get_links(struct yuka_string_list **);
+void yuka_free_links(struct yuka_string_list *);
 
-#endif
-
+#endif /* YUKA_DLPI_H_INC */

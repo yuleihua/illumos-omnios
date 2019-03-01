@@ -62,13 +62,13 @@
 	<exec_method
 		type='method'
 		name='start'
-		exec='/usr/lib/inet/in.cdpd -R'
+		exec='/usr/lib/inet/in.cdpd -R %{config/iflist}'
 		timeout_seconds='60'>
 		<method_context security_flags='aslr'>
 			<method_credential
 				user='root'
 				group='root'
-				privileges='basic,proc_owner'
+				privileges='basic,!file_link_any,!proc_info,!proc_session,net_rawaccess'
 				/>
 		</method_context>
 	</exec_method>
@@ -81,7 +81,7 @@
 	</exec_method>
 
 	<property_group name='config' type='application'>
-		<stability value='Unstable'/>
+		<propval name ='iflist' type='astring' value='' />
 	</property_group>
 
 	<stability value='Unstable' />

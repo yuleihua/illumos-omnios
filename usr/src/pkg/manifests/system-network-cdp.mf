@@ -33,8 +33,8 @@ dir path=usr/sbin
 dir path=usr/share/man/man1m
 file path=lib/svc/manifest/network/cdpd.xml group=sys mode=0444
 file path=usr/lib/inet/in.cdpd mode=0555
+file path=usr/sbin/cdpadm mode=0555
+file path=usr/share/man/man1m/cdpadm.1m
 file path=usr/share/man/man1m/in.cdpd.1m
 license lic_CDDL license=lic_CDDL
-link path=usr/sbin/cdp target=../lib/inet/in.cdpd
-link path=usr/share/man/man1m/cdp.1m target=in.cdpd.1m
 link path=usr/share/man/man1m/cdpd.1m target=in.cdpd.1m
