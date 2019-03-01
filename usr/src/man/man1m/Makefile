@@ -177,6 +177,7 @@ _MANFILES=	6to4relay.1m		\
 		ifparse.1m		\
 		ikeadm.1m		\
 		ikecert.1m		\
+		in.cdpd.1m		\
 		in.chargend.1m		\
 		in.comsat.1m		\
 		in.daytimed.1m		\
@@ -566,6 +567,8 @@ MANLINKS=	acctcon1.1m			\
 		acctwtmp.1m			\
 		audlinks.1m			\
 		bootparamd.1m			\
+		cdp.1m				\
+		cdpd.1m				\
 		chargefee.1m			\
 		ckpacct.1m			\
 		closewtmp.1m			\
@@ -679,7 +682,8 @@ hal-set-property.1m		:= LINKSRC = hal-get-property.1m
 
 poweroff.1m			:= LINKSRC = halt.1m
 
-
+cdp.1m				:= LINKSRC = in.cdpd.1m
+cdpd.1m				:= LINKSRC = in.cdpd.1m
 comsat.1m			:= LINKSRC = in.comsat.1m
 fingerd.1m			:= LINKSRC = in.fingerd.1m
 rarpd.1m			:= LINKSRC = in.rarpd.1m
