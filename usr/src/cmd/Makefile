@@ -489,6 +489,7 @@ i386_SUBDIRS=		\
 	cxgbetool	\
 	diskscan	\
 	nvmeadm		\
+	hyperv		\
 	rtc		\
 	ucodeadm	\
 	xhci		\
