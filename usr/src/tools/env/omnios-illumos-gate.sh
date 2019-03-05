@@ -244,6 +244,6 @@ export PERL_VERSION=5.28
 export PERL_ARCH=i86pc-solaris-thread-multi-64int
 export PERL_PKGVERS=
 
-export ONNV_BUILDNUM=`grep '^VERSION=r' /etc/os-release | cut -c10-`
+export ONNV_BUILDNUM=`grep '^VERSION=r' /etc/os-release | cut -c10-15`
 export PKGVERS_BRANCH=$ONNV_BUILDNUM.0
 
