@@ -247,6 +247,6 @@ ONLY_LINT_DEFS=-I${SPRO_ROOT}/sunstudio12.1/prod/include/lint; export ONLY_LINT_
 #export PERL_ARCH=i86pc-solaris-thread-multi-64int
 #export PERL_PKGVERS=
 
-export ONNV_BUILDNUM=`grep '^VERSION=r' /etc/os-release | cut -c10-`
+export ONNV_BUILDNUM=`grep '^VERSION=r' /etc/os-release | cut -c10-15`
 export PKGVERS_BRANCH=$ONNV_BUILDNUM.0
 
