@@ -54,7 +54,7 @@ only forth definitions
   if 7 fg 4 bg then
   ." Booting..."
   if me then
-  cr
+  clear
 ;
 
 : try-menu-unset
