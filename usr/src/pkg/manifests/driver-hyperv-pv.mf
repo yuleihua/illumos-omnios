@@ -48,3 +48,4 @@ file path=kernel/drv/hv_netvsc.conf group=sys
 file path=kernel/drv/hv_vmbus.conf group=sys
 file path=kernel/misc/$(ARCH64)/hyperv group=sys mode=0755
 license lic_CDDL license=lic_CDDL
+depend fmri=system/hyperv/tools type=require

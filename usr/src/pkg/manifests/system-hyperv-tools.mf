@@ -38,4 +38,3 @@ file path=usr/lib/hyperv/hv_get_dhcp_info mode=0555
 file path=usr/lib/hyperv/hv_get_dns_info mode=0555
 file path=usr/lib/hyperv/hv_kvp_daemon mode=0555
 license lic_CDDL license=lic_CDDL
-depend fmri=driver/hyperv/pv type=require
