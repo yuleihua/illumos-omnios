@@ -326,10 +326,8 @@ usr/src/cmd/cfgadm/cfgadm.dc
 usr/src/cmd/checkeq/checkeq
 usr/src/cmd/checknr/checknr
 usr/src/cmd/chgrp/chgrp
-usr/src/cmd/chgrp/chgrp.xpg4
 usr/src/cmd/chmod/chmod
 usr/src/cmd/chown/chown
-usr/src/cmd/chown/chown.xpg4
 usr/src/cmd/chroot/chroot
 usr/src/cmd/clear/clear
 usr/src/cmd/clinfo/clinfo
@@ -965,6 +963,9 @@ usr/src/cmd/hostid/hostid
 usr/src/cmd/hostname/hostname
 usr/src/cmd/hotplug/hotplug
 usr/src/cmd/hotplugd/hotplugd
+usr/src/cmd/hyperv/kvp/hv_kvp_daemon
+usr/src/cmd/hyperv/scripts/hv_get_dhcp_info
+usr/src/cmd/hyperv/scripts/hv_get_dns_info
 usr/src/cmd/ibd_upgrade/ibd_delete_link
 usr/src/cmd/ibd_upgrade/ibd_upgrade
 usr/src/cmd/iconv/iconv
@@ -3960,6 +3961,10 @@ usr/src/test/crypto-tests/tests/modes/aes/ecb/aes_ecb_kcf
 usr/src/test/crypto-tests/tests/modes/aes/ecb/aes_ecb_pkcs
 usr/src/test/crypto-tests/tests/modes/aes/gcm/aes_gcm_kcf
 usr/src/test/crypto-tests/tests/modes/aes/gcm/aes_gcm_pkcs
+usr/src/test/elf-tests/tests/assert-deflib/test-deflib
+usr/src/test/elf-tests/tests/tls/amd64/ie/amd64-ie-test
+usr/src/test/elf-tests/tests/tls/amd64/ld/amd64-ld-test
+usr/src/test/elf-tests/tests/tls/i386/ld/i386-ld-test
 usr/src/test/libc-tests/tests/aligned_alloc.32
 usr/src/test/libc-tests/tests/aligned_alloc.64
 usr/src/test/libc-tests/tests/c11_threads.32
