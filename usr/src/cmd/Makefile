@@ -84,6 +84,7 @@ COMMON_SUBDIRS=		\
 	cal		\
 	captoinfo	\
 	cat		\
+	cdpadm		\
 	cdrw		\
 	cfgadm		\
 	checkeq		\
