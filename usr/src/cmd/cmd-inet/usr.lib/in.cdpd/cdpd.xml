@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+
+<!--
+    CDDL HEADER START
+
+    This file and its contents are supplied under the terms of the
+    Common Development and Distribution License ("CDDL"), version 1.0.
+    You may only use this file in accordance with the terms of version
+    1.0 of the CDDL.
+
+    A full copy of the text of the CDDL should have accompanied this
+    source. A copy of the CDDL is also available via the Internet at
+    http://www.illumos.org/license/CDDL.
+
+    CDDL HEADER END
+
+    Copyright 2018 Meisaka Yukara
+    Copyright 2018, 2019 Prominic.NET Inc. All Rights reserved.
+    Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+-->
+
+<service_bundle type='manifest' name='cdp:cdpd'>
+<service name='network/cdp' type='service' version='1'>
+
+	<create_default_instance enabled='true' />
+
+	<single_instance/>
+
+	<dependency
+		name='fs'
+		grouping='require_all'
+		restart_on='error'
+		type='service'>
+		<service_fmri value='svc:/system/filesystem/local'/>
+	</dependency>
+
+	<dependency
+		name='network_initial'
+		grouping='optional_all'
+		restart_on='none'
+		type='service'>
+		<service_fmri value='svc:/network/routing-setup:default' />
+		<service_fmri value='svc:/network/initial:default' />
+	</dependency>
+
+	<dependency
+		name='datalink'
+		grouping='require_all'
+		restart_on='error'
+		type='service'>
+		<service_fmri value='svc:/network/datalink-management'/>
+	</dependency>
+
+	<exec_method
+		type='method'
+		name='stop'
+		exec=':kill'
+		timeout_seconds='60'>
+	</exec_method>
+
+	<exec_method
+		type='method'
+		name='start'
+		exec='/usr/lib/inet/in.cdpd -R %{config/iflist}'
+		timeout_seconds='60'>
+		<method_context security_flags='aslr'>
+			<method_credential
+				user='root'
+				group='root'
+				privileges='basic,!file_link_any,!proc_info,!proc_session,net_rawaccess'
+				/>
+		</method_context>
+	</exec_method>
+
+	<exec_method
+		type='method'
+		name='refresh'
+		exec=':kill -HUP'
+		timeout_seconds='60'>
+	</exec_method>
+
+	<property_group name='config' type='application'>
+		<propval name ='iflist' type='astring' value='' />
+	</property_group>
+
+	<stability value='Unstable' />
+
+	<template>
+		<common_name>
+			<loctext xml:lang='C'>in.cdpd</loctext>
+		</common_name>
+		<documentation>
+			<manpage title='in.cdpd' section='1M'
+			    manpath='/usr/share/man' />
+		</documentation>
+	</template>
+
+</service>
+
+</service_bundle>
