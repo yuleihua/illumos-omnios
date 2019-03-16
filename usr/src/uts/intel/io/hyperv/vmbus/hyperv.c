@@ -225,8 +225,8 @@ hyperv_identify(void)
 	unsigned int maxleaf;
 
 	if ((get_hwenv() & HW_MICROSOFT) == 0) {
-		cmn_err(CE_WARN,
-		    "hyperv_identify: NOT Hyper-V environment: 0x%x",
+		cmn_err(CE_CONT,
+		    "?hyperv_identify: NOT Hyper-V environment: 0x%x",
 		    get_hwenv());
 		return (B_FALSE);
 	}
@@ -347,8 +347,8 @@ hyperv_init(void)
 {
 	cmn_err(CE_CONT, "?hyperv_init: Checking Hyper-V support...\n");
 	if (!hyperv_identify()) {
-		cmn_err(CE_WARN,
-		    "hyperv_init: Hyper-V not supported on this environment");
+		cmn_err(CE_CONT,
+		    "?hyperv_init: Hyper-V not supported on this environment");
 		return (-1);
 	}
 
@@ -458,16 +458,16 @@ hypercall_destroy()
 	if (hypercall_context.hc_addr == NULL)
 		return;
 
-	cmn_err(CE_NOTE,
-	    "hypercall_destroy: Disabling Hypercall interface...");
+	cmn_err(CE_CONT,
+	    "?hypercall_destroy: Disabling Hypercall interface...");
 
 	/* Disable Hypercall */
 	hc = rdmsr(MSR_HV_HYPERCALL);
 	wrmsr(MSR_HV_HYPERCALL, (hc & MSR_HV_HYPERCALL_RSVD_MASK));
 	hypercall_memfree();
 
-	cmn_err(CE_NOTE,
-	    "hypercall_destroy: Disabling Hypercall interface - done.");
+	cmn_err(CE_CONT,
+	    "?hypercall_destroy: Disabling Hypercall interface - done.");
 }
 
 static struct modldrv hyperv_modldrv = {
