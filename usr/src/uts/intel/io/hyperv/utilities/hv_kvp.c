@@ -908,7 +908,7 @@ hv_kvp_attach(dev_info_t *dev, ddi_attach_cmd_t cmd)
 	    NULL);
 	cv_init(&sc->pending_cv, "hv_kvp pending condvar", CV_DRIVER, NULL);
 
-	sc->requesttq = ddi_taskq_create(sc->dev, "kvp request", 1,
+	sc->requesttq = ddi_taskq_create(sc->dev, "kvp_request", 1,
 	    TASKQ_DEFAULTPRI, 0);
 
 	if (sc->requesttq == NULL) {

@@ -419,7 +419,7 @@ vmbus_scan(struct vmbus_softc *sc)
 	 * for channel offer and rescind messages.
 	 */
 	sc->vmbus_devtq = ddi_taskq_create(sc->vmbus_dev,
-	    "vmbus dev", 1, maxclsyspri, TASKQ_PREPOPULATE);
+	    "vmbus_dev", 1, maxclsyspri, 0);
 
 	/*
 	 * This taskqueue handles sub-channel detach, so that vmbus
@@ -427,7 +427,7 @@ vmbus_scan(struct vmbus_softc *sc)
 	 * channels.
 	 */
 	sc->vmbus_subchtq = ddi_taskq_create(sc->vmbus_dev,
-	    "vmbus subch", 1, maxclsyspri, TASKQ_PREPOPULATE);
+	    "vmbus_subch", 1, maxclsyspri, 0);
 
 	/*
 	 * Start vmbus scanning.
@@ -824,18 +824,18 @@ vmbus_intr_setup(struct vmbus_softc *sc)
 		 * Setup taskq to handle events.  Task will be per-
 		 * channel.
 		 */
-		(void) snprintf(tq_name, sizeof (tq_name), "hyperv event[%d]",
+		(void) snprintf(tq_name, sizeof (tq_name), "hyperv_event_%d",
 		    cpu);
 		*VMBUS_PCPU_PTR(sc, event_tq, cpu) = ddi_taskq_create(NULL,
-		    tq_name, 1, maxclsyspri, TASKQ_PREPOPULATE);
+		    tq_name, 1, maxclsyspri, 0);
 
 		/*
 		 * Setup tasks and taskq to handle messages.
 		 */
-		(void) snprintf(tq_name, sizeof (tq_name), "hyperv msg[%d]",
+		(void) snprintf(tq_name, sizeof (tq_name), "hyperv_msg_%d",
 		    cpu);
 		*VMBUS_PCPU_PTR(sc, message_tq, cpu) = ddi_taskq_create(NULL,
-		    tq_name, 1, maxclsyspri, TASKQ_PREPOPULATE);
+		    tq_name, 1, maxclsyspri, 0);
 	}
 
 	sc->vmbus_idtvec = psm_get_ipivect(IPL_VMBUS, -1);
