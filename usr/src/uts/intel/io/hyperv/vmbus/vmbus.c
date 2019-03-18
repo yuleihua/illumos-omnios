@@ -656,25 +656,27 @@ vmbus_synic_setup(void *xsc)
 	    >> PAGE_SHIFT) << MSR_HV_SIEFP_PGSHIFT);
 	wrmsr(MSR_HV_SIEFP, val);
 
+	if (sc->vmbus_idtvec >= 0) {
+		/*
+		 * Configure and unmask SINT for message and event flags.
+		 */
+		sint = MSR_HV_SINT0 + VMBUS_SINT_MESSAGE;
+		orig = rdmsr(sint);
+		val = sc->vmbus_idtvec | MSR_HV_SINT_AUTOEOI |
+		    (orig & MSR_HV_SINT_RSVD_MASK);
+		dev_err(sc->vmbus_dev, CE_CONT, "?SINT val %llx\n",
+		    (u_longlong_t)val);
+		wrmsr(sint, val);
 
-	/*
-	 * Configure and unmask SINT for message and event flags.
-	 */
-	sint = MSR_HV_SINT0 + VMBUS_SINT_MESSAGE;
-	orig = rdmsr(sint);
-	val = sc->vmbus_idtvec | MSR_HV_SINT_AUTOEOI |
-	    (orig & MSR_HV_SINT_RSVD_MASK);
-	dev_err(sc->vmbus_dev, CE_CONT, "?SINT val %llx\n", (u_longlong_t)val);
-	wrmsr(sint, val);
-
-	/*
-	 * Configure and unmask SINT for timer.
-	 */
-	sint = MSR_HV_SINT0 + VMBUS_SINT_TIMER;
-	orig = rdmsr(sint);
-	val = sc->vmbus_idtvec | MSR_HV_SINT_AUTOEOI |
-	    (orig & MSR_HV_SINT_RSVD_MASK);
-	wrmsr(sint, val);
+		/*
+		 * Configure and unmask SINT for timer.
+		 */
+		sint = MSR_HV_SINT0 + VMBUS_SINT_TIMER;
+		orig = rdmsr(sint);
+		val = sc->vmbus_idtvec | MSR_HV_SINT_AUTOEOI |
+		    (orig & MSR_HV_SINT_RSVD_MASK);
+		wrmsr(sint, val);
+	}
 
 	/*
 	 * All done; enable SynIC.
@@ -837,6 +839,9 @@ vmbus_intr_setup(struct vmbus_softc *sc)
 		*VMBUS_PCPU_PTR(sc, message_tq, cpu) = ddi_taskq_create(NULL,
 		    tq_name, 1, maxclsyspri, 0);
 	}
+
+	if (psm_get_ipivect == NULL)
+		return (0);
 
 	sc->vmbus_idtvec = psm_get_ipivect(IPL_VMBUS, -1);
 	if (add_avintr(NULL, IPL_VMBUS, (avfunc)vmbus_handle_intr,
