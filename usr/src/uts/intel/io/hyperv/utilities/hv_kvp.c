@@ -939,7 +939,7 @@ hv_kvp_detach(dev_info_t *dev, ddi_detach_cmd_t cmd)
 
 	error = vmbus_ic_detach(dev, &sc->util_sc);
 	if (error != 0) {
-		hv_kvp_log_error(sc, "detach failed, error: %d", error);
+		hv_kvp_log_info(sc, "detach failed, error: %d", error);
 		return (error);
 	}
 

@@ -51,6 +51,8 @@
 #include <sys/types.h>
 #include <sys/inttypes.h>
 #include <sys/cmn_err.h>
+#include <sys/reboot.h>
+
 #include <sys/x86_archext.h>
 
 #include <sys/hyperv_illumos.h>
@@ -267,60 +269,69 @@ hyperv_identify(void)
 	hyperv_features3 = regs[3]; /* EDX */
 
 	do_cpuid(CPUID_LEAF_HV_IDENTITY, regs);
-	printf("Hyper-V Version: %d.%d.%d [SP%d]\n",
+
+	cmn_err(CE_CONT, "?Hyper-V Version: %d.%d.%d [SP%d]\n",
 	    regs[1] >> 16, regs[1] & 0xffff, regs[0], regs[2]);
 
-	printf("  Features=0x%b\n", hyperv_features,
-	    "\020"
-	    "\001VPRUNTIME"	/* MSR_HV_VP_RUNTIME */
-	    "\002TMREFCNT"	/* MSR_HV_TIME_REF_COUNT */
-	    "\003SYNIC"		/* MSRs for SynIC */
-	    "\004SYNTM"		/* MSRs for SynTimer */
-	    "\005APIC"		/* MSR_HV_{EOI,ICR,TPR} */
-	    "\006HYPERCALL"	/* MSR_HV_{GUEST_OS_ID,HYPERCALL} */
-	    "\007VPINDEX"	/* MSR_HV_VP_INDEX */
-	    "\010RESET"		/* MSR_HV_RESET */
-	    "\011STATS"		/* MSR_HV_STATS_ */
-	    "\012REFTSC"	/* MSR_HV_REFERENCE_TSC */
-	    "\013IDLE"		/* MSR_HV_GUEST_IDLE */
-	    "\014TMFREQ"	/* MSR_HV_{TSC,APIC}_FREQUENCY */
-	    "\015DEBUG");	/* MSR_HV_SYNTH_DEBUG_ */
-	printf("  Features1=0x%b\n", hyperv_features1,
-	    "\020"
-	    "\001CreatePartitions"
-	    "\002AccessPartitionId"
-	    "\003AccessMemoryPool"
-	    "\004AdjustMessageBuffers"
-	    "\005PostMessages"
-	    "\006SignalEvents"
-	    "\007CreatePort"
-	    "\008ConnectPort"
-	    "\009AccessStats"
-	    "\012Debugging"
-	    "\013CpuManagement"
-	    "\014ConfigureProfiler"
-	    "\015EnableExpandedStackwalking");
-	printf("  Features2(PM)=0x%b [C%u]\n",
-	    (hyperv_pm_features & ~CPUPM_HV_CSTATE_MASK),
-	    "\020"
-	    "\005C3HPET",	/* HPET is required for C3 state */
-	    CPUPM_HV_CSTATE(hyperv_pm_features));
-	printf("  Features3=0x%b\n", hyperv_features3,
-	    "\020"
-	    "\001MWAIT"		/* MWAIT */
-	    "\002DEBUG"		/* guest debug support */
-	    "\003PERFMON"	/* performance monitor */
-	    "\004PCPUDPE"	/* physical CPU dynamic partition event */
-	    "\005XMMHC"		/* hypercall input through XMM regs */
-	    "\006IDLE"		/* guest idle support */
-	    "\007SLEEP"		/* hypervisor sleep support */
-	    "\010NUMA"		/* NUMA distance query support */
-	    "\011TMFREQ"	/* timer frequency query (TSC, LAPIC) */
-	    "\012SYNCMC"	/* inject synthetic machine checks */
-	    "\013CRASH"		/* MSRs for guest crash */
-	    "\014DEBUGMSR"	/* MSRs for guest debug */
-	    "\015NPIEP"		/* NPIEP */
-	    "\016HVDIS");	/* disabling hypervisor */
+	if (boothowto & RB_VERBOSE) {
+		printf("  Features=0x%b\n", hyperv_features,
+		    "\020"
+		    "\001VPRUNTIME"	/* MSR_HV_VP_RUNTIME */
+		    "\002TMREFCNT"	/* MSR_HV_TIME_REF_COUNT */
+		    "\003SYNIC"		/* MSRs for SynIC */
+		    "\004SYNTM"		/* MSRs for SynTimer */
+		    "\005APIC"		/* MSR_HV_{EOI,ICR,TPR} */
+		    "\006HYPERCALL"	/* MSR_HV_{GUEST_OS_ID,HYPERCALL} */
+		    "\007VPINDEX"	/* MSR_HV_VP_INDEX */
+		    "\010RESET"		/* MSR_HV_RESET */
+		    "\011STATS"		/* MSR_HV_STATS_ */
+		    "\012REFTSC"	/* MSR_HV_REFERENCE_TSC */
+		    "\013IDLE"		/* MSR_HV_GUEST_IDLE */
+		    "\014TMFREQ"	/* MSR_HV_{TSC,APIC}_FREQUENCY */
+		    "\015DEBUG");	/* MSR_HV_SYNTH_DEBUG_ */
+		printf("  Features1=0x%b\n", hyperv_features1,
+		    "\020"
+		    "\001CreatePartitions"
+		    "\002AccessPartitionId"
+		    "\003AccessMemoryPool"
+		    "\004AdjustMessageBuffers"
+		    "\005PostMessages"
+		    "\006SignalEvents"
+		    "\007CreatePort"
+		    "\008ConnectPort"
+		    "\009AccessStats"
+		    "\012Debugging"
+		    "\013CpuManagement"
+		    "\014ConfigureProfiler"
+		    "\015EnableExpandedStackwalking");
+		printf("  Features2(PM)=0x%b [C%u]\n",
+		    (hyperv_pm_features & ~CPUPM_HV_CSTATE_MASK),
+		    "\020"
+		    "\005C3HPET",	/* HPET is required for C3 state */
+		    CPUPM_HV_CSTATE(hyperv_pm_features));
+		printf("  Features3=0x%b\n", hyperv_features3,
+		    "\020"
+		    "\001MWAIT"		/* MWAIT */
+		    "\002DEBUG"		/* guest debug support */
+		    "\003PERFMON"	/* performance monitor */
+		    "\004PCPUDPE"	/* phys CPU dynamic partition event */
+		    "\005XMMHC"		/* hypercall input through XMM regs */
+		    "\006IDLE"		/* guest idle support */
+		    "\007SLEEP"		/* hypervisor sleep support */
+		    "\010NUMA"		/* NUMA distance query support */
+		    "\011TMFREQ"	/* timer frequency query (TSC, LAPIC) */
+		    "\012SYNCMC"	/* inject synthetic machine checks */
+		    "\013CRASH"		/* MSRs for guest crash */
+		    "\014DEBUGMSR"	/* MSRs for guest debug */
+		    "\015NPIEP"		/* NPIEP */
+		    "\016HVDIS");	/* disabling hypervisor */
+	} else {
+		cmn_err(CE_CONT, "?Features=0x%x", hyperv_features);
+		cmn_err(CE_CONT, "?Features1=0x%x", hyperv_features1);
+		cmn_err(CE_CONT, "?Features2(PM)=0x%x",
+		    hyperv_pm_features & ~CPUPM_HV_CSTATE_MASK);
+		cmn_err(CE_CONT, "?Features3=0x%x", hyperv_features3);
+	}
 
 	do_cpuid(CPUID_LEAF_HV_RECOMMENDS, regs);
 	hyperv_recommends = regs[0];

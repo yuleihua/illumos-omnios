@@ -329,7 +329,7 @@ vmbus_init(struct vmbus_softc *sc)
 			(void) snprintf(version, sizeof (version),
 			    "%u.%u", VMBUS_VERSION_MAJOR(sc->vmbus_version),
 			    VMBUS_VERSION_MINOR(sc->vmbus_version));
-			dev_err(sc->vmbus_dev, CE_NOTE, "version %s",
+			dev_err(sc->vmbus_dev, CE_CONT, "?version %s",
 			    version);
 			(void) ddi_prop_update_string(DDI_DEV_T_NONE,
 			    sc->vmbus_dev, VMBUS_VERSION, version);

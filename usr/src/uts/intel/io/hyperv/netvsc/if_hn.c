@@ -336,7 +336,8 @@ hn_getprop(struct hn_softc *sc, char *name, int min, int max, int def)
 	    DDI_PROP_DONTPASS, name, &props, &nprops) == DDI_PROP_SUCCESS) {
 		if (sc->hn_instance < nprops) {
 			ret = props[sc->hn_instance];
-			HN_NOTE(sc, "property %s configured to %d", name, ret);
+			dev_err(sc->hn_dev, CE_CONT,
+			    "?property %s configured to %d", name, ret);
 		} else {
 			HN_WARN(sc, "property %s not available for this "
 			    "device", name);
