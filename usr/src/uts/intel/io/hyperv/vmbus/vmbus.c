@@ -1005,7 +1005,6 @@ vmbus_delete_child(struct vmbus_channel *chan)
 			mutex_exit(&vmbus_lock);
 			return (DDI_FAILURE);
 		}
-		(void) ndi_devi_free(chan->ch_dev);
 		chan->ch_dev = NULL;
 	}
 	mutex_exit(&vmbus_lock);
