@@ -329,7 +329,7 @@ vmbus_init(struct vmbus_softc *sc)
 			(void) snprintf(version, sizeof (version),
 			    "%u.%u", VMBUS_VERSION_MAJOR(sc->vmbus_version),
 			    VMBUS_VERSION_MINOR(sc->vmbus_version));
-			dev_err(sc->vmbus_dev, CE_NOTE, "version %s",
+			dev_err(sc->vmbus_dev, CE_CONT, "?version %s",
 			    version);
 			(void) ddi_prop_update_string(DDI_DEV_T_NONE,
 			    sc->vmbus_dev, VMBUS_VERSION, version);
@@ -419,7 +419,7 @@ vmbus_scan(struct vmbus_softc *sc)
 	 * for channel offer and rescind messages.
 	 */
 	sc->vmbus_devtq = ddi_taskq_create(sc->vmbus_dev,
-	    "vmbus dev", 1, maxclsyspri, TASKQ_PREPOPULATE);
+	    "vmbus_dev", 1, maxclsyspri, 0);
 
 	/*
 	 * This taskqueue handles sub-channel detach, so that vmbus
@@ -427,7 +427,7 @@ vmbus_scan(struct vmbus_softc *sc)
 	 * channels.
 	 */
 	sc->vmbus_subchtq = ddi_taskq_create(sc->vmbus_dev,
-	    "vmbus subch", 1, maxclsyspri, TASKQ_PREPOPULATE);
+	    "vmbus_subch", 1, maxclsyspri, 0);
 
 	/*
 	 * Start vmbus scanning.
@@ -656,25 +656,27 @@ vmbus_synic_setup(void *xsc)
 	    >> PAGE_SHIFT) << MSR_HV_SIEFP_PGSHIFT);
 	wrmsr(MSR_HV_SIEFP, val);
 
+	if (sc->vmbus_idtvec >= 0) {
+		/*
+		 * Configure and unmask SINT for message and event flags.
+		 */
+		sint = MSR_HV_SINT0 + VMBUS_SINT_MESSAGE;
+		orig = rdmsr(sint);
+		val = sc->vmbus_idtvec | MSR_HV_SINT_AUTOEOI |
+		    (orig & MSR_HV_SINT_RSVD_MASK);
+		dev_err(sc->vmbus_dev, CE_CONT, "?SINT val %llx\n",
+		    (u_longlong_t)val);
+		wrmsr(sint, val);
 
-	/*
-	 * Configure and unmask SINT for message and event flags.
-	 */
-	sint = MSR_HV_SINT0 + VMBUS_SINT_MESSAGE;
-	orig = rdmsr(sint);
-	val = sc->vmbus_idtvec | MSR_HV_SINT_AUTOEOI |
-	    (orig & MSR_HV_SINT_RSVD_MASK);
-	dev_err(sc->vmbus_dev, CE_CONT, "?SINT val %llx\n", (u_longlong_t)val);
-	wrmsr(sint, val);
-
-	/*
-	 * Configure and unmask SINT for timer.
-	 */
-	sint = MSR_HV_SINT0 + VMBUS_SINT_TIMER;
-	orig = rdmsr(sint);
-	val = sc->vmbus_idtvec | MSR_HV_SINT_AUTOEOI |
-	    (orig & MSR_HV_SINT_RSVD_MASK);
-	wrmsr(sint, val);
+		/*
+		 * Configure and unmask SINT for timer.
+		 */
+		sint = MSR_HV_SINT0 + VMBUS_SINT_TIMER;
+		orig = rdmsr(sint);
+		val = sc->vmbus_idtvec | MSR_HV_SINT_AUTOEOI |
+		    (orig & MSR_HV_SINT_RSVD_MASK);
+		wrmsr(sint, val);
+	}
 
 	/*
 	 * All done; enable SynIC.
@@ -824,19 +826,22 @@ vmbus_intr_setup(struct vmbus_softc *sc)
 		 * Setup taskq to handle events.  Task will be per-
 		 * channel.
 		 */
-		(void) snprintf(tq_name, sizeof (tq_name), "hyperv event[%d]",
+		(void) snprintf(tq_name, sizeof (tq_name), "hyperv_event_%d",
 		    cpu);
 		*VMBUS_PCPU_PTR(sc, event_tq, cpu) = ddi_taskq_create(NULL,
-		    tq_name, 1, maxclsyspri, TASKQ_PREPOPULATE);
+		    tq_name, 1, maxclsyspri, 0);
 
 		/*
 		 * Setup tasks and taskq to handle messages.
 		 */
-		(void) snprintf(tq_name, sizeof (tq_name), "hyperv msg[%d]",
+		(void) snprintf(tq_name, sizeof (tq_name), "hyperv_msg_%d",
 		    cpu);
 		*VMBUS_PCPU_PTR(sc, message_tq, cpu) = ddi_taskq_create(NULL,
-		    tq_name, 1, maxclsyspri, TASKQ_PREPOPULATE);
+		    tq_name, 1, maxclsyspri, 0);
 	}
+
+	if (psm_get_ipivect == NULL)
+		return (0);
 
 	sc->vmbus_idtvec = psm_get_ipivect(IPL_VMBUS, -1);
 	if (add_avintr(NULL, IPL_VMBUS, (avfunc)vmbus_handle_intr,
@@ -1000,7 +1005,6 @@ vmbus_delete_child(struct vmbus_channel *chan)
 			mutex_exit(&vmbus_lock);
 			return (DDI_FAILURE);
 		}
-		(void) ndi_devi_free(chan->ch_dev);
 		chan->ch_dev = NULL;
 	}
 	mutex_exit(&vmbus_lock);

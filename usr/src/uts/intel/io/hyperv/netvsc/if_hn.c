@@ -65,6 +65,7 @@
 
 /*
  * Copyright (c) 2017 by Delphix. All rights reserved.
+ * Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
  */
 
 #include <sys/sysmacros.h>
@@ -219,7 +220,7 @@ static void			hn_link_taskfunc(void *);
 static void			hn_netchg_taskfunc(void *);
 static void			hn_link_status(struct hn_softc *);
 
-static int			hn_create_rx_data(struct hn_softc *);
+static int			hn_create_rx_data(struct hn_softc *, int);
 static void			hn_destroy_rx_data(struct hn_softc *);
 static void			hn_rss_ind_fixup(struct hn_softc *);
 static int			hn_rxpkt(struct hn_rx_ring *, const void *,
@@ -229,7 +230,7 @@ static uint32_t			hn_get_implied_hcksum(struct hn_rx_ring *,
 
 static int			hn_tx_ring_create(struct hn_softc *, int);
 static void			hn_tx_ring_destroy(struct hn_tx_ring *);
-static int			hn_create_tx_data(struct hn_softc *);
+static int			hn_create_tx_data(struct hn_softc *, int);
 static void			hn_fixup_tx_data(struct hn_softc *);
 static void			hn_destroy_tx_data(struct hn_softc *);
 static void			hn_txdesc_dmamap_destroy(struct hn_txdesc *);
@@ -335,7 +336,8 @@ hn_getprop(struct hn_softc *sc, char *name, int min, int max, int def)
 	    DDI_PROP_DONTPASS, name, &props, &nprops) == DDI_PROP_SUCCESS) {
 		if (sc->hn_instance < nprops) {
 			ret = props[sc->hn_instance];
-			HN_NOTE(sc, "property %s configured to %d", name, ret);
+			dev_err(sc->hn_dev, CE_CONT,
+			    "?property %s configured to %d", name, ret);
 		} else {
 			HN_WARN(sc, "property %s not available for this "
 			    "device", name);
@@ -352,45 +354,6 @@ hn_getprop(struct hn_softc *sc, char *name, int min, int max, int def)
 	HN_DEBUG(sc, 2, "hn_getprop(%s) -> %d", name, ret);
 
 	return (ret);
-}
-
-static void
-hn_init_properties(struct hn_softc *sc)
-{
-	/*
-	 * NOTE:
-	 * The # of RX rings to use is same as the # of channels to use.
-	 */
-	sc->hn_rx_ring_cnt = hn_getprop(sc, "rx_rings", 1, HN_RING_CNT_DEF_MAX,
-	    min(ncpus, HN_RING_CNT_DEF_MAX));
-
-	/*
-	 * # of TX rings is limited by the number of channels (i.e RX rings)
-	 */
-	sc->hn_tx_ring_cnt = hn_getprop(sc, "tx_rings", 1, sc->hn_rx_ring_cnt,
-	    sc->hn_rx_ring_cnt);
-
-	sc->hn_lso_enable = hn_getprop(sc, "lso", B_FALSE, B_TRUE,
-	    hn_lso_enable_default);
-
-	sc->hn_tx_hcksum_enable = hn_getprop(sc, "tx_cksum_offload", B_FALSE,
-	    B_TRUE, hn_tx_hcksum_enable_default);
-
-	/* TODO: find txdesc_cnt hard limit, or get it from host */
-	sc->hn_txdesc_cnt = hn_getprop(sc, "tx_desc_cnt", HN_TX_DESC_CNT_MIN,
-	    HN_TX_DESC_CNT_MAX, hn_txdesc_cnt_default);
-	if (!ISP2(sc->hn_txdesc_cnt)) {
-		HN_WARN(sc, "number of tx descriptors (%d) must be a power "
-		    "of 2, defaulting to %d", sc->hn_txdesc_cnt,
-		    HN_TX_DESC_CNT_DEFAULT);
-		sc->hn_txdesc_cnt = HN_TX_DESC_CNT_DEFAULT;
-	}
-
-	/*
-	 * Set the leader CPU for channels.
-	 */
-	sc->hn_cpu = (atomic_add_32_nv(&hn_cpu_index, sc->hn_rx_ring_cnt) -
-	    sc->hn_rx_ring_cnt) % ncpus;
 }
 
 int
@@ -709,7 +672,7 @@ static int
 hn_attach(dev_info_t *dip, ddi_attach_cmd_t cmd)
 {
 	struct hn_softc *sc;
-	int error;
+	int error, rx_ring_cnt, tx_ring_cnt;
 
 	/*
 	 * We do not currently support DDI_RESUME
@@ -731,7 +694,39 @@ hn_attach(dev_info_t *dip, ddi_attach_cmd_t cmd)
 
 	ddi_set_driver_private(dip, sc);
 
-	hn_init_properties(sc);
+	/*
+	 * NOTE:
+	 * The # of RX rings to use is same as the # of channels to use.
+	 */
+	rx_ring_cnt = hn_getprop(sc, "rx_rings", 1, HN_RING_CNT_DEF_MAX,
+	    min(ncpus, HN_RING_CNT_DEF_MAX));
+
+	/*
+	 * # of TX rings is limited by the number of channels (i.e RX rings)
+	 */
+	tx_ring_cnt = hn_getprop(sc, "tx_rings", 1, rx_ring_cnt, rx_ring_cnt);
+
+	sc->hn_lso_enable = hn_getprop(sc, "lso", B_FALSE, B_TRUE,
+	    hn_lso_enable_default);
+
+	sc->hn_tx_hcksum_enable = hn_getprop(sc, "tx_cksum_offload", B_FALSE,
+	    B_TRUE, hn_tx_hcksum_enable_default);
+
+	/* TODO: find txdesc_cnt hard limit, or get it from host */
+	sc->hn_txdesc_cnt = hn_getprop(sc, "tx_desc_cnt", HN_TX_DESC_CNT_MIN,
+	    HN_TX_DESC_CNT_MAX, hn_txdesc_cnt_default);
+	if (!ISP2(sc->hn_txdesc_cnt)) {
+		HN_WARN(sc, "number of tx descriptors (%d) must be a power "
+		    "of 2, defaulting to %d", sc->hn_txdesc_cnt,
+		    HN_TX_DESC_CNT_DEFAULT);
+		sc->hn_txdesc_cnt = HN_TX_DESC_CNT_DEFAULT;
+	}
+
+	/*
+	 * Set the leader CPU for channels.
+	 */
+	sc->hn_cpu = (atomic_add_32_nv(&hn_cpu_index, sc->hn_rx_ring_cnt) -
+	    sc->hn_rx_ring_cnt) % ncpus;
 
 	/*
 	 * Setup taskqueue for management tasks, e.g. link status.
@@ -743,10 +738,10 @@ hn_attach(dev_info_t *dip, ddi_attach_cmd_t cmd)
 	 * Create enough TX/RX rings, even if only limited number of
 	 * channels can be allocated.
 	 */
-	error = hn_create_tx_data(sc);
+	error = hn_create_tx_data(sc, tx_ring_cnt);
 	if (error != 0)
 		goto failed;
-	error = hn_create_rx_data(sc);
+	error = hn_create_rx_data(sc, rx_ring_cnt);
 	if (error != 0)
 		goto failed;
 
@@ -1690,7 +1685,7 @@ hn_get_implied_hcksum(struct hn_rx_ring *rxr, const mblk_t *mp)
 }
 
 static int
-hn_create_rx_data(struct hn_softc *sc)
+hn_create_rx_data(struct hn_softc *sc, int ring_cnt)
 {
 	/*
 	 * Create RXBUF for reception.
@@ -1708,6 +1703,7 @@ hn_create_rx_data(struct hn_softc *sc)
 		return (ENOMEM);
 	}
 
+	sc->hn_rx_ring_cnt = ring_cnt;
 	sc->hn_rx_ring_inuse = sc->hn_rx_ring_cnt;
 
 	sc->hn_rx_ring = kmem_zalloc(sizeof (struct hn_rx_ring) *
@@ -1995,7 +1991,7 @@ hn_tx_ring_destroy(struct hn_tx_ring *txr)
 }
 
 static int
-hn_create_tx_data(struct hn_softc *sc)
+hn_create_tx_data(struct hn_softc *sc, int ring_cnt)
 {
 	/*
 	 * Create TXBUF for chimney sending.
@@ -2010,6 +2006,7 @@ hn_create_tx_data(struct hn_softc *sc)
 		return (ENOMEM);
 	}
 
+	sc->hn_tx_ring_cnt = ring_cnt;
 	sc->hn_tx_ring_inuse = sc->hn_tx_ring_cnt;
 
 	sc->hn_tx_ring = kmem_zalloc(sizeof (struct hn_tx_ring) *

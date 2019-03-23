@@ -908,7 +908,7 @@ hv_kvp_attach(dev_info_t *dev, ddi_attach_cmd_t cmd)
 	    NULL);
 	cv_init(&sc->pending_cv, "hv_kvp pending condvar", CV_DRIVER, NULL);
 
-	sc->requesttq = ddi_taskq_create(sc->dev, "kvp request", 1,
+	sc->requesttq = ddi_taskq_create(sc->dev, "kvp_request", 1,
 	    TASKQ_DEFAULTPRI, 0);
 
 	if (sc->requesttq == NULL) {
@@ -939,7 +939,7 @@ hv_kvp_detach(dev_info_t *dev, ddi_detach_cmd_t cmd)
 
 	error = vmbus_ic_detach(dev, &sc->util_sc);
 	if (error != 0) {
-		hv_kvp_log_error(sc, "detatch failed, error: %d", error);
+		hv_kvp_log_info(sc, "detach failed, error: %d", error);
 		return (error);
 	}
 

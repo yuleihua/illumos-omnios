@@ -203,7 +203,7 @@ vmbus_timesync_cb(struct vmbus_channel *chan, void *xsc)
 		if (error)
 			return;
 		if (VMBUS_TIMESYNC_DORTT(sc))
-			dev_err(sc->ic_dev, CE_WARN, "RTT");
+			dev_err(sc->ic_dev, CE_CONT, "?RTT");
 		break;
 
 	case VMBUS_ICMSG_TYPE_TIMESYNC:

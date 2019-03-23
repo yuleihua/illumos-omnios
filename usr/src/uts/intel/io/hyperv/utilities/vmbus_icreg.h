@@ -139,7 +139,6 @@ struct vmbus_icmsg_timesync {
 struct vmbus_icmsg_timesync4 {
 	struct vmbus_icmsg_hdr	ic_hdr;
 	uint64_t		ic_hvtime;
-	uint64_t		ic_vmtime;
 	uint64_t		ic_sent_tc;
 	uint8_t			ic_tsflags;	/* VMBUS_ICMSG_TS_FLAG_ */
 	uint8_t			ic_rsvd[5];
