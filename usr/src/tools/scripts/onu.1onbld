@@ -128,7 +128,7 @@ will attempt to update any ipkg-brand installed zones on the
 system; the
 .B -Z
 option may be used to disable this behavior. Linked-image zones such as
-\fBlipkg\fR and \fBsparse\fR will always be updated.
+\fBlipkg\fR, \fBsparse\fR and \fBpkgsrc\fR will always be updated.
 .SH EXAMPLES
 .LP
 \fBExample 1\fR Installing latest ON nightly build

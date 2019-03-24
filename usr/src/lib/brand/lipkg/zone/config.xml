@@ -33,8 +33,7 @@
 <!--
   NOTE:  The only reason "lipkg" exists is to provide a least-surpise, but
   otherwise compatible, linked-image version of "ipkg".  This exists so existing
-  "ipkg" zones aren't surpised by linked-image upgrades.  This is an
-  experimental brand type for now.
+  "ipkg" zones aren't surpised by linked-image upgrades.
 -->
 
 <brand name="lipkg">
