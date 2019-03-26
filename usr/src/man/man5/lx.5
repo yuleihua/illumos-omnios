@@ -8,11 +8,11 @@
 .\" source.  A copy of the CDDL is also available via the Internet at
 .\" http://www.illumos.org/license/CDDL.
 .\"
-.\"
 .\" Copyright 2016, Joyent, Inc.
 .\" Copyright 2016, OmniTI Computer Consulting, Inc. All Rights Reserved.
+.\" Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
 .\"
-.Dd February 5, 2106
+.Dd March 25, 2019
 .Dt LX 5
 .Os
 .Sh NAME
@@ -58,13 +58,15 @@ dataset to be cloned or snapshot to be promoted, or the absolute pathname of a
 file or gzipped tar file.
 .Pp
 Examples:
-.Dl zoneadm -z myzone install -x nodataset
-.Dl zoneadm -z myzone install -s /path/to/sendstream.zss
-.Dl zoneadm -z myzone install -s name/of/dataset-to-clone
-.Dl zoneadm -z myzone install -s name/of/snapshot-to@promote
-.Dl zoneadm -z myzone install -t /path/to/tarball.tgz
+.Bd -literal -offset indent
+zoneadm -z myzone install -x nodataset
+zoneadm -z myzone install -s /path/to/sendstream.zfs
+zoneadm -z myzone install -s name/of/dataset-to-clone
+zoneadm -z myzone install -s name/of/snapshot-to@promote
+zoneadm -z myzone install -t /path/to/tarball.tgz
+.Ed
 .Pp
-Applications provided by the base SunOS operating system are also available
+Applications provided by the base OmniOS operating system are also available
 within the zone under the
 .Em /native
 mount point.
@@ -88,36 +90,37 @@ For example, the value could be
 .Pp
 Persistent network configuration (including DNS resolver information) can be
 configured using
-.Xr zonecfg 1m
-as well, as attributes under the network property.
-An example LX zone configured with vNIC "lx1" using DHCP is below:
+.Xr zonecfg 1m .
+An example
+.Em lx
+zone configured with VNIC "lx1" using a static IP address is below:
 .sp
-.Dl create -b
-.Dl set zonepath=/zones/lx1
-.Dl set brand=lx
-.Dl set autoboot=true
-.Dl set ip-type=exclusive
-.Dl add net
-.Dl set physical=lx1
-.Dl add property (name=ip,value="dhcp")
-.Dl add property (name=ips,value="dhcp")
-.Dl add property (name=primary,value="true")
-.Dl end
-.Dl add attr
-.Dl set name=dns-domain
-.Dl set type=string
-.Dl set value=example.com
-.Dl end
-.Dl add attr
-.Dl set name=resolvers
-.Dl set type=string
-.Dl set value=192.21.12.1
-.Dl end
-.Dl add attr
-.Dl set name=kernel-version
-.Dl set type=string
-.Dl set value=4.3.0
-.Dl end
+.Bd -literal -offset indent
+create -t lx
+set zonepath=/zones/lx1
+set autoboot=true
+add net
+    set physical=lx1
+    set allowed-address=192.168.0.2/24
+    set defrouter=192.168.0.1
+    set global-nic=auto
+end
+add attr
+    set name=dns-domain
+    set type=string
+    set value=example.com
+end
+add attr
+    set name=resolvers
+    set type=string
+    set value=192.168.12.1,192.168.13.1
+end
+add attr
+    set name=kernel-version
+    set type=string
+    set value=4.3.0
+end
+.Ed
 .sp
 .Sh LIMITATIONS
 The brand only supports the exclusive IP stack zone configuration.
@@ -130,7 +133,7 @@ This does not preclude the application running in the future as the
 .Em lx
 brand adds new capabilities.
 .Pp
-Because there is only the single SunOS kernel running on the system, there
+As there is only the single illumos kernel running on the system, there
 is no support for any Linux kernel-level modules.
 That is, there is no support for add-on drivers or any other modules that are
 part of the Linux kernel itself.
@@ -139,7 +142,7 @@ an
 .Em lx
 branded zone.
 .Pp
-Any core files produced within the zone are in the native SunOS format.
+Any core files produced within the zone are in the native illumos format.
 .Pp
 As with any zone, the normal security mechanisms and privileges apply.
 Thus, certain operations (for example, changing the system time), will not be
