@@ -125,9 +125,11 @@ BUILD_TOOLS=		/ws/onnv-tools
 ONBLD_TOOLS=		$(BUILD_TOOLS)/onbld
 
 # define runtime JAVA_HOME, primarily for cmd/pools/poold
-JAVA_HOME=	/usr/java
+#JAVA_HOME=	/usr/java
+JAVA_HOME=	/usr/jdk/openjdk1.8.0
 # define buildtime JAVA_ROOT
-JAVA_ROOT=	/usr/java
+#JAVA_ROOT=	/usr/java
+JAVA_ROOT=	/usr/jdk/openjdk1.8.0
 # Build uses java8 by default.  Pass one the variables below set to empty
 # string in the environment to override.
 BLD_JAVA_6=	$(POUND_SIGN)
