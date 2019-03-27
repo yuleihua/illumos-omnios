@@ -279,13 +279,20 @@ export SPRO_VROOT="$SPRO_ROOT"
 
 export PERL_VERSION=5.28
 export PERL_ARCH=i86pc-solaris-thread-multi-64int
+export PERL_PKGVERS=
+
+export JAVA_ROOT=/usr/jdk/openjdk1.8.0
+export JAVA_HOME=$JAVA_ROOT
 export BLD_JAVA_7='#'
 export BLD_JAVA_8=
-export PERL_PKGVERS=
+
+export BUILDPY2=
+export BUILDPY3=
+export BUILDPY2TOOLS=
+export BUILDPY3TOOLS=
+export TOOLS_PYTHON=/usr/bin/python3.5
+
 export GNUC_ROOT=/opt/gcc-4.4.4/
-export SPRO_ROOT=/opt/sunstudio12.1
-export SPRO_VROOT="$SPRO_ROOT"
-export ONLY_LINT_DEFS="-I${SPRO_ROOT}/sunstudio12.1/prod/include/lint"
 export ON_CLOSED_BINS=/opt/onbld/closed
 
 export __GNUC=
