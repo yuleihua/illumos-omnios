@@ -47,7 +47,7 @@ variable PNGLogo
 
 : ooce        0  30  20   0   0	s" /boot/ooce.png" fb-putimage ;
 : dragon      0 530  30   0   0	s" /boot/dragon.png" fb-putimage ;
-: illumos_png 0   0   0 118   0	s" /boot/illumos.png" fb-putimage ;
+: illumos_png 0   0   0   0   0	s" /boot/illumos-small.png" fb-putimage ;
 
 : asciidragon ( x y -- x y' )
 	s"     @[30;1m.:   ..                 " logo+
