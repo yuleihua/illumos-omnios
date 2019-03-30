@@ -59,7 +59,7 @@ This testsuite uses the default configuration of filebench.
 
    - Install the "expect" package
 
-     # pkg install shell/expect
+     # pkg install ooce/runtime/expect
 
    - Install the "Test Runner" package
 
@@ -120,8 +120,8 @@ This testsuite uses the default configuration of filebench.
 
    - Prerequisites: configure client and server (see above).
 
-   - Install an "exepct" package, i.e. with IPS
-	pkg install shell/expect
+   - Install an "expect" package, i.e. with IPS
+	pkg install ooce/runtime/expect
 
    - Export the environment variables:
 
