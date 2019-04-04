@@ -10,22 +10,12 @@
  */
 
 /*
- * Copyright 2018 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 
 #include <sys/asm_linkage.h>
 
-#if defined(__lint)
-
-int
-/* LINTED E_FUNC_ARG_UNUSED */
-hma_vmx_vmxon(uintptr_t arg __unused)
-{
-	return (0);
-}
-
-#else	/* __lint */
 	ENTRY_NP(hma_vmx_vmxon)
 	push	%rbp
 	movq	%rsp, %rbp
@@ -40,4 +30,23 @@ hma_vmx_vmxon(uintptr_t arg __unused)
 	leave
 	ret
 	SET_SIZE(hma_vmx_vmxon)
-#endif	/* __lint */
+
+	ENTRY_NP(hma_vmx_do_invept)
+	push	%rbp
+	movq	%rsp, %rbp
+	pushq	%rdi
+	pushq	%rsi
+
+	/* build INVEPT descriptor on stack */
+	xorl	%eax, %eax
+	pushq	%rax;
+	pushq	%rsi
+
+	invept	(%rsp), %rdi
+	ja	1f	/* CF=0, ZF=0 (success) */
+	incl	%eax
+1:
+
+	leave
+	ret
+	SET_SIZE(hma_vmx_do_invept)
