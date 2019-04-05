@@ -23,7 +23,6 @@
  * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  *
  * Copyright 2011 Nexenta Systems, Inc. All rights reserved.
- * Copyright 2019 Joyent, Inc.
  */
 /* Copyright (c) 1990 Mentat Inc. */
 
@@ -57,7 +56,6 @@
 #include <sys/vtrace.h>
 #include <sys/isa_defs.h>
 #include <sys/mac.h>
-#include <sys/mac_client.h>
 #include <net/if.h>
 #include <net/if_arp.h>
 #include <net/route.h>
@@ -662,13 +660,11 @@ ill_input_short_v4(mblk_t *mp, void *iph_arg, void *nexthop_arg,
 	}
 
 	/*
-	 * If the packet originated from a same-machine sender or
-	 * there is a good HW IP header checksum, we clear the need
+	 * If there is a good HW IP header checksum we clear the need
 	 * look at the IP header checksum.
 	 */
-	if ((DB_CKSUMFLAGS(mp) & HW_LOCAL_MAC) ||
-	    ((DB_CKSUMFLAGS(mp) & HCK_IPV4_HDRCKSUM) &&
-	    ILL_HCKSUM_CAPABLE(ill) && dohwcksum)) {
+	if ((DB_CKSUMFLAGS(mp) & HCK_IPV4_HDRCKSUM) &&
+	    ILL_HCKSUM_CAPABLE(ill) && dohwcksum) {
 		/* Header checksum was ok. Clear the flag */
 		DB_CKSUMFLAGS(mp) &= ~HCK_IPV4_HDRCKSUM;
 		ira->ira_flags &= ~IRAF_VERIFY_IP_CKSUM;
@@ -2245,17 +2241,6 @@ ip_input_cksum_v4(iaflags_t iraflags, mblk_t *mp, ipha_t *ipha,
 		/* No ULP checksum to verify. */
 		return (B_TRUE);
 	}
-
-	hck_flags = DB_CKSUMFLAGS(mp);
-
-	if (hck_flags & HW_LOCAL_MAC) {
-		/*
-		 * The packet is from a same-machine sender in which
-		 * case we assume data integrity.
-		 */
-		return (B_TRUE);
-	}
-
 	/*
 	 * Revert to software checksum calculation if the interface
 	 * isn't capable of checksum offload.
@@ -2272,6 +2257,9 @@ ip_input_cksum_v4(iaflags_t iraflags, mblk_t *mp, ipha_t *ipha,
 	 * We apply this for all ULP protocols. Does the HW know to
 	 * not set the flags for SCTP and other protocols.
 	 */
+
+	hck_flags = DB_CKSUMFLAGS(mp);
+
 	if (hck_flags & HCK_FULLCKSUM_OK) {
 		/*
 		 * Hardware has already verified the checksum.
