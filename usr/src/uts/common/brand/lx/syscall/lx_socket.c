@@ -2116,11 +2116,21 @@ lx_recvmmsg(int sock, void *msg, uint_t vlen, int flags, timespec_t *timeoutp)
 	flags &= ~LX_MSG_WAITFORONE;
 
 	/*
-	 * Linux does not cap vlen here however we want to limit the
-	 * amount of system time that a single call to recvmmsg() can
-	 * consume in the case that datagrams are readily available to receive.
-	 * recvmmsg() is allowed to return fewer datagrams than requested
-	 * and this should be handled properly by the calling application.
+	 * We want to limit the work that a thread calling recvmmsg() can
+	 * perform in the kernel so that it cannot accrue too high a priority.
+	 * Artificially capping vlen means that the thread will return to
+	 * userspace after processing at most IOV_MAX messages, giving the
+	 * system a chance to reset the thread priority.
+	 *
+	 * Linux does not cap vlen here and recvmmsg() is expected to return
+	 * once vlen messages have been received, a timeout occurs, or if an
+	 * error is encountered; the artificial cap adds another case.
+	 *
+	 * It is possible that returning "early" in this emulation will
+	 * cause problems with some applications however a properly written
+	 * recvmmsg() consumer should consume only the received datagrams
+	 * and try again if it wants more. This may need revisiting in the
+	 * future.
 	 */
 	if (vlen > IOV_MAX)
 		vlen = IOV_MAX;
@@ -2554,9 +2564,7 @@ lx_sendmmsg(int sock, void *msg, uint_t vlen, int flags)
 	uint_t sent = 0;
 
 	/*
-	 * Linux caps vlen to UIO_MAXIOV (1024) so we do too.
-	 * This helps limit the amount of system time that a single
-	 * call to sendmmsg() can consume.
+	 * Linux caps vlen to UIO_MAXIOV (1024).
 	 */
 	if (vlen > IOV_MAX)
 		vlen = IOV_MAX;
