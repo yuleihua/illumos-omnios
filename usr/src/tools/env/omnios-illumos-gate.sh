@@ -83,7 +83,7 @@ export SHADOW_CCCS=gcc7,/usr/gcc/7/bin/g++,gnu
 
 # Comment this out to disable support for SMB printing, i.e. if you
 # don't want to bother providing the CUPS headers this needs.
-export ENABLE_SMB_PRINTING=
+#export ENABLE_SMB_PRINTING=
 
 # If your distro uses certain versions of Perl, make sure either Makefile.master
 # contains your new defaults OR your .env file sets them.
