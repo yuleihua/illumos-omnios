@@ -23,6 +23,7 @@
 # Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
 # Copyright 2015, Joyent, Inc.
 # Copyright 2017 ASS-Einrichtungssysteme GmbH, Inc.
+# Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
 #
 # lx boot script.
 #
@@ -86,6 +87,14 @@ elif [[ -f $ZONEROOT/etc/SuSE-release ]]; then
 fi
 
 [[ -z $distro ]] && fatal "Unsupported distribution!"
+
+#
+# Retrieve an attribute from the zone configuration
+#
+zone_attr() {
+	zonecfg -z "$ZONENAME" info attr "name=$1" \
+	    | nawk '$1 == "value:" {print $2}'
+}
 
 #
 # Perform distro-specific customization.
