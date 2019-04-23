@@ -9552,7 +9552,7 @@ qlt_convert_string_to_ull(char *prop, int radix,
 static boolean_t
 qlt_wwn_overload_prop(qlt_state_t *qlt)
 {
-	char		*prop_val = 0;
+	char		*prop_val = NULL;
 	int		rval;
 	int		radix;
 	u_longlong_t	wwnn = 0, wwpn = 0;
