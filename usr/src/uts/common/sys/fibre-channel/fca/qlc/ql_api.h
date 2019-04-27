@@ -2392,7 +2392,7 @@ typedef struct cmd_table_entry {
 	{LA_ELS_FARP_REPLY, "LA_ELS_FARP_REPLY"},	\
 	{LA_ELS_RLS, "LA_ELS_RLS"},			\
 	{LA_ELS_RNID, "LA_ELS_RNID"},			\
-	{NULL, NULL}					\
+	{0, NULL}					\
 }
 
 /*
