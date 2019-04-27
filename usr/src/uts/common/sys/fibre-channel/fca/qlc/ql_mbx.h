@@ -1042,7 +1042,7 @@ int ql_read_serdes(ql_adapter_state_t *, ql_mbx_data_t *);
 	{MBC_SET_LED_CONFIG, "MBC_SET_LED_CONFIG"},			\
 	{MBC_GET_LED_CONFIG, "MBC_GET_LED_CONFIG"},			\
 	{MBC_GET_MD_TEMPLATE, "MBC_GET_MD_TEMPLATE"},			\
-	{NULL, "Unsupported"}						\
+	{0, "Unsupported"}						\
 }
 
 #ifdef	__cplusplus
