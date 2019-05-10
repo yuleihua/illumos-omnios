@@ -320,6 +320,7 @@ usr/src/cmd/cal/cal
 usr/src/cmd/cal/cal.dc
 usr/src/cmd/captoinfo/captoinfo
 usr/src/cmd/cat/cat
+usr/src/cmd/cdpadm/cdpadm
 usr/src/cmd/cdrw/cdrw
 usr/src/cmd/cfgadm/cfgadm
 usr/src/cmd/cfgadm/cfgadm.dc
@@ -372,6 +373,7 @@ usr/src/cmd/cmd-inet/usr.bin/whois
 usr/src/cmd/cmd-inet/usr.lib/bridged/bridged
 usr/src/cmd/cmd-inet/usr.lib/ilbd/ilb/ilb_probe
 usr/src/cmd/cmd-inet/usr.lib/ilbd/ilbd
+usr/src/cmd/cmd-inet/usr.lib/in.cdpd/in.cdpd
 usr/src/cmd/cmd-inet/usr.lib/in.chargend/in.chargend
 usr/src/cmd/cmd-inet/usr.lib/in.daytimed/in.daytimed
 usr/src/cmd/cmd-inet/usr.lib/in.discardd/in.discardd
@@ -813,6 +815,7 @@ usr/src/cmd/fs.d/proc/mount
 usr/src/cmd/fs.d/reparsed/reparsed
 usr/src/cmd/fs.d/sharefs/mount
 usr/src/cmd/fs.d/smbclnt/chacl/chacl
+usr/src/cmd/fs.d/smbclnt/fksmbcl/fksmbcl
 usr/src/cmd/fs.d/smbclnt/lsacl/lsacl
 usr/src/cmd/fs.d/smbclnt/mount/mount
 usr/src/cmd/fs.d/smbclnt/share/dfshares
@@ -822,9 +825,6 @@ usr/src/cmd/fs.d/smbclnt/smbiod-svc/smbiod-svc
 usr/src/cmd/fs.d/smbclnt/smbiod/smbiod
 usr/src/cmd/fs.d/smbclnt/smbutil/smbutil
 usr/src/cmd/fs.d/smbclnt/smbutil/srvsvc1_ndr.c
-usr/src/cmd/fs.d/smbclnt/test/srvenum
-usr/src/cmd/fs.d/smbclnt/test/srvinfo
-usr/src/cmd/fs.d/smbclnt/test/tconn
 usr/src/cmd/fs.d/smbclnt/umount/umount
 usr/src/cmd/fs.d/tmpfs/mount
 usr/src/cmd/fs.d/udfs/fsck/fsck
@@ -3409,6 +3409,7 @@ usr/src/man/man1/fgrep.1
 usr/src/man/man1/mailq.1
 usr/src/man/man1/whatis.1
 usr/src/man/man1m/audlinks.1m
+usr/src/man/man1m/cdpd.1m
 usr/src/man/man1s/dmake.1s
 usr/src/man/man1s/make.1s
 usr/src/man/man2/fchmodat.2
@@ -3776,6 +3777,7 @@ usr/src/man/man3proc/pr_setrlimit64.3proc
 usr/src/man/man3proc/pr_stat64.3proc
 usr/src/man/man3proc/proc_arg_xgrab.3proc
 usr/src/man/man3proc/proc_arg_xpsinfo.3proc
+usr/src/man/man3proc/proc_dmodelname.3proc
 usr/src/man/man3proc/proc_finistdio.3proc
 usr/src/man/man3proc/proc_flushstdio.3proc
 usr/src/man/man3proc/proc_free_priv.3proc
@@ -3962,6 +3964,8 @@ usr/src/test/crypto-tests/tests/modes/aes/ecb/aes_ecb_pkcs
 usr/src/test/crypto-tests/tests/modes/aes/gcm/aes_gcm_kcf
 usr/src/test/crypto-tests/tests/modes/aes/gcm/aes_gcm_pkcs
 usr/src/test/elf-tests/tests/assert-deflib/test-deflib
+usr/src/test/elf-tests/tests/linker-sets/in-use-check
+usr/src/test/elf-tests/tests/linker-sets/simple
 usr/src/test/elf-tests/tests/tls/amd64/ie/amd64-ie-test
 usr/src/test/elf-tests/tests/tls/amd64/ld/amd64-ld-test
 usr/src/test/elf-tests/tests/tls/i386/ld/i386-ld-test
@@ -4092,6 +4096,26 @@ usr/src/test/smbclient-tests/cmd/mkfile_mmap/mkfile_mmap
 usr/src/test/smbclient-tests/cmd/no_close/no_close
 usr/src/test/smbclient-tests/cmd/prot_mmap/prot_mmap
 usr/src/test/smbclient-tests/cmd/rw_mmap/rw_mmap
+usr/src/test/util-tests/tests/ctf/check-array
+usr/src/test/util-tests/tests/ctf/check-enum
+usr/src/test/util-tests/tests/ctf/check-float-32
+usr/src/test/util-tests/tests/ctf/check-float-64
+usr/src/test/util-tests/tests/ctf/check-forward-32
+usr/src/test/util-tests/tests/ctf/check-forward-64
+usr/src/test/util-tests/tests/ctf/check-function
+usr/src/test/util-tests/tests/ctf/check-int-32
+usr/src/test/util-tests/tests/ctf/check-int-64
+usr/src/test/util-tests/tests/ctf/check-merge-dedup
+usr/src/test/util-tests/tests/ctf/check-merge-forward-32
+usr/src/test/util-tests/tests/ctf/check-merge-forward-64
+usr/src/test/util-tests/tests/ctf/check-merge-reduction
+usr/src/test/util-tests/tests/ctf/check-merge-static
+usr/src/test/util-tests/tests/ctf/check-merge-weak
+usr/src/test/util-tests/tests/ctf/check-qualifiers
+usr/src/test/util-tests/tests/ctf/check-reference
+usr/src/test/util-tests/tests/ctf/check-sou-32
+usr/src/test/util-tests/tests/ctf/check-sou-64
+usr/src/test/util-tests/tests/ctf/check-weak
 usr/src/test/util-tests/tests/demangle/afl-fast
 usr/src/test/util-tests/tests/demangle/gcc-libstdc++
 usr/src/test/util-tests/tests/demangle/llvm-stdcxxabi
@@ -4293,6 +4317,7 @@ usr/src/uts/intel/core_pcbe/core_pcbe_bdw.c
 usr/src/uts/intel/core_pcbe/core_pcbe_bdw_de.c
 usr/src/uts/intel/core_pcbe/core_pcbe_bdx.c
 usr/src/uts/intel/core_pcbe/core_pcbe_bnl.c
+usr/src/uts/intel/core_pcbe/core_pcbe_clx.c
 usr/src/uts/intel/core_pcbe/core_pcbe_cpcgen.c
 usr/src/uts/intel/core_pcbe/core_pcbe_cpcgen.h
 usr/src/uts/intel/core_pcbe/core_pcbe_glm.c
