@@ -23,6 +23,10 @@
  * Use is subject to license terms.
  */
 
+/*
+ * Copyright 2019 Joyent, Inc.
+ */
+
 #include <sys/types.h>
 #include <sys/processor.h>
 #include <sys/pset.h>
@@ -670,6 +674,7 @@ cpustat(void)
 		case P_POWEROFF:
 		case P_FAULTED:
 		case P_SPARE:
+		case P_DISABLED:
 			gstate[i++].cpuid = -1;
 			break;
 		default:

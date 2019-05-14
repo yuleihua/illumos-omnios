@@ -25,6 +25,10 @@
  */
 
 /*
+ * Copyright 2019 Joyent, Inc.
+ */
+
+/*
  * CPU support routines for DR
  */
 
@@ -395,7 +399,7 @@ dr_post_attach_cpu(dr_handle_t *hp, dr_common_unit_t **devlist, int devnum)
 		if (cpu_is_offline(cp)) {
 			PR_CPU("%s: onlining cpu %d...\n", f, up->sbc_cpu_id);
 
-			if (cpu_online(cp) != 0) {
+			if (cpu_online(cp, 0) != 0) {
 				dr_dev_err(CE_WARN, &up->sbc_cm, ESBD_ONLINE);
 				errflag = 1;
 			}
@@ -896,7 +900,7 @@ dr_cancel_cpu(dr_cpu_unit_t *up)
 		}
 
 		if (cpu_is_offline(cp)) {
-			if (cpu_online(cp)) {
+			if (cpu_online(cp, 0)) {
 				cmn_err(CE_WARN, "%s: failed to online cpu %d",
 				    f, up->sbc_cpu_id);
 				rv = -1;
