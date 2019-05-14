@@ -88,7 +88,7 @@
 #include <sys/dmu_tx.h>
 #include <sys/zfeature.h>
 #include <sys/zio_checksum.h>
-#include <sys/ht.h>
+#include <sys/smt.h>
 
 #include "zfs_namecheck.h"
 
@@ -1281,7 +1281,7 @@ zvol_strategy(buf_t *bp)
 	    (zv->zv_objset->os_sync == ZFS_SYNC_ALWAYS)) &&
 	    !doread && !is_dumpified;
 
-	ht_begin_unsafe();
+	smt_begin_unsafe();
 
 	/*
 	 * There must be no buffer changes when doing a dmu_sync() because
@@ -1330,7 +1330,7 @@ zvol_strategy(buf_t *bp)
 		zil_commit(zv->zv_zilog, ZVOL_OBJ);
 	biodone(bp);
 
-	ht_end_unsafe();
+	smt_end_unsafe();
 
 	return (0);
 }
@@ -1410,7 +1410,7 @@ zvol_read(dev_t dev, uio_t *uio, cred_t *cr)
 		return (error);
 	}
 
-	ht_begin_unsafe();
+	smt_begin_unsafe();
 
 	rl = zfs_range_lock(&zv->zv_znode, uio->uio_loffset, uio->uio_resid,
 	    RL_READER);
@@ -1431,7 +1431,7 @@ zvol_read(dev_t dev, uio_t *uio, cred_t *cr)
 	}
 	zfs_range_unlock(rl);
 
-	ht_end_unsafe();
+	smt_end_unsafe();
 
 	return (error);
 }
@@ -1462,7 +1462,7 @@ zvol_write(dev_t dev, uio_t *uio, cred_t *cr)
 		return (error);
 	}
 
-	ht_begin_unsafe();
+	smt_begin_unsafe();
 
 	sync = !(zv->zv_flags & ZVOL_WCE) ||
 	    (zv->zv_objset->os_sync == ZFS_SYNC_ALWAYS);
@@ -1495,7 +1495,7 @@ zvol_write(dev_t dev, uio_t *uio, cred_t *cr)
 	if (sync)
 		zil_commit(zv->zv_zilog, ZVOL_OBJ);
 
-	ht_end_unsafe();
+	smt_end_unsafe();
 
 	return (error);
 }
@@ -1738,7 +1738,7 @@ zvol_ioctl(dev_t dev, int cmd, intptr_t arg, int flag, cred_t *cr, int *rvalp)
 		dkc = (struct dk_callback *)arg;
 		mutex_exit(&zfsdev_state_lock);
 
-		ht_begin_unsafe();
+		smt_begin_unsafe();
 
 		zil_commit(zv->zv_zilog, ZVOL_OBJ);
 		if ((flag & FKIOCTL) && dkc != NULL && dkc->dkc_callback) {
@@ -1746,7 +1746,7 @@ zvol_ioctl(dev_t dev, int cmd, intptr_t arg, int flag, cred_t *cr, int *rvalp)
 			error = 0;
 		}
 
-		ht_end_unsafe();
+		smt_end_unsafe();
 
 		return (error);
 
@@ -1772,9 +1772,9 @@ zvol_ioctl(dev_t dev, int cmd, intptr_t arg, int flag, cred_t *cr, int *rvalp)
 		} else {
 			zv->zv_flags &= ~ZVOL_WCE;
 			mutex_exit(&zfsdev_state_lock);
-			ht_begin_unsafe();
+			smt_begin_unsafe();
 			zil_commit(zv->zv_zilog, ZVOL_OBJ);
-			ht_end_unsafe();
+			smt_end_unsafe();
 		}
 		return (0);
 	}
@@ -1827,7 +1827,7 @@ zvol_ioctl(dev_t dev, int cmd, intptr_t arg, int flag, cred_t *cr, int *rvalp)
 
 		mutex_exit(&zfsdev_state_lock);
 
-		ht_begin_unsafe();
+		smt_begin_unsafe();
 
 		rl = zfs_range_lock(&zv->zv_znode, df.df_start, df.df_length,
 		    RL_WRITER);
@@ -1861,8 +1861,7 @@ zvol_ioctl(dev_t dev, int cmd, intptr_t arg, int flag, cred_t *cr, int *rvalp)
 			zil_commit(zv->zv_zilog, ZVOL_OBJ);
 		}
 
-		if (!(flag & FKIOCTL))
-			dfl_free(dfl);
+		smt_end_unsafe();
 
 		return (error);
 	}

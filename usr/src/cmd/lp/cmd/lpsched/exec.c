@@ -32,6 +32,9 @@
 #if defined PS_FAULTED
 #undef  PS_FAULTED
 #endif /* PS_FAULTED */
+#if defined PS_DISABLED
+#undef  PS_DISABLED
+#endif /* PS_DISABLED */
 #include <dial.h>
 
 #include <stdlib.h>
