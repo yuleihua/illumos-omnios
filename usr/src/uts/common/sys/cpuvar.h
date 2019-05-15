@@ -25,6 +25,7 @@
  * Copyright 2014 Igor Kozhukhov <ikozhukhov@gmail.com>.
  * Copyright 2018 Joyent, Inc.
  * Copyright 2017 RackTop Systems.
+ * Copyright 2019 Joyent, Inc.
  */
 
 #ifndef _SYS_CPUVAR_H
@@ -99,11 +100,11 @@ typedef struct cpu {
 	/*
 	 * Links to other CPUs.  It is safe to walk these lists if
 	 * one of the following is true:
-	 * 	- cpu_lock held
-	 * 	- preemption disabled via kpreempt_disable
-	 * 	- PIL >= DISP_LEVEL
-	 * 	- acting thread is an interrupt thread
-	 * 	- all other CPUs are paused
+	 *	- cpu_lock held
+	 *	- preemption disabled via kpreempt_disable
+	 *	- PIL >= DISP_LEVEL
+	 *	- acting thread is an interrupt thread
+	 *	- all other CPUs are paused
 	 */
 	struct cpu	*cpu_next;		/* next existing CPU */
 	struct cpu	*cpu_prev;		/* prev existing CPU */
@@ -131,7 +132,7 @@ typedef struct cpu {
 	 */
 	char		cpu_runrun;	/* scheduling flag - set to preempt */
 	char		cpu_kprunrun;		/* force kernel preemption */
-	pri_t		cpu_chosen_level; 	/* priority at which cpu */
+	pri_t		cpu_chosen_level;	/* priority at which cpu */
 						/* was chosen for scheduling */
 	kthread_t	*cpu_dispthread; /* thread selected for dispatch */
 	disp_lock_t	cpu_thread_lock; /* dispatcher lock on current thread */
@@ -287,7 +288,7 @@ extern cpu_core_t cpu_core[];
  * list in avintr.c.
  */
 #define	INTR_ACTIVE(cpup, level)	\
-	((level) <= LOCK_LEVEL ? 	\
+	((level) <= LOCK_LEVEL ?	\
 	((cpup)->cpu_intr_actv & (1 << (level))) : (CPU_ON_INTR(cpup)))
 
 /*
@@ -423,24 +424,19 @@ extern void	cpuset_free(cpuset_t *);
  * private when some cpuset_t handling was performed in the CPUSET_* macros.
  * They are now acceptable to use in non-_MACHDEP code.
  */
-extern	void	cpuset_all(cpuset_t *);
-extern	void	cpuset_all_but(cpuset_t *, const uint_t);
-extern	int	cpuset_isnull(cpuset_t *);
-extern	int	cpuset_isequal(cpuset_t *, cpuset_t *);
-extern	void	cpuset_only(cpuset_t *, const uint_t);
-extern	long	cpu_in_set(cpuset_t *, const uint_t);
-extern	void	cpuset_add(cpuset_t *, const uint_t);
-extern	void	cpuset_del(cpuset_t *, const uint_t);
-extern	uint_t	cpuset_find(cpuset_t *);
-extern	void	cpuset_bounds(cpuset_t *, uint_t *, uint_t *);
-extern	void	cpuset_atomic_del(cpuset_t *, const uint_t);
-extern	void	cpuset_atomic_add(cpuset_t *, const uint_t);
-extern	long	cpuset_atomic_xadd(cpuset_t *, const uint_t);
-extern	long	cpuset_atomic_xdel(cpuset_t *, const uint_t);
-extern	void	cpuset_or(cpuset_t *, cpuset_t *);
-extern	void	cpuset_xor(cpuset_t *, cpuset_t *);
-extern	void	cpuset_and(cpuset_t *, cpuset_t *);
-extern	void	cpuset_zero(cpuset_t *);
+extern void	cpuset_all(cpuset_t *);
+extern void	cpuset_all_but(cpuset_t *, const uint_t);
+extern int	cpuset_isnull(const cpuset_t *);
+extern int	cpuset_isequal(const cpuset_t *, const cpuset_t *);
+extern void	cpuset_only(cpuset_t *, const uint_t);
+extern long	cpu_in_set(const cpuset_t *, const uint_t);
+extern void	cpuset_add(cpuset_t *, const uint_t);
+extern void	cpuset_del(cpuset_t *, const uint_t);
+extern uint_t	cpuset_find(const cpuset_t *);
+extern void	cpuset_bounds(const cpuset_t *, uint_t *, uint_t *);
+extern void	cpuset_atomic_del(cpuset_t *, const uint_t);
+extern void	cpuset_atomic_add(cpuset_t *, const uint_t);
+extern long	cpuset_atomic_xadd(cpuset_t *, const uint_t);
 
 
 #if defined(_MACHDEP)
@@ -503,16 +499,8 @@ extern	void	cpuset_zero(cpuset_t *);
 
 #define	CPUSET_ZERO(set)	cpuset_zero(&(set))
 
-#endif /* _MACHDEP */
-#endif /* _KERNEL || _KMEMUSER || _BOOT */
+#endif /* defined(_MACHDEP) */
 
-#define	CPU_CPR_OFFLINE		0x0
-#define	CPU_CPR_ONLINE		0x1
-#define	CPU_CPR_IS_OFFLINE(cpu)	(((cpu)->cpu_cpr_flags & CPU_CPR_ONLINE) == 0)
-#define	CPU_CPR_IS_ONLINE(cpu)	((cpu)->cpu_cpr_flags & CPU_CPR_ONLINE)
-#define	CPU_SET_CPR_FLAGS(cpu, flag)	((cpu)->cpu_cpr_flags |= flag)
-
-#if defined(_KERNEL) || defined(_KMEMUSER)
 
 extern cpuset_t cpu_seqid_inuse;
 
@@ -588,6 +576,12 @@ extern struct cpu *curcpup(void);
 #define	CPU_NEW_GENERATION(cp)	((cp)->cpu_generation++)
 
 #endif /* defined(_KERNEL) || defined(_KMEMUSER) */
+
+#define	CPU_CPR_OFFLINE		0x0
+#define	CPU_CPR_ONLINE		0x1
+#define	CPU_CPR_IS_OFFLINE(cpu)	(((cpu)->cpu_cpr_flags & CPU_CPR_ONLINE) == 0)
+#define	CPU_CPR_IS_ONLINE(cpu)	((cpu)->cpu_cpr_flags & CPU_CPR_ONLINE)
+#define	CPU_SET_CPR_FLAGS(cpu, flag)	((cpu)->cpu_cpr_flags |= flag)
 
 /*
  * CPU support routines (not for genassym.c)
