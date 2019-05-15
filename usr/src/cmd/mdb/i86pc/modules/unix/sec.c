@@ -173,6 +173,59 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 		mdb_printf("\n");
 	}
 
+	/*
+	 * MDS
+	 *   CVE-2018-12127
+	 *   CVE-2018-12126
+	 *   CVE-2018-12130
+	 *   CVE-2019-11091
+	 *  https://www.intel.com/content/www/us/en/security-center/advisory/intel-sa-00233.html
+	 */
+
+	int mds_no, mds_cmd;
+
+	mds_no = BT_TEST((ulong_t *)fset, X86FSET_MDS_NO);
+	mds_cmd = BT_TEST((ulong_t *)fset, X86FSET_MD_CLEAR);
+
+	if (mds_no)
+		/*
+		 * Not strictly true, but the system will protect against
+		 * the remaining exposure.
+		 */
+		vuln = VULN_INVULN;
+	else if (!ht_exclusion)
+		vuln = VULN_NOTPROT;
+	else if (mds_cmd)
+		vuln = VULN_PROT;
+	else
+		vuln = VULN_NOTPROT;
+
+	if (opt_p) {
+		mdb_printf("mds:CVE-2018-12126:%s\n",
+		    vuln_name(vuln, opt_p));
+		mdb_printf("mds:CVE-2018-12127:%s\n",
+		    vuln_name(vuln, opt_p));
+		mdb_printf("mds:CVE-2018-12130:%s\n",
+		    vuln_name(vuln, opt_p));
+		mdb_printf("mds:CVE-2019-11091:%s\n",
+		    vuln_name(vuln, opt_p));
+	} else {
+		mdb_printf(
+		    "= MDS (CVE-2018-12126/12127/12130,CVE-2019-11091)\n");
+		mdb_printf("    Status: %s%c\n", vuln_name(vuln, opt_p),
+		    vuln == VULN_NOTPROT ? '*' : ' ');
+		if (mds_no)
+			mdb_printf("            CPU reports not vulnerable "
+			    "(RDCL_NO)\n");
+		mdb_printf(
+		    "            HT Exclusion is %s\n",
+		    ht_exclusion ? "enabled" : "disabled");
+		mdb_printf(
+		    "            MDS flush is %s\n",
+		    mds_cmd ? "available" : "not supported");
+		mdb_printf("\n");
+	}
+
 	/* Free feature set */
 
 	mdb_free(fset, sz);
