@@ -110,7 +110,7 @@ cpu_t		*cpu_list;		/* list of all CPUs */
 cpu_t		*clock_cpu_list;	/* used by clock to walk CPUs */
 cpu_t		*cpu_active;		/* list of active CPUs */
 cpuset_t	cpu_active_set;		/* cached set of active CPUs */
-static cpuset_t	cpu_available;		/* set of available CPUs */
+cpuset_t	cpu_available;		/* set of available CPUs */
 cpuset_t	cpu_seqid_inuse;	/* which cpu_seqids are in use */
 
 cpu_t		**cpu_seq;		/* ptrs to CPUs, indexed by seq_id */
@@ -460,9 +460,8 @@ thread_affinity_set(kthread_id_t t, int cpu_id)
 		thread_unlock(t);
 	}
 
-	if (cpu_id == CPU_CURRENT || cpu_id == CPU_BEST) {
+	if (cpu_id == CPU_CURRENT || cpu_id == CPU_BEST)
 		kpreempt_enable();
-	}
 }
 
 /*

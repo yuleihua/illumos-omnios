@@ -23,7 +23,7 @@
  * Copyright (c) 1989, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 by Delphix. All rights reserved.
  * Copyright 2014 Igor Kozhukhov <ikozhukhov@gmail.com>.
- * Copyright 2018 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  * Copyright 2017 RackTop Systems.
  * Copyright 2019 Joyent, Inc.
  */
@@ -437,6 +437,11 @@ extern void	cpuset_bounds(const cpuset_t *, uint_t *, uint_t *);
 extern void	cpuset_atomic_del(cpuset_t *, const uint_t);
 extern void	cpuset_atomic_add(cpuset_t *, const uint_t);
 extern long	cpuset_atomic_xadd(cpuset_t *, const uint_t);
+extern long	cpuset_atomic_xdel(cpuset_t *, const uint_t);
+extern void	cpuset_or(cpuset_t *, cpuset_t *);
+extern void	cpuset_xor(cpuset_t *, cpuset_t *);
+extern void	cpuset_and(cpuset_t *, cpuset_t *);
+extern void	cpuset_zero(cpuset_t *);
 
 
 #if defined(_MACHDEP)
