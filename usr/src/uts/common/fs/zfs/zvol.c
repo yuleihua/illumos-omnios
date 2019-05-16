@@ -1871,8 +1871,6 @@ zvol_ioctl(dev_t dev, int cmd, intptr_t arg, int flag, cred_t *cr, int *rvalp)
 			zil_commit(zv->zv_zilog, ZVOL_OBJ);
 		}
 
-		ht_end_unsafe();
-
 		if (!(flag & FKIOCTL))
 			dfl_free(dfl);
 
