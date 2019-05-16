@@ -176,8 +176,8 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 	/*
 	 * MDS
 	 *   CVE-2018-12127
-	 *   CVE-2018-12126
-	 *   CVE-2018-12130
+	 *   CVE-2018-12126 - Fallout
+	 *   CVE-2018-12130 - Zombieload/RIDL
 	 *   CVE-2019-11091
 	 *  https://www.intel.com/content/www/us/en/security-center/advisory/intel-sa-00233.html
 	 */
@@ -201,11 +201,11 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 		vuln = VULN_NOTPROT;
 
 	if (opt_p) {
-		mdb_printf("mds:CVE-2018-12126:%s\n",
+		mdb_printf("mds/Fallout:CVE-2018-12126:%s\n",
 		    vuln_name(vuln, opt_p));
 		mdb_printf("mds:CVE-2018-12127:%s\n",
 		    vuln_name(vuln, opt_p));
-		mdb_printf("mds:CVE-2018-12130:%s\n",
+		mdb_printf("mds/Zombieload/RIDL:CVE-2018-12130:%s\n",
 		    vuln_name(vuln, opt_p));
 		mdb_printf("mds:CVE-2019-11091:%s\n",
 		    vuln_name(vuln, opt_p));
