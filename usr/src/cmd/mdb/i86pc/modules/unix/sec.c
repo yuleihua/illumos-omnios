@@ -126,10 +126,10 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 
 	/* Foreshadow/L1TF (CVE-2018-3646) */
 
-	int ht_exclusion, rdcl_no, flush_cmd, l1d_vm_no;
+	int smt_exclusion, rdcl_no, flush_cmd, l1d_vm_no;
 
-	if (mdb_readvar(&ht_exclusion, "ht_exclusion") == -1)
-		ht_exclusion = 0;
+	if (mdb_readvar(&smt_exclusion, "smt_exclusion") == -1)
+		smt_exclusion = 0;
 
 	rdcl_no = BT_TEST((ulong_t *)fset, X86FSET_RDCL_NO);
 	flush_cmd = BT_TEST((ulong_t *)fset, X86FSET_FLUSH_CMD);
@@ -137,7 +137,7 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 
 	if (rdcl_no)
 		vuln = VULN_INVULN;
-	else if (!ht_exclusion)
+	else if (!smt_exclusion)
 		vuln = VULN_NOTPROT;
 	else if (l1d_vm_no)
 		/* Flush cmd not required, ht-exclusion is enough */
@@ -161,11 +161,68 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 			mdb_printf("            CPU reports cache flush not "
 			    "required (L1D_VM_NO)\n");
 		mdb_printf(
-		    "            HT Exclusion is %s\n",
-		    ht_exclusion ? "enabled" : "disabled");
+		    "            SMT Exclusion is %s\n",
+		    smt_exclusion ? "enabled" : "disabled");
 		mdb_printf(
 		    "            L1 Cache flush is %s\n",
 		    flush_cmd ? "available" : "not supported");
+		if (vuln == VULN_NOTPROT)
+			mdb_printf(
+			    "            * - Not necessary if hyperthreading "
+			    "is disabled/not present.\n");
+		mdb_printf("\n");
+	}
+
+	/*
+	 * MDS
+	 *   CVE-2018-12127
+	 *   CVE-2018-12126 - Fallout
+	 *   CVE-2018-12130 - Zombieload/RIDL
+	 *   CVE-2019-11091
+	 *  https://www.intel.com/content/www/us/en/security-center/advisory/intel-sa-00233.html
+	 */
+
+	int mds_no, mds_cmd;
+
+	mds_no = BT_TEST((ulong_t *)fset, X86FSET_MDS_NO);
+	mds_cmd = BT_TEST((ulong_t *)fset, X86FSET_MD_CLEAR);
+
+	if (mds_no)
+		/*
+		 * Not strictly true, but the system will protect against
+		 * the remaining exposure.
+		 */
+		vuln = VULN_INVULN;
+	else if (!smt_exclusion)
+		vuln = VULN_NOTPROT;
+	else if (mds_cmd)
+		vuln = VULN_PROT;
+	else
+		vuln = VULN_NOTPROT;
+
+	if (opt_p) {
+		mdb_printf("mds/Fallout:CVE-2018-12126:%s\n",
+		    vuln_name(vuln, opt_p));
+		mdb_printf("mds:CVE-2018-12127:%s\n",
+		    vuln_name(vuln, opt_p));
+		mdb_printf("mds/Zombieload/RIDL:CVE-2018-12130:%s\n",
+		    vuln_name(vuln, opt_p));
+		mdb_printf("mds:CVE-2019-11091:%s\n",
+		    vuln_name(vuln, opt_p));
+	} else {
+		mdb_printf(
+		    "= MDS (CVE-2018-12126/12127/12130,CVE-2019-11091)\n");
+		mdb_printf("    Status: %s%c\n", vuln_name(vuln, opt_p),
+		    vuln == VULN_NOTPROT ? '*' : ' ');
+		if (mds_no)
+			mdb_printf("            CPU reports not vulnerable "
+			    "(RDCL_NO)\n");
+		mdb_printf(
+		    "            SMT Exclusion is %s\n",
+		    smt_exclusion ? "enabled" : "disabled");
+		mdb_printf(
+		    "            MDS flush is %s\n",
+		    mds_cmd ? "available" : "not supported");
 		if (vuln == VULN_NOTPROT)
 			mdb_printf(
 			    "            * - Not necessary if hyperthreading "
