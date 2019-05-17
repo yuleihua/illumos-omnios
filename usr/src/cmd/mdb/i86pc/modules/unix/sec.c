@@ -126,10 +126,10 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 
 	/* Foreshadow/L1TF (CVE-2018-3646) */
 
-	int ht_exclusion, rdcl_no, flush_cmd, l1d_vm_no;
+	int smt_exclusion, rdcl_no, flush_cmd, l1d_vm_no;
 
-	if (mdb_readvar(&ht_exclusion, "ht_exclusion") == -1)
-		ht_exclusion = 0;
+	if (mdb_readvar(&smt_exclusion, "smt_exclusion") == -1)
+		smt_exclusion = 0;
 
 	rdcl_no = BT_TEST((ulong_t *)fset, X86FSET_RDCL_NO);
 	flush_cmd = BT_TEST((ulong_t *)fset, X86FSET_FLUSH_CMD);
@@ -137,7 +137,7 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 
 	if (rdcl_no)
 		vuln = VULN_INVULN;
-	else if (!ht_exclusion)
+	else if (!smt_exclusion)
 		vuln = VULN_NOTPROT;
 	else if (l1d_vm_no)
 		/* Flush cmd not required, ht-exclusion is enough */
@@ -161,8 +161,8 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 			mdb_printf("            CPU reports cache flush not "
 			    "required (L1D_VM_NO)\n");
 		mdb_printf(
-		    "            HT Exclusion is %s\n",
-		    ht_exclusion ? "enabled" : "disabled");
+		    "            SMT Exclusion is %s\n",
+		    smt_exclusion ? "enabled" : "disabled");
 		mdb_printf(
 		    "            L1 Cache flush is %s\n",
 		    flush_cmd ? "available" : "not supported");
@@ -193,7 +193,7 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 		 * the remaining exposure.
 		 */
 		vuln = VULN_INVULN;
-	else if (!ht_exclusion)
+	else if (!smt_exclusion)
 		vuln = VULN_NOTPROT;
 	else if (mds_cmd)
 		vuln = VULN_PROT;
@@ -218,11 +218,15 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 			mdb_printf("            CPU reports not vulnerable "
 			    "(RDCL_NO)\n");
 		mdb_printf(
-		    "            HT Exclusion is %s\n",
-		    ht_exclusion ? "enabled" : "disabled");
+		    "            SMT Exclusion is %s\n",
+		    smt_exclusion ? "enabled" : "disabled");
 		mdb_printf(
 		    "            MDS flush is %s\n",
 		    mds_cmd ? "available" : "not supported");
+		if (vuln == VULN_NOTPROT)
+			mdb_printf(
+			    "            * - Not necessary if hyperthreading "
+			    "is disabled/not present.\n");
 		mdb_printf("\n");
 	}
 
