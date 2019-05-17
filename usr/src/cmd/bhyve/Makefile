@@ -11,6 +11,7 @@
 
 #
 # Copyright 2014 Pluribus Networks Inc.
+# Copyright 2019 Joyent, Inc.
 #
 
 PROG =		bhyve
@@ -114,6 +115,8 @@ CPPFLAGS =	-I$(COMPAT)/freebsd -I$(CONTRIB)/freebsd \
 CPPFLAGS +=	-DNO_OPENSSL
 
 pci_nvme.o := CERRWARN += -_gcc=-Wno-pointer-sign
+
+SMOFF += all_func_returns,leaks,no_if_block
 
 # Force c99 for everything
 CSTD=		$(CSTD_GNU99)

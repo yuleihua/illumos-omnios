@@ -11,7 +11,7 @@
 
 #
 # Copyright 2013 Pluribus Networks Inc.
-# Copyright 2017 Joyent, Inc.
+# Copyright 2019 Joyent, Inc.
 #
 
 #
@@ -85,6 +85,9 @@ LINTTAGS	+= -erroff=E_NOP_IF_STMT
 LINTTAGS	+= -erroff=E_ZERO_OR_NEGATIVE_SUBSCRIPT
 
 $(OBJS_DIR)/ppt.o := CERRWARN	+= -_gcc=-Wno-unused-variable
+
+# needs work
+SMOFF += all_func_returns
 
 #
 #	Default build targets.
