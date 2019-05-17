@@ -21,7 +21,7 @@
 
 /*
  * Copyright (c) 1991, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, Joyent, Inc.  All rights reserved.
+ * Copyright 2019 Joyent, Inc.
  */
 
 #include <sys/types.h>
@@ -74,7 +74,8 @@
 #include <sys/waitq.h>
 #include <sys/cpucaps.h>
 #include <sys/kiconv.h>
-#include <sys/ht.h>
+#include <sys/ctype.h>
+#include <sys/smt.h>
 
 struct kmem_cache *thread_cache;	/* cache of free threads */
 struct kmem_cache *lwp_cache;		/* cache of free lwps */
@@ -1318,7 +1319,7 @@ thread_unpin()
 	itp = t->t_intr;		/* interrupted thread */
 	t->t_intr = NULL;		/* clear interrupt ptr */
 
-	ht_end_intr();
+	smt_end_intr();
 
 	/*
 	 * Get state from interrupt thread for the one

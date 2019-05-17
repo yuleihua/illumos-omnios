@@ -29,9 +29,11 @@ fw=platform/i86pc/ucode/GenuineIntel
 tmp=`mktemp -d`
 mkdir $tmp/out
 
-gzip -dc "$1" | (cd $tmp; tar xf -)
+gtar -C $tmp -xvf "$1"
 
-find $tmp/intel-ucode/ -type f | while read f; do
+find $tmp/Intel-Linux-Processor-Microcode-Data*/intel-ucode/ -type f \
+    | while read f; do
+	echo "Converting `basename $f`"
 	cp $f $tmp/intel-fw
 	ucodeadm -i -R $tmp/out $tmp/intel-fw
 	rm -f $tmp/intel-fw

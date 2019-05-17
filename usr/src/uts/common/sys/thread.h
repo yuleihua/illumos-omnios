@@ -25,7 +25,7 @@
  */
 
 /*
- * Copyright 2017, Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 #ifndef	_SYS_THREAD_H
@@ -350,7 +350,7 @@ typedef struct _kthread {
 	struct waitq	*t_waitq;	/* wait queue */
 	kmutex_t	t_wait_mutex;	/* used in CV wait functions */
 
-	uint64_t	t_unsafe;	/* unsafe to run with HT VCPU thread */
+	uint64_t	t_unsafe;	/* unsafe to run with SMT VCPU thread */
 } kthread_t;
 
 /*

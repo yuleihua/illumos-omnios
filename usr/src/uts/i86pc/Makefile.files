@@ -68,7 +68,6 @@ CORE_OBJS +=			\
 	hment.o			\
 	hold_page.o		\
 	hrtimers.o		\
-	ht.o			\
 	htable.o		\
 	hypercall.o		\
 	hypersubr.o		\
@@ -84,6 +83,7 @@ CORE_OBJS +=			\
 	mach_kdi.o		\
 	mach_sysconfig.o	\
 	machdep.o		\
+	md_clear.o		\
 	mem_config.o		\
 	mem_config_stubs.o	\
 	mem_config_arch.o	\
@@ -113,6 +113,7 @@ CORE_OBJS +=			\
 	pmem.o			\
 	ppage.o			\
 	pwrnow.o		\
+	smt.o			\
 	speedstep.o		\
 	ssp.o			\
 	startup.o		\

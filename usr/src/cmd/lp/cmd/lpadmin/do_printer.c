@@ -45,6 +45,9 @@
 #if defined PS_FAULTED
 #undef	PS_FAULTED
 #endif
+#if defined PS_DISABLED
+#undef	PS_DISABLED
+#endif
 #include "printers.h"
 #include "msgs.h"
 
