@@ -56,7 +56,7 @@ __FBSDID("$FreeBSD$");
 #ifndef __FreeBSD__
 #include <sys/x86_archext.h>
 #include <sys/smp_impldefs.h>
-#include <sys/ht.h>
+#include <sys/smt.h>
 #include <sys/hma.h>
 #include <sys/trap.h>
 #endif
@@ -928,7 +928,7 @@ vmx_init(int ipinum)
 		}
 	}
 #else
-	/* L1D flushing is taken care of by ht_acquire() and friends */
+	/* L1D flushing is taken care of by smt_acquire() and friends */
 	guest_l1d_flush = 0;
 #endif /* __FreeBSD__ */
 
@@ -3340,7 +3340,7 @@ vmx_run(void *arg, int vcpu, register_t rip, pmap_t pmap,
 		}
 
 #ifndef __FreeBSD__
-		if ((rc = ht_acquire()) != 1) {
+		if ((rc = smt_acquire()) != 1) {
 			enable_intr();
 			vmexit->rip = rip;
 			vmexit->inst_length = 0;
@@ -3369,7 +3369,7 @@ vmx_run(void *arg, int vcpu, register_t rip, pmap_t pmap,
 #endif
 
 #ifndef __FreeBSD__
-		ht_release();
+		smt_release();
 #endif
 
 		/* Collect some information for VM exit processing */
