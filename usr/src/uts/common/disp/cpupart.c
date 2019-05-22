@@ -20,6 +20,8 @@
  */
 /*
  * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ *
+ * Copyright 2018 Joyent, Inc.
  * Copyright (c) 2017 by Delphix. All rights reserved.
  * Copyright 2018 Joyent, Inc.
  */
