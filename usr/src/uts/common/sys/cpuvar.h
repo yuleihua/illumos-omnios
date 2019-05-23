@@ -23,7 +23,6 @@
  * Copyright (c) 1989, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 by Delphix. All rights reserved.
  * Copyright 2014 Igor Kozhukhov <ikozhukhov@gmail.com>.
- * Copyright 2019 Joyent, Inc.
  * Copyright 2017 RackTop Systems.
  * Copyright 2019 Joyent, Inc.
  */

@@ -39,7 +39,6 @@
 #include <sys/segments.h>
 #include <sys/psw.h>
 
-#if !defined(__lint)
 #include "assym.h"
 
 /*
@@ -495,5 +494,3 @@ resume_from_intr_return:
 	call	thread_exit	/* destroy thread if it returns. */
 	/*NOTREACHED*/
 	SET_SIZE(thread_start)
-
-#endif /* !__lint */
