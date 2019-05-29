@@ -24,6 +24,7 @@
 # Copyright 2014 Garrett D'Amore <garrett@damore.org>
 # Copyright (c) 2011, 2017 by Delphix. All rights reserved.
 # Copyright 2017 Nexenta Systems, Inc.
+# Copyright 2019 Peter Tribble
 #
 
 include ../Makefile.master
@@ -39,7 +40,6 @@ MANIFEST_TOPDIRS=			\
 	consadm				\
 	coreadm				\
 	cron				\
-	cvcd				\
 	dispadmin			\
 	drd				\
 	dumpadm				\
