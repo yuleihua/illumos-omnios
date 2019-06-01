@@ -88,7 +88,7 @@ export SHADOW_CCCS=gcc7,/usr/gcc/7/bin/g++,gnu
 # If your distro uses certain versions of Perl, make sure either Makefile.master
 # contains your new defaults OR your .env file sets them.
 # These are how you would override for building on OmniOS r151028, for example.
-#export PERL_VERSION=5.28
+#export PERL_VERSION=5.30
 #export PERL_ARCH=i86pc-solaris-thread-multi-64int
 #export PERL_PKGVERS=
 
@@ -277,7 +277,7 @@ export SPRO_VROOT="$SPRO_ROOT"
 ######################################################################
 # OmniOS-specific overrides
 
-export PERL_VERSION=5.28
+export PERL_VERSION=5.30
 export PERL_ARCH=i86pc-solaris-thread-multi-64int
 export PERL_PKGVERS=
 
