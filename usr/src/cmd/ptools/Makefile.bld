@@ -119,6 +119,8 @@ OBJS_pwait =		$(COBJS)
 CPPFLAGS_pwdx =		$(CINC)
 OBJS_pwdx =		$(COBJS)
 
+LN_pargs =		penv pauxv
+
 CPPFLAGS +=	$(CPPFLAGS_$(PROG))
 OBJS +=		$(OBJS_$(PROG))
 SRCS +=		$(SRCS_$(PROG))
@@ -148,8 +150,9 @@ pmap_common.o:	$(PMAP)/pmap_common.c
 	$(COMPILE.c) $<
 	$(POST_PROCESS_O)
 
-all:	$(PROG)
+all:	$(PROG) $(LN_$(PROG))
 
+ROOTBINLN=$(LN_$(PROG):%=$(ROOTBIN)/%)
 ROOTBINPROG=$(ROOTBIN)/$(PROG)
 ROOTPROCBINSYMLINK=$(ROOT)/usr/proc/bin/$(PROG)
 
@@ -161,10 +164,22 @@ $(PROG): $$(OBJS)
 # Install the ptool, symlinking it into /usr/proc/bin if PTOOL_TYPE is set
 # to LEGACY.
 #
-install: all $(ROOTISAPROG)
+install: all $(ROOTISAPROG) $(ROOTISALN) $(ROOTBINLN)
 	-$(RM) $(ROOTBINPROG)
 	-$(LN) $(ISAEXEC) $(ROOTBINPROG)
 	-$(INSTALL_$(PTOOL_TYPE))
+
+$(ROOTBINLN):
+	-$(RM) $@
+	-$(LN) $(ISAEXEC) $@
+
+$(ROOTISALN): $(ROOTISAPROG)
+	-$(RM) $@
+	-$(LN) $(ROOTISAPROG) $@
+
+$(LN_$(PROG)): $(PROG)
+	-$(RM) $@
+	-$(LN) $(PROG) $@
 
 clean:
 	$(RM) $(OBJS)
