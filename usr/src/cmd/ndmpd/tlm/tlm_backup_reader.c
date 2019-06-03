@@ -36,7 +36,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-/* Copyright 2017 Nexenta Systems, Inc. All rights reserved. */
+/* Copyright 2019. Nexenta by DDN, Inc. All rights reserved. */
 
 #include <syslog.h>
 #include <stdio.h>
@@ -641,7 +641,6 @@ tlm_output_xattr(char  *dir, char *name, char *chkdir,
 	DIR *dp;
 	struct dirent *dtp;
 	char *attrname;
-	char *fnamep;
 	int rv = 0;
 
 	if (S_ISPECIAL(tlm_acls->acl_attr.st_mode)) {
@@ -679,15 +678,13 @@ tlm_output_xattr(char  *dir, char *name, char *chkdir,
 		goto err_out;
 	}
 
-	fnamep = (tlm_acls->acl_checkpointed) ? snapname : fullname;
-
 	/*
 	 * Open the file for reading.
 	 */
-	fd = attropen(fnamep, ".", O_RDONLY);
+	fd = attropen(snapname, ".", O_RDONLY);
 	if (fd == -1) {
-		syslog(LOG_ERR, "BACKUP> Can't open file [%s][%s]",
-		    fullname, fnamep);
+		syslog(LOG_ERR, "BACKUP> Can't open file [%s]",
+		    snapname);
 		rv = TLM_NO_SOURCE_FILE;
 		goto err_out;
 	}
@@ -711,11 +708,11 @@ tlm_output_xattr(char  *dir, char *name, char *chkdir,
 		if (sysattr_rdonly(dtp->d_name))
 			continue;
 
-		afd = attropen(fnamep, dtp->d_name, O_RDONLY);
+		afd = attropen(snapname, dtp->d_name, O_RDONLY);
 		if (afd == -1) {
 			syslog(LOG_ERR,
-			    "problem(%d) opening xattr file [%s][%s]", errno,
-			    fullname, fnamep);
+			    "problem(%d) opening xattr file [%s]", errno,
+			    snapname);
 			goto tear_down;
 		}
 
@@ -845,7 +842,6 @@ tlm_output_file(char *dir, char *name, char *chkdir,
 	longlong_t seek_spot = 0;	/* location in the file */
 					/* for Multi Volume record */
 	u_longlong_t pos;
-	char *fnamep;
 
 	/* Indicate whether a file with the same inode has been backed up. */
 	int hardlink_done = 0;
@@ -908,8 +904,6 @@ tlm_output_file(char *dir, char *name, char *chkdir,
 		return (0);
 	}
 
-	fnamep = (tlm_acls->acl_checkpointed) ? snapname : fullname;
-
 	/*
 	 * For hardlink, only read the data if no other link
 	 * belonging to the same inode has been backed up.
@@ -923,14 +917,16 @@ tlm_output_file(char *dir, char *name, char *chkdir,
 		/*
 		 * Open the file for reading.
 		 */
-		fd = open(fnamep, O_RDONLY);
+		fd = open(snapname, O_RDONLY);
 		if (fd == -1) {
 			syslog(LOG_ERR,
-			    "BACKUP> Can't open file [%s][%s] err(%d)",
-			    fullname, fnamep, errno);
+			    "BACKUP> Can't open file [%s] err(%d)",
+			    snapname, errno);
 			real_size = -TLM_NO_SOURCE_FILE;
 			goto err_out;
 		}
+		syslog(LOG_DEBUG,
+		    "BACKUP> Open hardlink [%s]", snapname);
 	} else {
 		syslog(LOG_DEBUG, "found hardlink, inode = %llu, pos = %llu ",
 		    tlm_acls->acl_attr.st_ino, hardlink_pos);
