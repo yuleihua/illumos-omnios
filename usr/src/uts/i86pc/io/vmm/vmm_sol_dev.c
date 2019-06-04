@@ -231,7 +231,7 @@ vcpu_lock_one(vmm_softc_t *sc, int vcpu)
 {
 	int error;
 
-	if (vcpu < 0 || vcpu >= VM_MAXCPU)
+	if (vcpu < 0 || vcpu >= vm_get_maxcpus(sc->vmm_vm))
 		return (EINVAL);
 
 	error = vcpu_set_state(sc->vmm_vm, vcpu, VCPU_FROZEN, true);
@@ -255,9 +255,11 @@ vcpu_unlock_one(vmm_softc_t *sc, int vcpu)
 static int
 vcpu_lock_all(vmm_softc_t *sc)
 {
-	int error, vcpu;
+	int error = 0, vcpu;
+	uint16_t maxcpus;
 
-	for (vcpu = 0; vcpu < VM_MAXCPU; vcpu++) {
+	maxcpus = vm_get_maxcpus(sc->vmm_vm);
+	for (vcpu = 0; vcpu < maxcpus; vcpu++) {
 		error = vcpu_lock_one(sc, vcpu);
 		if (error)
 			break;
@@ -275,8 +277,10 @@ static void
 vcpu_unlock_all(vmm_softc_t *sc)
 {
 	int vcpu;
+	uint16_t maxcpus;
 
-	for (vcpu = 0; vcpu < VM_MAXCPU; vcpu++)
+	maxcpus = vm_get_maxcpus(sc->vmm_vm);
+	for (vcpu = 0; vcpu < maxcpus; vcpu++)
 		vcpu_unlock_one(sc, vcpu);
 }
 
@@ -321,7 +325,7 @@ vmmdev_do_ioctl(vmm_softc_t *sc, int cmd, intptr_t arg, int md,
 		if (ddi_copyin(datap, &vcpu, sizeof (vcpu), md)) {
 			return (EFAULT);
 		}
-		if (vcpu < 0 || vcpu >= VM_MAXCPU) {
+		if (vcpu < 0 || vcpu >= vm_get_maxcpus(sc->vmm_vm)) {
 			error = EINVAL;
 			goto done;
 		}
@@ -357,7 +361,7 @@ vmmdev_do_ioctl(vmm_softc_t *sc, int cmd, intptr_t arg, int md,
 		 * Lock a vcpu to make sure that the memory map cannot be
 		 * modified while it is being inspected.
 		 */
-		vcpu = VM_MAXCPU - 1;
+		vcpu = vm_get_maxcpus(sc->vmm_vm) - 1;
 		error = vcpu_lock_one(sc, vcpu);
 		if (error)
 			goto done;
@@ -977,7 +981,7 @@ vmmdev_do_ioctl(vmm_softc_t *sc, int cmd, intptr_t arg, int md,
 			error = EFAULT;
 			break;
 		}
-		if (vcpu < -1 || vcpu >= VM_MAXCPU) {
+		if (vcpu < -1 || vcpu >= vm_get_maxcpus(sc->vmm_vm)) {
 			error = EINVAL;
 			break;
 		}
@@ -990,7 +994,7 @@ vmmdev_do_ioctl(vmm_softc_t *sc, int cmd, intptr_t arg, int md,
 			error = EFAULT;
 			break;
 		}
-		if (vcpu < -1 || vcpu >= VM_MAXCPU) {
+		if (vcpu < -1 || vcpu >= vm_get_maxcpus(sc->vmm_vm)) {
 			error = EINVAL;
 			break;
 		}
