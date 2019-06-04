@@ -77,7 +77,7 @@ static void			vmbus_chan_set_chmap(struct vmbus_channel *);
 static void			vmbus_chan_clear_chmap(struct vmbus_channel *);
 static void			vmbus_chan_detach(struct vmbus_channel *);
 static boolean_t		vmbus_chan_wait_revoke(
-				    const struct vmbus_channel *);
+				    const struct vmbus_channel *, boolean_t);
 
 static void			vmbus_chan_ins_prilist(struct vmbus_softc *,
 				    struct vmbus_channel *);
@@ -423,14 +423,14 @@ vmbus_chan_open_br(struct vmbus_channel *chan, const struct vmbus_chan_br *cbr,
 				msg = vmbus_msghc_poll_result(sc, mh);
 				if (msg != NULL)
 					break;
-				drv_usecwait(1000);
+				delay(drv_usectohz(1000));
 			}
 #undef REVOKE_LINGER
 			if (msg == NULL)
 				vmbus_msghc_exec_cancel(sc, mh);
 			break;
 		}
-		drv_usecwait(1000);
+		delay(drv_usectohz(1000));
 	}
 	if (msg != NULL) {
 		status = ((const struct vmbus_chanmsg_chopen_resp *)
@@ -602,7 +602,7 @@ vmbus_chan_gpadl_connect(struct vmbus_channel *chan, paddr_t paddr,
 }
 
 static boolean_t
-vmbus_chan_wait_revoke(const struct vmbus_channel *chan)
+vmbus_chan_wait_revoke(const struct vmbus_channel *chan, boolean_t can_sleep)
 {
 #define	WAIT_COUNT	200	/* 200ms */
 
@@ -611,8 +611,10 @@ vmbus_chan_wait_revoke(const struct vmbus_channel *chan)
 	for (i = 0; i < WAIT_COUNT; ++i) {
 		if (vmbus_chan_is_revoked(chan))
 			return (B_TRUE);
-		/* Not sure about the context; use busy-wait. */
-		drv_usecwait(1000);
+		if (can_sleep)
+			delay(drv_usectohz(1000));
+		else
+			drv_usecwait(1000);
 	}
 	return (B_FALSE);
 
@@ -649,7 +651,7 @@ vmbus_chan_gpadl_disconnect(struct vmbus_channel *chan, uint32_t gpadl)
 	if (error != 0) {
 		vmbus_msghc_put(sc, mh);
 
-		if (vmbus_chan_wait_revoke(chan)) {
+		if (vmbus_chan_wait_revoke(chan, B_TRUE)) {
 			/*
 			 * Error is benign; this channel is revoked,
 			 * so this GPADL will not be touched anymore.
@@ -1909,7 +1911,7 @@ vmbus_chan_xact_wait(const struct vmbus_channel *chan,
 		 */
 		while (!vmbus_chan_rx_empty(chan)) {
 			if (can_sleep)
-				delay(1);
+				delay(drv_usectohz(1000));
 			else
 				drv_usecwait(1000);
 		}
