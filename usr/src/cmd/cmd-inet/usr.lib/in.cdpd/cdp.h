@@ -73,17 +73,17 @@ typedef struct cdp_host_entry {
 	struct cdp_host_entry	*next;
 } neighbour_t;
 
-int yuka_cdp_init(yuka_session_t *, yuka_packet_t *);
+void yuka_cdp_init(yuka_session_t *, yuka_packet_t *);
 void yuka_cdp_final(yuka_packet_t *);
 void yuka_cdp_walk(void (*)(neighbour_t *, void *), void *, boolean_t);
 void yuka_cdp_reap(int);
 void yuka_cdp_refresh(const neighbour_t *);
 int yuka_cdp_parse(const uint8_t *, uint32_t, neighbour_t *);
 void cdp_add_sysname(yuka_packet_t * lclcdp);
-int cdp_add_hostid(yuka_packet_t *, const char *);
-int cdp_add_ipaddress(yuka_packet_t *, in_addr_t);
-int cdp_add_portid(yuka_packet_t *, const char *);
-int cdp_add_capabilities(yuka_packet_t *, uint32_t);
+void cdp_add_hostid(yuka_packet_t *, const char *);
+void cdp_add_ipaddress(yuka_packet_t *, in_addr_t);
+void cdp_add_portid(yuka_packet_t *, const char *);
+void cdp_add_capabilities(yuka_packet_t *, uint32_t);
 extern const data_link_addr_t MAC_CDP;
 
 #endif /* YUKA_CDP_H_INC */

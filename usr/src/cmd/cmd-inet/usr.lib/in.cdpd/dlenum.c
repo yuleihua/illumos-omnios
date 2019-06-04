@@ -60,7 +60,7 @@ yuka_list_links(void)
 		fprintf(stderr, "Error code: %d\n", status);
 		exit(1);
 	}
-	dladm_walk_datalink_id(list_link, h, NULL,
+	(void) dladm_walk_datalink_id(list_link, h, NULL,
 		DATALINK_CLASS_PHYS, DATALINK_ANY_MEDIATYPE, DLADM_OPT_ACTIVE);
 	dladm_close(h);
 }
@@ -103,7 +103,7 @@ yuka_get_links(stringlist_t **slist)
 		exit(1);
 	}
 
-	dladm_walk_datalink_id(getlist_link, h, slist,
+	(void) dladm_walk_datalink_id(getlist_link, h, slist,
 	    DATALINK_CLASS_PHYS, DATALINK_ANY_MEDIATYPE, DLADM_OPT_ACTIVE);
 	dladm_close(h);
 }

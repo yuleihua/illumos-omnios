@@ -46,8 +46,17 @@ const uint8_t LLC_CDP[8] = { 0xaa, 0xaa, 0x03, 0x00, 0x00, 0x0c, 0x20, 0x00 };
 
 extern int verbose;
 
-static int cdp_add_x(yuka_packet_t *, unsigned short, const uint8_t *,
-    unsigned short);
+static void
+cdp_add_x(yuka_packet_t *lfr, unsigned short ty, const uint8_t *x,
+    unsigned short xlen)
+{
+	int inp = lfr->insertpos;
+	if (xlen + 4 + inp > lfr->bufsize)
+		return;
+	add_short(lfr, ty);
+	add_short(lfr, 4 + xlen);
+	add_string(lfr, (uint8_t *)x, xlen);
+}
 
 unsigned short
 verify_checksum(const uint16_t *ptr, int length, int oddtype)
@@ -79,73 +88,59 @@ verify_checksum(const uint16_t *ptr, int length, int oddtype)
 	return (~sum);
 }
 
-int
+void
 cdp_add_hostid(yuka_packet_t *lfr, const char *devid)
 {
-	return (cdp_add_x(lfr, 1, (uint8_t *)devid, strlen(devid)));
+	cdp_add_x(lfr, 1, (uint8_t *)devid, strlen(devid));
 }
 
 // ip 1.2.3.4 == 0x01020304
-int
+void
 cdp_add_ipaddress(yuka_packet_t *lfr, in_addr_t ip)
 {
 	// Type NLPID(1), Len 1, Proto: IP( 0xCC )
 	uint8_t stg[3] = { 1, 1, 0xcc };
 	if (lfr->insertpos + 17 > lfr->bufsize)
-		return (-5);
+		return;
 	add_short(lfr, 2);
 	add_short(lfr, 17);
 	add_long(lfr, 1); // Address Count
 	add_string(lfr, stg, 3); // Address Info
 	add_short(lfr, 4); // Address Len - 4 Bytes
 	add_ip(lfr, ip); // IP
-	return (0);
 }
 
-int
+void
 cdp_add_portid(yuka_packet_t *lfr, const char *portid)
 {
-	return (cdp_add_x(lfr, 3, (uint8_t *)portid, strlen(portid)));
+	cdp_add_x(lfr, 3, (uint8_t *)portid, strlen(portid));
 }
 
-int
+void
 cdp_add_capabilities(yuka_packet_t *lfr, uint32_t flags)
 {
 	if (lfr->insertpos + 8 > lfr->bufsize)
-		return (-5);
+		return;
 	add_short(lfr, 4);
 	add_short(lfr, 8);
 	add_long(lfr, flags);
-	return (0);
 }
 
-static int
+static void
 cdp_add_softver(yuka_packet_t *lfr, const char *verstr)
 {
-	return (cdp_add_x(lfr, 5, (uint8_t *)verstr, strlen(verstr)));
+	cdp_add_x(lfr, 5, (uint8_t *)verstr, strlen(verstr));
 }
 
-static int
+static void
 cdp_add_platform(yuka_packet_t *lfr, const char *plfstr)
 {
-	return (cdp_add_x(lfr, 6, (uint8_t *)plfstr, strlen(plfstr)));
-}
-
-static int
-cdp_add_x(yuka_packet_t *lfr, unsigned short ty, const uint8_t *x,
-    unsigned short xlen)
-{
-	int inp = lfr->insertpos;
-	if (xlen + 4 + inp > lfr->bufsize)
-		return (-5);
-	add_short(lfr, ty);
-	add_short(lfr, 4 + xlen);
-	add_string(lfr, (uint8_t *)x, xlen);
-	return (0);
+	cdp_add_x(lfr, 6, (uint8_t *)plfstr, strlen(plfstr));
 }
 
 int
-get_cdp_string(const uint8_t *cdata, int slen, char *dest, int dlen) {
+get_cdp_string(const uint8_t *cdata, int slen, char *dest, int dlen)
+{
 	int p = slen;
 
 	if (slen >= dlen)
@@ -289,7 +284,7 @@ yuka_cdp_parse(const uint8_t *remdata, uint32_t rlen, neighbour_t *rhe)
 
 		switch (sectype) {
 		case CDP_DATA_DEVID:
-			get_cdp_string(cdata, seclen, rhe->devid,
+			(void) get_cdp_string(cdata, seclen, rhe->devid,
 			    sizeof (rhe->devid));
 			if (dumpcdp)
 				printf("[Device ID]: %s\n", rhe->devid);
@@ -301,7 +296,7 @@ yuka_cdp_parse(const uint8_t *remdata, uint32_t rlen, neighbour_t *rhe)
 			}
 			break;
 		case CDP_DATA_PORTID:
-			get_cdp_string(cdata, seclen, rhe->portid,
+			(void) get_cdp_string(cdata, seclen, rhe->portid,
 			    sizeof (rhe->portid));
 			if (dumpcdp)
 				printf("[Port ID]: %s\n", rhe->portid);
@@ -312,19 +307,19 @@ yuka_cdp_parse(const uint8_t *remdata, uint32_t rlen, neighbour_t *rhe)
 				printf("[Capability]: %08x\n", rhe->caps);
 			break;
 		case CDP_DATA_SWVER:
-			get_cdp_string(cdata, seclen, rhe->swversion,
+			(void) get_cdp_string(cdata, seclen, rhe->swversion,
 			    sizeof (rhe->swversion));
 			if (dumpcdp)
 				printf("[Sw Version]: %s\n", rhe->swversion);
 			break;
 		case CDP_DATA_PLATFORM:
-			get_cdp_string(cdata, seclen, rhe->platform,
+			(void) get_cdp_string(cdata, seclen, rhe->platform,
 			    sizeof (rhe->platform));
 			if (dumpcdp)
 				printf("[Platform]: %s\n", rhe->platform);
 			break;
 		case CDP_DATA_VTP:
-			get_cdp_string(cdata, seclen, rhe->vtpdomain,
+			(void) get_cdp_string(cdata, seclen, rhe->vtpdomain,
 			    sizeof (rhe->vtpdomain));
 			if (dumpcdp)
 				printf("[VTP Domain]: %s\n", rhe->vtpdomain);
@@ -375,7 +370,7 @@ yuka_cdp_parse(const uint8_t *remdata, uint32_t rlen, neighbour_t *rhe)
 	return (0);
 }
 
-int
+void
 yuka_cdp_init(yuka_session_t *ses, yuka_packet_t *lclcdp)
 {
 	lclcdp->framelen = 0;
@@ -391,8 +386,6 @@ yuka_cdp_init(yuka_session_t *ses, yuka_packet_t *lclcdp)
 	add_byte(lclcdp, 2);
 	add_byte(lclcdp, CDP_HOLD_TIMER); // Holdtime
 	add_short(lclcdp, 0); // Space for checksum
-
-	return (0);
 }
 
 void

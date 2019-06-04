@@ -76,7 +76,7 @@ connect_ipc(void)
 
 	memset(&server, 0, sizeof (server));
 	server.sun_family = AF_UNIX;
-	strcpy(server.sun_path, YUKA_SOCKET);
+	(void) strlcpy(server.sun_path, YUKA_SOCKET, sizeof (server.sun_path));
 
 	if ((ufd = socket(server.sun_family, SOCK_STREAM, 0)) == -1) {
 		perror("ipc: socket()");
@@ -88,7 +88,7 @@ connect_ipc(void)
 			fprintf(stderr, "The CDP service is not running.\n");
 		else
 			perror("ipc: connect()");
-		close(ufd);
+		(void) close(ufd);
 		return (-1);
 	}
 	return (ufd);
@@ -233,7 +233,7 @@ main(int argc, char **argv)
 	} else {
 		char buf[0x400];
 
-		shutdown(fd, SHUT_WR);
+		(void) shutdown(fd, SHUT_WR);
 
 		while (is_readable(fd)) {
 			i = read(fd, buf, sizeof (buf));
