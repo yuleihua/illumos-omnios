@@ -76,7 +76,7 @@ show_datalink(dladm_handle_t handle, datalink_id_t linkid,
 
 	if (dladm_datalink_id2info(handle, linkid, NULL, NULL, NULL,
 	    link, sizeof (link)) != DLADM_STATUS_OK)
-		strcpy(link, "??");
+		strlcpy(link, "??", MAXLINKNAMELEN);
 	printf(LABEL "%d - %s\n", "Datalink", linkid, link);
 
 	bufsize = sizeof (buf);
@@ -96,9 +96,9 @@ show_datalink(dladm_handle_t handle, datalink_id_t linkid,
 		if (IN6_IS_ADDR_V4MAPPED(&defrouter)) {
 			struct in_addr gw4;
 			IN6_V4MAPPED_TO_INADDR(&defrouter, &gw4);
-			inet_ntop(AF_INET, &gw4, gw, sizeof (gw));
+			(void) inet_ntop(AF_INET, &gw4, gw, sizeof (gw));
 		} else {
-			inet_ntop(AF_INET6, &defrouter, gw, sizeof (gw));
+			(void) inet_ntop(AF_INET6, &defrouter, gw, sizeof (gw));
 		}
 		printf(LABEL "    [%s]\n", "    router", gw);
 	}
@@ -107,7 +107,7 @@ show_datalink(dladm_handle_t handle, datalink_id_t linkid,
 }
 
 int
-usage()
+usage(void)
 {
 	fprintf(stderr, "Syntax: zadump [zoneid]\n");
 	return (1);
@@ -208,7 +208,8 @@ main(int argc, char **argv)
 
 	if (flags & ZF_NET_EXCL) {
 		if (dladm_open(&handle) == DLADM_STATUS_OK) {
-			dladm_walk_datalink_id(show_datalink, handle, NULL,
+			(void) dladm_walk_datalink_id(show_datalink,
+			    handle, NULL,
 			    DATALINK_CLASS_ALL, DATALINK_ANY_MEDIATYPE,
 			    DLADM_OPT_PERSIST | DLADM_OPT_ACTIVE);
 			dladm_close(handle);
