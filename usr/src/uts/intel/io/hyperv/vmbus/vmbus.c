@@ -840,8 +840,9 @@ vmbus_intr_setup(struct vmbus_softc *sc)
 		    tq_name, 1, maxclsyspri, 0);
 	}
 
+	/* Checked in attach, but let's be careful. */
 	if (psm_get_ipivect == NULL)
-		return (0);
+		panic("psm_get_ipivect == NULL");
 
 	sc->vmbus_idtvec = psm_get_ipivect(IPL_VMBUS, -1);
 	if (add_avintr(NULL, IPL_VMBUS, (avfunc)vmbus_handle_intr,
@@ -1139,6 +1140,15 @@ vmbus_attach(dev_info_t *dip, ddi_attach_cmd_t cmd)
 	case DDI_RESUME:
 		return (DDI_SUCCESS);
 	default:
+		return (DDI_FAILURE);
+	}
+
+	/*
+	 * Make sure the platform module provides psm_get_ipivect
+	 * or we'll fail in vmbus_intr_setup
+	 */
+	if (psm_get_ipivect == NULL) {
+		dev_err(dip, CE_WARN, "psm_get_ipivect == NULL");
 		return (DDI_FAILURE);
 	}
 

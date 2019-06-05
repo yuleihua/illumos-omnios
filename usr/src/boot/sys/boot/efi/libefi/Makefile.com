@@ -57,6 +57,8 @@ include ../../Makefile.inc
 # For multiboot2.h, must be last, to avoid conflicts
 CPPFLAGS +=	-I$(SRC)/uts/common
 
+gfx_fb.o := CPPFLAGS += $(DEFAULT_CONSOLE_COLOR)
+
 libefi.a: $(OBJS)
 	$(AR) $(ARFLAGS) $@ $(OBJS)
 
