@@ -1,4 +1,6 @@
 
+-----------------------------------------------------------------------------
+
 The hyperv drivers and their associated userland consumers have been updated
 to the latest upstream FreeBSD sources as of:
 
@@ -7,4 +9,130 @@ to the latest upstream FreeBSD sources as of:
 	Date:   Fri Apr 14 05:29:27 2017 +0000
 
 	    hyperv/kvp: Remove always false condition.
+
+-----------------------------------------------------------------------------
+
+The following commits from before this point were pending integration by
+Delphix and need reviewing/integrating:
+
+DEFER commit 25e2f312328ff891b009d7aae2bcb44c110b32d8
+	Author: sephe <sephe@FreeBSD.org>
+	Date: Mon Dec 19 07:40:45 2016 +0000
+	hyperv: Implement userspace gettimeofday(2) with Hyper-V reference TSC
+	This 6 times gettimeofday performance, as measured by
+	tools/tools/syscall_timing
+	Differential Revision: https://reviews.freebsd.org/D8789
+
+DEFER commit 43a02131947097389a971434f30b4627962ea721
+	Author: sephe <sephe@FreeBSD.org>
+	Date: Thu Dec 15 03:32:24 2016 +0000
+	hyperv: Allow userland to ro-mmap reference TSC page
+	This paves way to implement VDSO for the enlightened time counter.
+	Differential Revision: https://reviews.freebsd.org/D8768
+
+DEFER commit aa25f6d75301bf84bf92c2600b98c87a62538d8b
+	Author: sephe <sephe@FreeBSD.org>
+	Date: Wed Dec 14 03:20:57 2016 +0000
+	hyperv: Implement "enlightened" time counter, which is rdtsc based.
+	Differential Revision: https://reviews.freebsd.org/D8763
+
+DEFER commit 31e5d78146de9014169cc0376fe0ca433e481ff8
+	Author: sephe <sephe@FreeBSD.org>
+	Date: Mon Nov 28 05:54:20 2016 +0000
+	hyperv/hn: Enable multi-packet RNDIS message support by default.
+	Differential Revision: https://reviews.freebsd.org/D8621
+
+DEFER commit d01f31829b251bdc25f7394d7cf8986a91545dae
+	Author: sephe <sephe@FreeBSD.org>
+	Date: Mon Nov 28 05:31:36 2016 +0000
+	hyperv/hn: Fix multi-packet RNDIS message aggregation size setting.
+	Just in case that no chimney sending buffer can be used.
+	Differential Revision: https://reviews.freebsd.org/D8619
+
+DEFER commit 0b818a9bb24c271556d683bcb4ca90939c3f852c
+	Author: sephe <sephe@FreeBSD.org>
+	Date: Mon Nov 21 05:00:51 2016 +0000
+	hyperv/hn: Implement RNDIS multi-packet message support.
+	Currently, it is only applied to packet sent through chimney sending
+	buffers. Not enabled by default yet.
+	This one gives 20%~30% performance boost for non-TSO usage in both
+	bit/packet rate tests and nginx performance test.
+	Differential Revision: https://reviews.freebsd.org/D8560
+
+-----------------------------------------------------------------------------
+
+The following commits from before this sync point were flagged as
+not required by Delphix. This list should be reviewed and removed from this
+file.
+
+IGNORED commit e8eb94da16e075d7b395fd9b9fc5fad7f1d968d3
+	Author: sephe <sephe@FreeBSD.org>
+	Date: Tue Dec 20 05:39:00 2016 +0000
+	hyperv/ic: Inclusion cleanup
+	Differential Revision: https://reviews.freebsd.org/D8847
+
+IGNORED commit 80c55f08a05ab3b26a73b226ccb56adc3122a55c
+	Author: sephe <sephe@FreeBSD.org>
+	Date: Fri Dec 9 06:18:12 2016 +0000
+	hyperv/storvsc: Minor style changes; no functional changes.
+
+IGNORED commit d00d549125acd389e5508e4d995d9a37b8200aef
+	Author: sephe <sephe@FreeBSD.org>
+	Date: Thu Dec 1 05:37:29 2016 +0000
+	hyperv/hn: Add 'options RSS' support.
+	Differential Revision: https://reviews.freebsd.org/D8676
+
+IGNORED commit 95dbf6d04affccdc5218e61dd8029ad32903a6ec
+	Author: sephe <sephe@FreeBSD.org>
+	Date: Thu Dec 1 03:39:34 2016 +0000
+	hyperv/hn: Don't hold txdesc, if no BPFs are attached.
+	Differential Revision: https://reviews.freebsd.org/D8675
+
+IGNORED commit 8a84dc62058c7c9d182d46fa393a899fabffb15e
+	Author: sephe <sephe@FreeBSD.org>
+	Date: Wed Nov 30 07:54:28 2016 +0000
+	hyperv/hn: Allow TX to share event taskqueues.
+	Differential Revision: https://reviews.freebsd.org/D8659
+
+IGNORED commit 06bb1b5f322152c7ef213c3472a993f60e615e96
+	Author: sephe <sephe@FreeBSD.org>
+	Date: Wed Nov 30 05:28:39 2016 +0000
+	hyperv/hn: Allow multiple TX taskqueues.
+	Differential Revision: https://reviews.freebsd.org/D8655
+
+IGNORED commit 738c61bc0ed66674eec81f7a0bd507afd51263e8
+	Author: sephe <sephe@FreeBSD.org>
+	Date: Wed Nov 30 05:11:59 2016 +0000
+	hyperv/hn: Nuke the unused TX taskqueue CPU binding tunable.
+	It was an experimental tunable, and is now deemed to be road blocker
+	for further changes. Time to retire it.
+	Differential Revision: https://reviews.freebsd.org/D8654
+
+IGNORE commit 34312086a052b94f0df01086a50b7c61950d0b52
+	Author: sephe <sephe@FreeBSD.org>
+	Date: Fri Nov 25 06:01:45 2016 +0000
+	hyperv/vmbus: Fix sysctl tree leakage, if channel open fails.
+	Differential Revision: https://reviews.freebsd.org/D8565
+
+IGNORE commit 96a6324bf6bad6d8bcb8fee1f0f9def46125d3f6
+	Author: sephe <sephe@FreeBSD.org>
+	Date: Mon Nov 21 05:41:08 2016 +0000
+	hyperv/hn: Allow enabling IPv6 TX checksum offloading and IPv6 TSO.
+	They are still disabled by default.
+	Differential Revision: https://reviews.freebsd.org/D8490
+
+IGNORE commit 9e72ff06a9c8f807ae3c4647eecd42a8926c841d
+	Author: sephe <sephe@FreeBSD.org>
+	Date: Mon Nov 21 05:21:15 2016 +0000
+	hyperv/hn: Fix WITNESS warnings
+	And re-enable SIOCADDMULTI/SIOCDELMULTI, after WITNESS warning is fixed.
+	Differential Revision: https://reviews.freebsd.org/D8489
+
+IGNORE commit 2b2586d8f7243b639775b82757834067ae30958b
+	Author: dexuan <dexuan@FreeBSD.org>
+	Date: Fri Nov 18 06:24:22 2016 +0000
+	hyperv/vmbus,pcib: Add MODULE_DEPEND on pci
+	We'd better add this dependency explicitly, though usually the pci
+	driver is built into the kernel by default.
+	Sponsored by: Microsoft
 
