@@ -110,8 +110,8 @@ DlpiOpenSession(yuka_session_t *ses)
 void
 DlpiCloseSession(yuka_session_t *ses)
 {
-	dlpi_unbind(ses->hdl);
-	dlpi_close(ses->hdl);
+	(void) dlpi_unbind(ses->hdl);
+	(void) dlpi_close(ses->hdl);
 	ses->hdl = NULL;
 	ses->fd = -1;
 	free(ses->buf);

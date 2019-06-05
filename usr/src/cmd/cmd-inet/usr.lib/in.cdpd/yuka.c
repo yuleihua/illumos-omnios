@@ -164,15 +164,14 @@ checksum(const void *ptr, int length)
 	return (htons(~sum));
 }
 
-int
+void
 add_long(yuka_packet_t *lfp, uint32_t v)
 {
 	if (lfp->insertpos + 4 > lfp->bufsize)
-		return (-5);
+		return;
 	*((uint32_t *)&lfp->buf[lfp->insertpos]) = htonl(v);
 	lfp->insertpos += 4;
 	if (lfp->insertpos > lfp->framelen) lfp->framelen = lfp->insertpos;
-	return (0);
 }
 
 uint32_t
@@ -182,28 +181,26 @@ get_long(const uint8_t *rfp)
 	return (r);
 }
 
-int
+void
 add_ip(yuka_packet_t *lfp, in_addr_t v)
 {
 	if (lfp->insertpos + 4 > lfp->bufsize)
-		return (-5);
+		return;
 	*((in_addr_t *)&lfp->buf[lfp->insertpos]) = v;
 	lfp->insertpos += 4;
 	if (lfp->insertpos > lfp->framelen)
 		lfp->framelen = lfp->insertpos;
-	return (0);
 }
 
-int
+void
 add_short(yuka_packet_t *lfp, uint16_t v)
 {
 	if (lfp->insertpos + 2 > lfp->bufsize)
-		return (-5);
+		return;
 	*((unsigned short *)&lfp->buf[lfp->insertpos]) = htons(v);
 	lfp->insertpos += 2;
 	if (lfp->insertpos > lfp->framelen)
 		lfp->framelen = lfp->insertpos;
-	return (0);
 }
 
 uint16_t
@@ -221,32 +218,29 @@ get_short_m(const uint8_t **rfp)
 	return (r);
 }
 
-int
+void
 add_byte(yuka_packet_t *lfp, uint8_t v)
 {
 	if (lfp->insertpos + 1 > lfp->bufsize)
-		return (-5);
+		return;
 	lfp->buf[lfp->insertpos++] = v;
 	if (lfp->insertpos > lfp->framelen)
 		lfp->framelen = lfp->insertpos;
-	return (0);
 }
 
-int
+void
 add_string(yuka_packet_t *lfp, const uint8_t *v, int len)
 {
 	int i;
 
 	if (lfp->insertpos + len > lfp->bufsize)
-		return (-5);
+		return;
 
 	for (i = 0; i < len; i++)
 		lfp->buf[lfp->insertpos++] = v[i];
 
 	if (lfp->insertpos > lfp->framelen)
 		lfp->framelen = lfp->insertpos;
-
-	return (0);
 }
 
 static void *
@@ -288,7 +282,7 @@ yuka_xmit(void *arg)
 			DlpiSnd(s, MAC_CDP,
 			    s->cdpinfo->buf, s->cdpinfo->framelen);
 		}
-		sleep(CDP_XMIT_INTERVAL);
+		(void) sleep(CDP_XMIT_INTERVAL);
 	}
 
 	/* NOTREACHED */
@@ -346,19 +340,19 @@ show_cdp_host_V(neighbour_t *he, void *n)
 	*portprefix = '\0';
 	if (s->fmt == YUKA_FMT_TEXT) {
 		if (strncmp(he->portid, "Ethernet", 8) == 0) {
-			strcpy(portprefix, "Eth ");
+			(void) strcpy(portprefix, "Eth ");
 			portid += 8;
 			portw = -9;
 		} else if (strncmp(he->portid, "FastEthernet", 12) == 0) {
-			strcpy(portprefix, "Fas ");
+			(void) strcpy(portprefix, "Fas ");
 			portid += 12;
 			portw = -9;
 		} else if (strncmp(he->portid, "GigabitEthernet", 15) == 0) {
-			strcpy(portprefix, "Gig ");
+			(void) strcpy(portprefix, "Gig ");
 			portid += 15;
 			portw = -9;
 		} else if (strncmp(he->portid, "TenGigabitEthernet", 18) == 0) {
-			strcpy(portprefix, "Ten ");
+			(void) strcpy(portprefix, "Ten ");
 			portid += 18;
 			portw = -9;
 		}
@@ -401,7 +395,7 @@ show_cdp_host_V(neighbour_t *he, void *n)
 	    portprefix,
 	    portw, portid,
 	    he->vlan);
-	write(s->fd, buf, r);
+	(void) write(s->fd, buf, r);
 	s->index++;
 }
 
@@ -421,19 +415,19 @@ yuka_show_cdp_hosts(int outfd, int fflag)
 		const char *info =
 		    "Device ID          Local Int  Hold  Capable  Platform"
 		    "          Port ID      VLAN\n";
-		write(outset.fd, info, strlen(info));
+		(void) write(outset.fd, info, strlen(info));
 	} else if (outset.fmt == YUKA_FMT_JSON) {
-		write(outset.fd, "[\n", 2);
+		(void) write(outset.fd, "[\n", 2);
 	} else if (outset.fmt == YUKA_FMT_XML) {
-		write(outset.fd, "<cdpneighbors>\n", 16);
+		(void) write(outset.fd, "<cdpneighbors>\n", 16);
 	}
 
 	yuka_cdp_walk(show_cdp_host_V, &outset, B_TRUE);
 
 	if (outset.fmt == YUKA_FMT_JSON) {
-		write(outset.fd, "]\n", 2);
+		(void) write(outset.fd, "]\n", 2);
 	} else if (outset.fmt == YUKA_FMT_XML) {
-		write(outset.fd, "</cdpneighbors>\n", 17);
+		(void) write(outset.fd, "</cdpneighbors>\n", 17);
 	}
 }
 
@@ -443,23 +437,23 @@ show_cdp_host_detail(neighbour_t *n, void *arg)
 	yuka_session_t const *ses = (yuka_session_t const *)n->localportid;
 	FILE *fp = (FILE *)arg;
 
-	fprintf(fp, "--\n");
-	fprintf(fp, "---------------------- %s ----------------------\n",
+	(void) fprintf(fp, "--\n");
+	(void) fprintf(fp, "---------------------- %s ----------------------\n",
 	    n->devid);
-	fprintf(fp, "--\n");
-	fprintf(fp, "Platform:        %s\n", n->platform);
-	fprintf(fp, "Version:\n\n%s\n\n", n->swversion);
-	fprintf(fp, "Capabilities:    %s\n", cdp_capstring(n));
-	fprintf(fp, "VTP Domain:      %s\n", n->vtpdomain);
-	fprintf(fp, "\n");
-	fprintf(fp, "Interface:       %s\n", n->portid);
-	fprintf(fp, "Local Interface: %s\n", ses->device);
-	fprintf(fp, "VLAN:            %u\n", n->vlan);
-	fprintf(fp, "Duplex:          %u\n", n->duplex);
-	fprintf(fp, "\n");
-	fprintf(fp, "CDP Version:     %u\n", n->version);
-	fprintf(fp, "Hold Time:       %u\n", n->holdtime);
-	fprintf(fp, "Dead Time:       %u\n", n->deadtime);
+	(void) fprintf(fp, "--\n");
+	(void) fprintf(fp, "Platform:        %s\n", n->platform);
+	(void) fprintf(fp, "Version:\n\n%s\n\n", n->swversion);
+	(void) fprintf(fp, "Capabilities:    %s\n", cdp_capstring(n));
+	(void) fprintf(fp, "VTP Domain:      %s\n", n->vtpdomain);
+	(void) fprintf(fp, "\n");
+	(void) fprintf(fp, "Interface:       %s\n", n->portid);
+	(void) fprintf(fp, "Local Interface: %s\n", ses->device);
+	(void) fprintf(fp, "VLAN:            %u\n", n->vlan);
+	(void) fprintf(fp, "Duplex:          %u\n", n->duplex);
+	(void) fprintf(fp, "\n");
+	(void) fprintf(fp, "CDP Version:     %u\n", n->version);
+	(void) fprintf(fp, "Hold Time:       %u\n", n->holdtime);
+	(void) fprintf(fp, "Dead Time:       %u\n", n->deadtime);
 }
 
 void
@@ -468,13 +462,13 @@ yuka_show_detail(int fd)
 	FILE *fp;
 
 	if ((fp = fdopen(fd, "w")) == NULL) {
-		write(fd, "fdopen failed.\n", 15);
+		(void) write(fd, "fdopen failed.\n", 15);
 		return;
 	}
 
 	yuka_cdp_walk(show_cdp_host_detail, (void *)fp, B_TRUE);
 
-	fclose(fp);
+	(void) fclose(fp);
 }
 
 void
@@ -484,23 +478,23 @@ yuka_stats(int fd)
 	int i;
 
 	if ((fp = fdopen(fd, "w")) == NULL) {
-		write(fd, "fdopen failed.\n", 15);
+		(void) write(fd, "fdopen failed.\n", 15);
 		return;
 	}
 
-	fprintf(fp, "%-15s %10s %10s %10s %10s\n",
+	(void) fprintf(fp, "%-15s %10s %10s %10s %10s\n",
 	    "INTERFACE", "FRAMES OUT", "FRAMES IN", "BYTES OUT", "BYTES IN");
-	fprintf(fp, "%-15s %10s %10s %10s %10s\n", "---------",
+	(void) fprintf(fp, "%-15s %10s %10s %10s %10s\n", "---------",
 	    "----------", "----------", "----------", "----------");
 	for (i = 0; sessions[i] != NULL; i++) {
 		yuka_session_t *s = sessions[i];
 
-		fprintf(fp, "%-15s %10u %10u %10u %10u\n", s->device,
+		(void) fprintf(fp, "%-15s %10u %10u %10u %10u\n", s->device,
 		    s->frames_out, s->frames_in,
 		    s->bytes_out, s->bytes_in);
 	}
 
-	fclose(fp);
+	(void) fclose(fp);
 }
 
 static void
@@ -519,7 +513,7 @@ yuka_update_hold(void *arg __unused)
 
 	for (;;) {
 		yuka_cdp_walk(update_hold_V, NULL, B_TRUE);
-		sleep(1);
+		(void) sleep(1);
 	}
 	/* NOTREACHED */
 	return (NULL);
@@ -532,7 +526,7 @@ yuka_reaper(void *arg __unused)
 
 	for (;;) {
 		yuka_cdp_reap(CDP_DEAD_TIMER);
-		sleep(CDP_REAP_INTERVAL);
+		(void) sleep(CDP_REAP_INTERVAL);
 	}
 	/* NOTREACHED */
 	return (NULL);
@@ -545,19 +539,19 @@ ascii_out(const unsigned char *p, int n)
 
 	for (i = (n & 0xf) + 1; i < 16; ++i) {
 		if (i == 8)
-			putchar(' ');
+			(void) putchar(' ');
 		printf("   ");
 	}
 	printf(" ");
 	for (i = n & ~0xf; i <= n; ++i) {
 		if (!(i & 0x7))
-			putchar(' ');
+			(void) putchar(' ');
 		if (isprint(p[i]))
-			putchar(p[i]);
+			(void) putchar(p[i]);
 		else
-			putchar('.');
+			(void) putchar('.');
 	}
-	putchar('\n');
+	(void) putchar('\n');
 }
 
 void
@@ -569,7 +563,7 @@ xdump(const unsigned char *p, int l)
 		if (!(n & 0xf))
 			printf("    %04x: ", n);
 		if (!(n & 0x7))
-			putchar(' ');
+			(void) putchar(' ');
 		printf("%02x ", p[n]);
 		if ((n & 0xf) == 0xf)
 			ascii_out(p, n);
@@ -689,7 +683,7 @@ Warn(char *str, ...)
 	e = errno;
 
 	va_start(ap, str);
-	vfprintf(stderr, str, ap);
+	(void) vfprintf(stderr, str, ap);
 	va_end(ap);
 	fprintf(stderr, " - platform warning\n");
 
@@ -706,7 +700,7 @@ Error(char *str, ...)
 	e = errno;
 
 	va_start(ap, str);
-	vfprintf(stderr, str, ap);
+	(void) vfprintf(stderr, str, ap);
 	va_end(ap);
 	fprintf(stderr, " - platform error, exiting\n");
 
@@ -890,15 +884,15 @@ enter_service(void)
 		exit(0);
 	}
 
-	ioctl(fileno(stdin), TIOCNOTTY);
-	freopen("/dev/null", "r", stdin);
+	(void) ioctl(fileno(stdin), TIOCNOTTY);
+	(void) freopen("/dev/null", "r", stdin);
 
 	fd = open("/dev/null", O_WRONLY, 0666);
-	dup2(fd, fileno(stdout));
-	dup2(fd, fileno(stderr));
-	close(fd);
+	(void) dup2(fd, fileno(stdout));
+	(void) dup2(fd, fileno(stderr));
+	(void) close(fd);
 
-	setsid();
+	(void) setsid();
 
 	pid = getpid();
 	n = snprintf(buf, sizeof (buf), "%d", pid);
@@ -908,8 +902,8 @@ enter_service(void)
 	(void) unlink(yuka_pid_path);
 	fd = open(yuka_pid_path, O_WRONLY | O_CREAT, 0644);
 	if (fd >= 0) {
-		write(fd, buf, n);
-		close(fd);
+		(void) write(fd, buf, n);
+		(void) close(fd);
 	}
 }
 
@@ -968,7 +962,10 @@ main(int argc, char **argv)
 	if (!rflag)
 		Usage(argv[0]);
 
-	gethostname(hostname, MAXHOSTNAMELEN);
+	if (gethostname(hostname, MAXHOSTNAMELEN) != 0) {
+		perror("gethostname");
+		return (0);
+	}
 
 	sessioncount = argc - optind;
 
@@ -1034,8 +1031,15 @@ main(int argc, char **argv)
 	if (init_ipc() == 0)
 		goto err;
 
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+	if (pthread_attr_init(&attr) != 0) {
+		perror("pthread_attr_init");
+		goto err;
+	}
+
+	if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0) {
+		perror("pthread_attr_setdetachstate");
+		goto err;
+	}
 
 	if (pthread_create(&tid, &attr, yuka_update_hold, NULL) != 0) {
 		perror("pthread_create");

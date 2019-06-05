@@ -106,7 +106,7 @@ yuka_handle_ipc(int fd)
 			yuka_show_detail(fd);
 			break;
 		default:
-			write(fd, "Command Error\n", 14);
+			(void) write(fd, "Command Error\n", 14);
 			break;
 		}
 		break;
@@ -116,7 +116,7 @@ yuka_handle_ipc(int fd)
 		break;
 
 	default:
-		write(fd, "Unknown command\n", 16);
+		(void) write(fd, "Unknown command\n", 16);
 		break;
 	}
 }
@@ -158,8 +158,8 @@ ipc_thread(void *xfd)
 			(void) close(c);
 		}
 	}
-	close(fd);
-	unlink(YUKA_SOCKET);
+	(void) close(fd);
+	(void) unlink(YUKA_SOCKET);
 
 	return (NULL);
 }
@@ -172,7 +172,7 @@ init_ipc_socket(void)
 
 	memset(&server, 0, sizeof (server));
 	server.sun_family = AF_UNIX;
-	strncpy(server.sun_path, YUKA_SOCKET, sizeof (server.sun_path));
+	(void) strlcpy(server.sun_path, YUKA_SOCKET, sizeof (server.sun_path));
 
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (fd < 0) {
@@ -188,8 +188,7 @@ init_ipc_socket(void)
 			    sizeof (server)) >= 0) {
 				printf("Control socket is in use by another "
 				    "process.\n");
-				close(fd);
-				return (-1);
+				goto err;
 			}
 
 			/* If not, clean it up */
@@ -197,8 +196,7 @@ init_ipc_socket(void)
 			if (unlink(server.sun_path) == -1) {
 				printf("Could not unlink stale control "
 				    "socket, %s\n", strerror(errno));
-				close(fd);
-				return (-1);
+				goto err;
 			}
 
 			/* Try and bind again */
@@ -207,30 +205,30 @@ init_ipc_socket(void)
 			    sizeof (server)) == -1) {
 				printf("Cannot bind to control socket, %s\n",
 				    strerror(errno));
-				close(fd);
-				return (-1);
+				goto err;
 			}
 		} else {
 			printf("Cannot bind to control socket, %s\n",
 			    strerror(errno));
-			close(fd);
-			return (-1);
+			goto err;
 		}
 	}
 
 	if (fchmod(fd, 0444)) {
 		perror("ipc: fchmod");
-		close(fd);
-		return (-1);
+		goto err;
 	}
 
 	if (listen(fd, 10)) {
 		perror("ipc: listen");
-		close(fd);
-		return (-1);
+		goto err;
 	}
 
 	return (fd);
+
+err:
+	(void) close(fd);
+	return (-1);
 }
 
 int
@@ -243,8 +241,7 @@ init_ipc(void)
 		return (0);
 
 	if (pthread_create(&tid, NULL, ipc_thread, (void *)(uintptr_t)fd)
-	    == 0) {
-		pthread_detach(tid);
+	    == 0 && pthread_detach(tid) == 0) {
 		return (1);
 	}
 
@@ -255,7 +252,7 @@ init_ipc(void)
 void
 deinit_ipc(int fd)
 {
-	close(fd);
+	(void) close(fd);
 	if (unlink(YUKA_SOCKET) < 0)
 		perror("deinit-ipc: unlink()");
 }
