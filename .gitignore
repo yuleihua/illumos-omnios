@@ -2012,6 +2012,7 @@ usr/src/cmd/smbsrv/fksmbd/fksmbd
 usr/src/cmd/smbsrv/smbadm/smbadm
 usr/src/cmd/smbsrv/smbd/smbd
 usr/src/cmd/smbsrv/smbstat/smbstat
+usr/src/cmd/smbsrv/test-msgbuf/test-msgbuf
 usr/src/cmd/smserverd/rpc.smserverd
 usr/src/cmd/smserverd/smed.h
 usr/src/cmd/smserverd/smed_svc.c
@@ -3185,6 +3186,7 @@ usr/src/lib/libldap5/i386/libldap.so.5
 usr/src/lib/libm/amd64/libm.so.2
 usr/src/lib/libm/i386/libm.so.2
 usr/src/lib/libmd/amd64/md5_amd64.s
+usr/src/lib/libmd/amd64/pics/
 usr/src/lib/libmd/amd64/sha1-x86_64.s
 usr/src/lib/libmd/amd64/sha256-x86_64.s
 usr/src/lib/libmd/amd64/sha512-x86_64.s
@@ -3380,6 +3382,7 @@ usr/src/lib/scsi/libscsi/common/scsi_errno.c
 usr/src/lib/scsi/libses/common/ses_errno.c
 usr/src/lib/scsi/libsmp/common/smp_errno.c
 usr/src/lib/scsi/plugins/ses/libses/common/libses_elemtype.c
+usr/src/lib/smbsrv/libfksmbsrv/common/fksmb_dt.h
 usr/src/lib/smbsrv/libmlsvc/amd64/dssetup_ndr.c
 usr/src/lib/smbsrv/libmlsvc/amd64/eventlog_ndr.c
 usr/src/lib/smbsrv/libmlsvc/amd64/lsarpc_ndr.c
@@ -3407,6 +3410,8 @@ usr/src/man/man1/dmake.1
 usr/src/man/man1/egrep.1
 usr/src/man/man1/fgrep.1
 usr/src/man/man1/mailq.1
+usr/src/man/man1/pauxv.1
+usr/src/man/man1/penv.1
 usr/src/man/man1/whatis.1
 usr/src/man/man1m/audlinks.1m
 usr/src/man/man1m/cdpd.1m
@@ -3995,6 +4000,8 @@ usr/src/test/libc-tests/tests/newlocale/newlocale_test.i386
 usr/src/test/libc-tests/tests/nl_langinfo/nl_langinfo_test
 usr/src/test/libc-tests/tests/nl_langinfo/nl_langinfo_test.amd64
 usr/src/test/libc-tests/tests/nl_langinfo/nl_langinfo_test.i386
+usr/src/test/libc-tests/tests/posix_memalign.32
+usr/src/test/libc-tests/tests/posix_memalign.64
 usr/src/test/libc-tests/tests/printf-6961.64
 usr/src/test/libc-tests/tests/printf-9511.32
 usr/src/test/libc-tests/tests/printf-9511.64
@@ -4339,6 +4346,8 @@ usr/src/uts/intel/core_pcbe/core_pcbe_wsm_ex.c
 usr/src/uts/intel/md5/md5_amd64.s
 usr/src/uts/intel/mwlfw/mw88W8363fw
 usr/src/uts/intel/mwlfw/mwlboot
+usr/src/uts/intel/opteron_pcbe/opteron_pcbe_cpcgen.h
+usr/src/uts/intel/opteron_pcbe/opteron_pcbe_f17h.c
 usr/src/uts/intel/os/priv_names
 usr/src/uts/intel/sha1/sha1-x86_64.s
 usr/src/uts/intel/sha2/sha256-x86_64.s
