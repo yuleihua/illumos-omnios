@@ -35,4 +35,4 @@
 <transform file path=usr/share/applications/.*\.desktop -> \
     add restart_fmri svc:/application/desktop-cache/desktop-mime-cache:default>
 <transform file link path=usr/(share|has)/man/.*\.\d[a-z]*$ -> \
-    add restart_fmri svc:/system/rebuild-whatis:default>
+    add restart_fmri svc:/system/update-man-index:default>
