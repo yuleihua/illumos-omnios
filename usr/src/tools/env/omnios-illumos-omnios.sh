@@ -277,17 +277,22 @@ export SPRO_VROOT="$SPRO_ROOT"
 ######################################################################
 # OmniOS-specific overrides
 
-export GNUC_ROOT=/opt/gcc-4.4.4/
-export SPRO_ROOT=/opt/sunstudio12.1
-export SPRO_VROOT="$SPRO_ROOT"
-export ONLY_LINT_DEFS="-I${SPRO_ROOT}/sunstudio12.1/prod/include/lint"
+export GNUC_ROOT=/opt/gcc-7/
 export ON_CLOSED_BINS=/opt/onbld/closed
 
 export __GNUC=
-export PRIMARY_CC=gcc4,/opt/gcc-4.4.4/bin/gcc,gnu
-export PRIMARY_CCC=gcc4,/opt/gcc-4.4.4/bin/g++,gnu
-export SHADOW_CCS=gcc7,/opt/gcc-7/bin/gcc,gnu
-export SHADOW_CCCS=gcc7,/opt/gcc-7/bin/g++,gnu
+export PRIMARY_CC=gcc7,/opt/gcc-7/bin/gcc,gnu
+export PRIMARY_CCC=gcc7,/opt/gcc-7/bin/g++,gnu
+export SHADOW_CCS=gcc4,/opt/gcc-4.4.4/bin/gcc,gnu
+export SHADOW_CCCS=gcc4,/opt/gcc-4.4.4/bin/g++,gnu
+
+# Uncomment the following line to enable smatch.
+# export ENABLE_SMATCH=yes
+if [ -n "$ENABLE_SMATCH" ]; then
+	SMATCHBIN=$CODEMGR_WS$PARENT_TOOLS_ROOT/opt/onbld/bin/$MACH/smatch
+	export SMATCHBIN
+	SHADOW_CCS+=" smatch,$SMATCHBIN,smatch"
+fi
 
 _branch=`git -C $CODEMGR_WS rev-parse --abbrev-ref HEAD`
 _hash=`git -C $CODEMGR_WS rev-parse --short HEAD`
