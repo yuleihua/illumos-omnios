@@ -292,14 +292,22 @@ export BUILDPY2TOOLS=
 export BUILDPY3TOOLS=
 export TOOLS_PYTHON=/usr/bin/python3.5
 
-export GNUC_ROOT=/opt/gcc-4.4.4/
+export GNUC_ROOT=/opt/gcc-7/
 export ON_CLOSED_BINS=/opt/onbld/closed
 
 export __GNUC=
-export PRIMARY_CC=gcc4,/opt/gcc-4.4.4/bin/gcc,gnu
-export PRIMARY_CCC=gcc4,/opt/gcc-4.4.4/bin/g++,gnu
-export SHADOW_CCS=gcc7,/opt/gcc-7/bin/gcc,gnu
-export SHADOW_CCCS=gcc7,/opt/gcc-7/bin/g++,gnu
+export PRIMARY_CC=gcc7,/opt/gcc-7/bin/gcc,gnu
+export PRIMARY_CCC=gcc7,/opt/gcc-7/bin/g++,gnu
+export SHADOW_CCS=gcc4,/opt/gcc-4.4.4/bin/gcc,gnu
+export SHADOW_CCCS=gcc4,/opt/gcc-4.4.4/bin/g++,gnu
+
+# Uncomment the following line to enable smatch.
+# export ENABLE_SMATCH=yes
+if [ -n "$ENABLE_SMATCH" ]; then
+	SMATCHBIN=$CODEMGR_WS$PARENT_TOOLS_ROOT/opt/onbld/bin/$MACH/smatch
+	export SMATCHBIN
+	SHADOW_CCS+=" smatch,$SMATCHBIN,smatch"
+fi
 
 export ONNV_BUILDNUM=`grep '^VERSION=r' /etc/os-release | cut -c10-15`
 export PKGVERS_BRANCH=$ONNV_BUILDNUM.0
