@@ -2013,6 +2013,7 @@ usr/src/cmd/smbsrv/smbadm/smbadm
 usr/src/cmd/smbsrv/smbd/smbd
 usr/src/cmd/smbsrv/smbstat/smbstat
 usr/src/cmd/smbsrv/test-msgbuf/test-msgbuf
+usr/src/cmd/smbsrv/testoplock/testoplock
 usr/src/cmd/smserverd/rpc.smserverd
 usr/src/cmd/smserverd/smed.h
 usr/src/cmd/smserverd/smed_svc.c
