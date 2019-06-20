@@ -9488,7 +9488,11 @@ qlt_el_msg(qlt_state_t *qlt, const char *fn, int ce, ...)
 	bcopy((void *)&time, (void *)&entry->hs_time,
 	    sizeof (timespec_t));
 
-	(void) strcpy(entry->buf, fmt1);
+	/*
+	 * Here we know that fmt1 will fit within QL_LOG_LENGTH due to the
+	 * check above, but smatch identifies a potential problem.
+	 */
+	(void) strncpy(entry->buf, fmt1, rval);
 	entry->buf[rval] = 0;
 
 	TRACE_BUFFER_UNLOCK(qlt);
