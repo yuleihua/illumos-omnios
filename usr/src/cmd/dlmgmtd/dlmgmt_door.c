@@ -1368,7 +1368,7 @@ dlmgmt_zonehalt(void *argp, void *retp, size_t *sz, zoneid_t zoneid,
 
 			while ((fd = open(ZONE_LOCK, O_WRONLY |
 			    O_CREAT | O_EXCL, S_IRUSR | S_IWUSR)) < 0)
-			(void) sleep(1);
+				(void) sleep(1);
 			(void) write(fd, my_pid, sizeof (my_pid));
 			(void) close(fd);
 

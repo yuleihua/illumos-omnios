@@ -76,7 +76,7 @@ show_datalink(dladm_handle_t handle, datalink_id_t linkid,
 
 	if (dladm_datalink_id2info(handle, linkid, NULL, NULL, NULL,
 	    link, sizeof (link)) != DLADM_STATUS_OK)
-		strlcpy(link, "??", MAXLINKNAMELEN);
+		(void) strlcpy(link, "??", MAXLINKNAMELEN);
 	printf(LABEL "%d - %s\n", "Datalink", linkid, link);
 
 	bufsize = sizeof (buf);
