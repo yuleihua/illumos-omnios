@@ -21,7 +21,7 @@
 
 #
 # Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
-# Copyright 2018, Joyent, Inc.
+# Copyright 2019, Joyent, Inc.
 # Copyright 2018 Nexenta Systems, Inc.
 # Copyright (c) 2017 by Delphix. All rights reserved.
 #
@@ -469,3 +469,13 @@ HV_TIMESYNC_OBJS = \
 # VMware PVSCSI SCSI Controller
 #
 PVSCSI_OBJS =	pvscsi.o
+
+#
+# Intel Temperature Module
+#
+CORETEMP_OBJS =	coretemp.o
+
+#
+# AMD Family 17 northbridge driver
+#
+AMDF17NBDF_OBJS = amdf17nbdf.o
