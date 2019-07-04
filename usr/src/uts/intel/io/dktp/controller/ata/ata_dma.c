@@ -2,7 +2,7 @@
  * CDDL HEADER START
  *
  * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").  
+ * Common Development and Distribution License (the "License").
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
@@ -22,9 +22,8 @@
 /*
  * Copyright 2004 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
+ * Copyright (c) 2019 by Delphix. All rights reserved.
  */
-
-#pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/types.h>
 #include <sys/debug.h>
@@ -96,6 +95,8 @@ ddi_dma_attr_t ata_prd_dma_attr = {
 
 size_t	prd_size = sizeof (prde_t) * ATA_DMA_NSEGS;
 
+extern boolean_t ata_azure_workaround;
+
 int
 ata_pciide_alloc(
 	dev_info_t *dip,
@@ -113,7 +114,7 @@ ata_pciide_alloc(
 
 
 	rc = ddi_dma_alloc_handle(dip, &ata_prd_dma_attr, DDI_DMA_SLEEP, NULL,
-		&ata_ctlp->ac_sg_handle);
+	    &ata_ctlp->ac_sg_handle);
 	if (rc != DDI_SUCCESS) {
 		ADBG_ERROR(("ata_pciide_alloc 0x%p handle %d\n",
 		    (void *)ata_ctlp, rc));
@@ -143,7 +144,7 @@ ata_pciide_alloc(
 	ASSERT((cookie.dmac_address & (sizeof (int) - 1)) == 0);
 #define	Mask4K	0xfffff000
 	ASSERT((cookie.dmac_address & Mask4K)
-		== ((cookie.dmac_address + cookie.dmac_size - 1) & Mask4K));
+	    == ((cookie.dmac_address + cookie.dmac_size - 1) & Mask4K));
 
 	ata_ctlp->ac_sg_paddr = cookie.dmac_address;
 	return (TRUE);
@@ -210,10 +211,10 @@ ata_pciide_dma_setup(
 	 * give the pciide chip the physical address of the PRDE table
 	 */
 	ddi_put32(bmhandle, (uint_t *)(bmaddr + PCIIDE_BMIDTPX_REG),
-		ata_ctlp->ac_sg_paddr);
+	    ata_ctlp->ac_sg_paddr);
 
 	ADBG_DMA(("ata dma_setup 0x%p 0x%llx\n",
-		bmaddr, (unsigned long long)ata_ctlp->ac_sg_paddr));
+	    bmaddr, (unsigned long long)ata_ctlp->ac_sg_paddr));
 }
 
 
@@ -229,18 +230,34 @@ ata_pciide_dma_start(
 
 	ASSERT((ata_ctlp->ac_sg_paddr & PCIIDE_BMIDTPX_MASK) == 0);
 	ASSERT((direction == PCIIDE_BMICX_RWCON_WRITE_TO_MEMORY) ||
-		(direction == PCIIDE_BMICX_RWCON_READ_FROM_MEMORY));
+	    (direction == PCIIDE_BMICX_RWCON_READ_FROM_MEMORY));
 
 	/*
 	 * Set the direction control and start the PCIIDE DMA controller
 	 */
 	tmp = ddi_get8(bmhandle, (uchar_t *)bmaddr + PCIIDE_BMICX_REG);
 	tmp &= PCIIDE_BMICX_MASK;
-	ddi_put8(bmhandle, (uchar_t *)bmaddr + PCIIDE_BMICX_REG,
-		(tmp |  direction));
+
+	/*
+	 * After Hyper-V update 14393-10.0-0-0.295, ATA dma stopped
+	 * working. Referring to Section 2.1 (Bus Master IDE Command Register)
+	 * of the IDE specification from http://www.bswd.com/idems100.pdf:
+	 *
+	 * Writing only the direction bit first with bit 0 (start/stop bit)
+	 * set to Zero, results in a side effect of the Bus master DMA
+	 * controller losing all state information, which the new Hyper-V
+	 * update adheres to strictly and hence results in DMA not working.
+	 *
+	 * It is unclear if this fix could negatively impact existing
+	 * hardware, so it is gated under a flag.
+	 */
+	if (!ata_azure_workaround) {
+		ddi_put8(bmhandle, (uchar_t *)bmaddr + PCIIDE_BMICX_REG,
+		    (tmp |  direction));
+	}
 
 	ddi_put8(bmhandle, (uchar_t *)bmaddr + PCIIDE_BMICX_REG,
-		(tmp | PCIIDE_BMICX_SSBM_E | direction));
+	    (tmp | PCIIDE_BMICX_SSBM_E | direction));
 
 	return;
 
@@ -283,7 +300,7 @@ ata_pciide_dma_sg_func(
 	ASSERT(dmackp->dmac_size <= PCIIDE_PRDE_CNT_MAX);
 
 	ADBG_TRACE(("adp_dma_sg_func: gcmdp 0x%p dmackp 0x%p s %d idx %d\n",
-		    gcmdp, dmackp, single_segment, seg_index));
+	    gcmdp, dmackp, single_segment, seg_index));
 
 	/* set address of current entry in scatter/gather list */
 	dmap = ata_pktp->ap_sg_list + seg_index;
@@ -320,7 +337,7 @@ ata_pciide_status_clear(
 	tmp |= (PCIIDE_BMISX_IDERR | PCIIDE_BMISX_IDEINTS);
 
 	ADBG_DMA(("ata_pciide_status_clear 0x%p 0x%x\n",
-		bmaddr, status));
+	    bmaddr, status));
 
 	/*
 	 * Clear the latches (and preserve the other bits)
@@ -333,7 +350,7 @@ ata_pciide_status_clear(
 		tmp = ddi_get8(bmhandle, bmaddr + PCIIDE_BMICX_REG);
 		tmp &= PCIIDE_BMICX_MASK;
 		ddi_put8(bmhandle, bmaddr + PCIIDE_BMICX_REG,
-			(tmp | PCIIDE_BMISX_IDERR | PCIIDE_BMISX_IDEINTS));
+		    (tmp | PCIIDE_BMISX_IDERR | PCIIDE_BMISX_IDEINTS));
 	}
 #endif
 	return (status);
@@ -351,7 +368,7 @@ ata_pciide_status_dmacheck_clear(
 	status = ata_pciide_status_clear(ata_ctlp);
 
 	ADBG_DMA(("ata_pciide_status_dmacheck_clear 0x%p 0x%x\n",
-		ata_ctlp->ac_bmaddr, status));
+	    ata_ctlp->ac_bmaddr, status));
 	/*
 	 * check for errors
 	 */
@@ -376,7 +393,7 @@ ata_pciide_status_pending(
 
 	status = PCIIDE_STATUS_GET(ata_ctlp->ac_bmhandle, ata_ctlp->ac_bmaddr);
 	ADBG_DMA(("ata_pciide_status_pending 0x%p 0x%x\n",
-		ata_ctlp->ac_bmaddr, status));
+	    ata_ctlp->ac_bmaddr, status));
 	if (status & PCIIDE_BMISX_IDEINTS)
 		return (TRUE);
 	return (FALSE);

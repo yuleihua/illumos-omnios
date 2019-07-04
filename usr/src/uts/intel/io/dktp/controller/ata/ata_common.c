@@ -24,6 +24,7 @@
  * Use is subject to license terms.
  *
  * Copyright 2018 RackTop Systems.
+ * Copyright (c) 2019 by Delphix. All rights reserved.
  */
 
 #include <sys/types.h>
@@ -36,6 +37,7 @@
 #include <sys/uio.h>
 #include <sys/cred.h>
 #include <sys/cpu.h>
+#include <sys/x86_archext.h>
 #include "ata_common.h"
 #include "ata_disk.h"
 #include "atapi.h"
@@ -179,6 +181,11 @@ char *ata_dev_DMA_sel_msg;
  */
 static	struct bus_ops	 ata_bus_ops;
 static	struct bus_ops	*scsa_bus_ops_p;
+
+/*
+ * ATA workaround for Azure bug
+ */
+boolean_t ata_azure_workaround = B_FALSE;
 
 /* ARGSUSED */
 static int
@@ -390,6 +397,13 @@ _init(void)
 		ddi_soft_state_fini(&ata_state);
 		return (err);
 	}
+
+	/*
+	 * See comment in function ata_pciide_dma_start() of ata_dma.c for
+	 * more details.
+	 */
+	if (get_hwenv() & HW_MICROSOFT)
+		ata_azure_workaround = B_TRUE;
 
 	/* save pointer to SCSA provided bus_ops struct */
 	scsa_bus_ops_p = ata_ops.devo_bus_ops;
@@ -3502,7 +3516,7 @@ static void
 ata_init_pm(dev_info_t *dip)
 {
 	int		instance;
-	ata_ctl_t 	*ata_ctlp;
+	ata_ctl_t	*ata_ctlp;
 #ifdef	ATA_USE_AUTOPM
 	char		pmc_name[16];
 	char		*pmc[] = {
@@ -3592,7 +3606,7 @@ static int
 ata_resume(dev_info_t *dip)
 {
 	int		instance;
-	ata_ctl_t 	*ata_ctlp;
+	ata_ctl_t	*ata_ctlp;
 	ddi_acc_handle_t io_hdl2;
 	caddr_t		ioaddr2;
 
@@ -3626,7 +3640,7 @@ static int
 ata_suspend(dev_info_t *dip)
 {
 	int		instance;
-	ata_ctl_t 	*ata_ctlp;
+	ata_ctl_t	*ata_ctlp;
 	ddi_acc_handle_t io_hdl2;
 
 	instance = ddi_get_instance(dip);
@@ -3656,7 +3670,7 @@ static int
 ata_power(dev_info_t *dip, int component, int level)
 {
 	int		instance;
-	ata_ctl_t 	*ata_ctlp;
+	ata_ctl_t	*ata_ctlp;
 	uint8_t		cmd;
 
 	ADBG_TRACE(("ata_power entered, component = %d, level = %d\n",
