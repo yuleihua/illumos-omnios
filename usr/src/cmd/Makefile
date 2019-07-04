@@ -485,6 +485,7 @@ i386_SUBDIRS=		\
 	biosdev		\
 	cxgbetool	\
 	diskscan	\
+	hyperv		\
 	nvmeadm		\
 	rtc		\
 	ucodeadm	\

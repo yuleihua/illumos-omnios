@@ -364,6 +364,9 @@ HV_STORVSC_OBJS = \
 HV_HEARTBEAT_OBJS = \
 	vmbus_heartbeat.o
 
+HV_KVP_OBJS = \
+	hv_kvp.o
+
 HV_SHUTDOWN_OBJS = \
 	vmbus_shutdown.o
 
