@@ -2,7 +2,7 @@
  * CDDL HEADER START
  *
  * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").  
+ * Common Development and Distribution License (the "License").
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
@@ -22,9 +22,8 @@
 /*
  * Copyright 2004 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
+ * Copyright (c) 2019 by Delphix. All rights reserved.
  */
-
-#pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include <sys/types.h>
 #include <sys/debug.h>
@@ -95,6 +94,8 @@ ddi_dma_attr_t ata_prd_dma_attr = {
 
 
 size_t	prd_size = sizeof (prde_t) * ATA_DMA_NSEGS;
+
+extern boolean_t ata_azure_workaround;
 
 int
 ata_pciide_alloc(
@@ -236,8 +237,24 @@ ata_pciide_dma_start(
 	 */
 	tmp = ddi_get8(bmhandle, (uchar_t *)bmaddr + PCIIDE_BMICX_REG);
 	tmp &= PCIIDE_BMICX_MASK;
-	ddi_put8(bmhandle, (uchar_t *)bmaddr + PCIIDE_BMICX_REG,
-		(tmp |  direction));
+
+	/*
+	 * After Hyper-V update 14393-10.0-0-0.295, ATA dma stopped
+	 * working. Referring to Section 2.1 (Bus Master IDE Command Register)
+	 * of the IDE specification from http://www.bswd.com/idems100.pdf:
+	 *
+	 * Writing only the direction bit first with bit 0 (start/stop bit)
+	 * set to Zero, results in a side effect of the Bus master DMA
+	 * controller losing all state information, which the new Hyper-V
+	 * update adheres to strictly and hence results in DMA not working.
+	 *
+	 * It is unclear if this fix could negatively impact existing
+	 * hardware, so it is gated under a flag.
+	 */
+	if (!ata_azure_workaround) {
+		ddi_put8(bmhandle, (uchar_t *)bmaddr + PCIIDE_BMICX_REG,
+			(tmp |  direction));
+	}
 
 	ddi_put8(bmhandle, (uchar_t *)bmaddr + PCIIDE_BMICX_REG,
 		(tmp | PCIIDE_BMICX_SSBM_E | direction));
