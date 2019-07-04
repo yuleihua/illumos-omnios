@@ -123,33 +123,17 @@ vmbus_chan_msgprocs[VMBUS_CHANMSG_TYPE_MAX] = {
 	VMBUS_CHANMSG_PROC_WAKEUP(GPADL_DISCONNRESP)
 };
 
-/*
- * Check to see if the bit is set or cleared
- * Note: These routines don't return old value.
- * It returns 0 when succeeds, or -1 when fails.
- */
-#ifdef _LP64
 #define	test_and_set_bit(p, b) \
-	atomic_set_long_excl(((ulong_t *)(void *)p) + (b >> 6), (b & 0x3f))
+	atomic_set_long_excl((ulong_t *)(void *)(p), (b))
 #define	test_and_clear_bit(p, b) \
-	atomic_clear_long_excl(((ulong_t *)(void *)(p)) + ((b) >> 6), \
-	((b) & 0x3f))
-#else
-#define	test_and_set_bit(p, b) \
-	atomic_set_long_excl(((ulong_t *)(void *)p) + (b >> 5), (b & 0x1f))
-#define	test_and_clear_bit(p, b) \
-	atomic_clear_long_excl(((ulong_t *)(void *)p) + (b >> 5), (b & 0x1f))
-#endif
-
+	atomic_clear_long_excl((ulong_t *)(void *)(p), (b))
 #define	atomic_cmpset_int(p, c, n) \
 	((c == atomic_cas_uint(p, c, n)) ? 1 : 0)
-
-
 
 /*
  * Notify host that there are data pending on our TX bufring.
  */
-static __inline void
+static inline void
 vmbus_chan_signal_tx(const struct vmbus_channel *chan)
 {
 	atomic_or_ulong(chan->ch_evtflag, chan->ch_evtflag_mask);
@@ -412,7 +396,6 @@ vmbus_chan_open_br(struct vmbus_channel *chan, const struct vmbus_chan_br *cbr,
 			    chan->ch_id);
 
 			/*
-			 * XXX
 			 * Add extra delay before cancel the hypercall
 			 * execution; mainly to close any possible
 			 * CHRESCIND and CHOPEN_RESP races on the
@@ -448,7 +431,8 @@ vmbus_chan_open_br(struct vmbus_channel *chan, const struct vmbus_chan_br *cbr,
 		return (0);
 	}
 
-	dev_err(sc->vmbus_dev, CE_WARN, "failed to open chan%u", chan->ch_id);
+	dev_err(sc->vmbus_dev, CE_WARN, "failed to open chan%u, status %u",
+	    chan->ch_id, status);
 	error = ENXIO;
 
 failed:
@@ -701,11 +685,8 @@ static void
 vmbus_chan_clrchmap_task(void *xchan)
 {
 	struct vmbus_channel *chan = xchan;
-	/* Disable preemption */
-	kpreempt_disable();
+
 	chan->ch_vmbus->vmbus_chmap[chan->ch_id] = NULL;
-	/* Enable preemption */
-	kpreempt_enable();
 }
 
 static void
@@ -800,7 +781,6 @@ disconnect:
 		    chan->ch_bufring_gpadl);
 		if (error1) {
 			/*
-			 * XXX
 			 * The bufring GPADL is still connected; abandon
 			 * this bufring, instead of having mysterious
 			 * crash or trashed data later on.
@@ -1143,7 +1123,7 @@ vmbus_chan_task_nobatch(void *xchan)
 	chan->ch_cb(chan, chan->ch_cbarg);
 }
 
-static void /* __inline (really ?) */
+static void
 vmbus_event_flags_proc(struct vmbus_softc *sc, volatile ulong_t *event_flags,
     int flag_cnt)
 {
@@ -1176,7 +1156,7 @@ vmbus_event_flags_proc(struct vmbus_softc *sc, volatile ulong_t *event_flags,
 			if (chan->ch_flags & VMBUS_CHAN_FLAG_BATCHREAD)
 				vmbus_rxbr_intr_mask(&chan->ch_rxbr);
 			if (ddi_taskq_dispatch(chan->ch_tq, chan->ch_tqent_func,
-			    chan, 0) != DDI_SUCCESS) {
+			    chan, DDI_SLEEP) != DDI_SUCCESS) {
 				vmbus_chan_printf(chan,
 				    "Failed to dispatch ch_task, flag: %d, "
 				    "flag_cnt: %d", f, flag_cnt);
@@ -1258,8 +1238,8 @@ vmbus_chan_alloc(struct vmbus_softc *sc)
 
 	chan->ch_refs = 1;
 	chan->ch_vmbus = sc;
-	mutex_init(&chan->ch_subchan_lock, "vmbus subchan", MUTEX_DRIVER, NULL);
-	mutex_init(&chan->ch_orphan_lock, "vmbus chorphan", MUTEX_DRIVER, NULL);
+	mutex_init(&chan->ch_subchan_lock, NULL, MUTEX_DRIVER, NULL);
+	mutex_init(&chan->ch_orphan_lock, NULL, MUTEX_DRIVER, NULL);
 	cv_init(&chan->ch_subchan_cv, NULL, CV_DEFAULT, NULL);
 	TAILQ_INIT(&chan->ch_subchans);
 	vmbus_rxbr_init(&chan->ch_rxbr);
@@ -1525,7 +1505,7 @@ vmbus_chan_msgproc_choffer(struct vmbus_softc *sc,
 		return;
 	}
 	(void) ddi_taskq_dispatch(chan->ch_mgmt_tq, chan->ch_attach_task,
-	    chan, 0);
+	    chan, DDI_SLEEP);
 }
 
 static void
@@ -1713,7 +1693,7 @@ vmbus_chan_destroy_all(struct vmbus_softc *sc)
 		mutex_exit(&sc->vmbus_prichan_lock);
 
 		(void) ddi_taskq_dispatch(chan->ch_mgmt_tq,
-		    chan->ch_detach_task, chan, 0);
+		    chan->ch_detach_task, chan, DDI_SLEEP);
 	}
 }
 
@@ -1843,7 +1823,8 @@ vmbus_chan_rx_empty(const struct vmbus_channel *chan)
 void
 vmbus_chan_run_task(struct vmbus_channel *chan, task_func_t *task)
 {
-	if (ddi_taskq_dispatch(chan->ch_tq, task, chan, 0) != DDI_SUCCESS) {
+	if (ddi_taskq_dispatch(chan->ch_tq, task, chan, DDI_SLEEP)
+	    != DDI_SUCCESS) {
 		dev_err(chan->ch_dev, CE_PANIC,
 		    "Failed to run task: %p", (void *)task);
 	} else {

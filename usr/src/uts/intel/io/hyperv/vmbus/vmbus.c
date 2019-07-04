@@ -114,7 +114,7 @@ vmbus_chanmsg_handlers[VMBUS_CHANMSG_TYPE_MAX] = {
 	VMBUS_CHANMSG_PROC_WAKEUP(CONNECT_RESP)
 };
 
-static __inline struct vmbus_softc *
+static inline struct vmbus_softc *
 vmbus_get_softc(void)
 {
 	return (vmbus_sc);
@@ -185,19 +185,15 @@ vmbus_msghc_exec_noresult(struct vmbus_msghc *mh)
 	inprm_paddr = vmbus_xact_req_paddr(mh->mh_xact);
 
 	/*
-	 * Save the input parameter so that we could restore the input
-	 * parameter if the Hypercall failed.
-	 *
-	 * XXX
-	 * Is this really necessary?!  i.e. Will the Hypercall ever
-	 * overwrite the input parameter?
+	 * Save the input parameter so that we can restore the input
+	 * parameter if the Hypercall fails.
 	 */
 	(void) memcpy(&mh->mh_inprm_save, inprm, HYPERCALL_POSTMSGIN_SIZE);
 
 	/*
 	 * In order to cope with transient failures, e.g. insufficient
 	 * resources on host side, we retry the post message Hypercall
-	 * several times.  20 retries seem sufficient.
+	 * several times. 20 retries seem sufficient.
 	 */
 #define	HC_RETRY_MAX	20
 
@@ -205,14 +201,30 @@ vmbus_msghc_exec_noresult(struct vmbus_msghc *mh)
 		uint64_t status;
 
 		status = hypercall_post_message(inprm_paddr);
-		if (status == HYPERCALL_STATUS_SUCCESS)
-			return (0);
+		switch (status) {
+			case HYPERCALL_STATUS_SUCCESS:
+				return (0);
+
+			case HYPERCALL_STATUS_INVALID_HYPERCALL_CODE:
+			case HYPERCALL_STATUS_INVALID_HYPERCALL_INPUT:
+			case HYPERCALL_STATUS_INVALID_ALIGNMENT:
+			case HYPERCALL_STATUS_INVALID_PARAMETER:
+			case HYPERCALL_STATUS_OPERATION_DENIED:
+			case HYPERCALL_STATUS_UNKNOWN_PROPERTY:
+			case HYPERCALL_STATUS_PROPERTY_VALUE_OUT_OF_RANGE:
+				/*
+				 * These response codes mean that a retry
+				 * with the same parameters will not succeed.
+				 */
+				return (EIO);
+		}
 
 		drv_usecwait(delay_us);
+		/* If delay is under 2 seconds, double it for the next retry. */
 		if (delay_us < MICROSEC * 2)
 			delay_us *= 2;
 
-		/* Restore input parameter and try again */
+		/* Restore input parameter and try again. */
 		(void) memcpy(inprm, &mh->mh_inprm_save,
 		    HYPERCALL_POSTMSGIN_SIZE);
 	}
@@ -951,7 +963,7 @@ vmbus_add_child(struct vmbus_channel *chan)
 	 * Find a device that matches the classid in the channel.
 	 */
 	for (dev = vmbus_devices; dev->hv_guid != NULL; dev++) {
-		if (strncmp(dev->hv_guid, classid, strlen(dev->hv_guid)) == 0) {
+		if (strcmp(dev->hv_guid, classid) == 0) {
 			devname = dev->hv_devname;
 			break;
 		}

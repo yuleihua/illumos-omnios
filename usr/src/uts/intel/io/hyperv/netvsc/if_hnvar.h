@@ -22,8 +22,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 /*
@@ -164,7 +162,7 @@ struct hn_tx_ring {
 	/* info about next packet to send */
 	int		(*hn_sendpkt)(struct hn_tx_ring *, struct hn_txdesc *);
 	hn_pkt_type_t	hn_pkt_type;
-	int		hn_pkt_length;
+	uint32_t	hn_pkt_length;
 
 	ddi_dma_handle_t hn_data_dmah;
 	boolean_t	hn_suspended;

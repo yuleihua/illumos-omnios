@@ -66,7 +66,7 @@ vmbus_rxbr_intr_mask(struct vmbus_rxbr *rbr)
 	membar_sync();
 }
 
-static __inline uint32_t
+static inline uint32_t
 vmbus_rxbr_avail(const struct vmbus_rxbr *rbr)
 {
 	uint32_t rindex, windex;
@@ -103,7 +103,7 @@ vmbus_br_setup(struct vmbus_br *br, void *buf, int blen)
 void
 vmbus_rxbr_init(struct vmbus_rxbr *rbr)
 {
-	mutex_init(&rbr->rxbr_lock, "vmbus_rxbr", MUTEX_DEFAULT, NULL);
+	mutex_init(&rbr->rxbr_lock, NULL, MUTEX_DEFAULT, NULL);
 }
 
 void
@@ -121,7 +121,7 @@ vmbus_rxbr_setup(struct vmbus_rxbr *rbr, void *buf, int blen)
 void
 vmbus_txbr_init(struct vmbus_txbr *tbr)
 {
-	mutex_init(&tbr->txbr_lock, "vmbus_txbr", MUTEX_DEFAULT, NULL);
+	mutex_init(&tbr->txbr_lock, NULL, MUTEX_DEFAULT, NULL);
 }
 
 void
@@ -149,7 +149,7 @@ vmbus_txbr_setup(struct vmbus_txbr *tbr, void *buf, int blen)
  *   empty, it will clear the br_imask and re-check to see if new
  *   data have arrived.
  */
-static __inline boolean_t
+static inline boolean_t
 vmbus_txbr_need_signal(const struct vmbus_txbr *tbr, uint32_t old_windex)
 {
 	membar_sync();
@@ -168,7 +168,7 @@ vmbus_txbr_need_signal(const struct vmbus_txbr *tbr, uint32_t old_windex)
 	return (B_FALSE);
 }
 
-static __inline uint32_t
+static inline uint32_t
 vmbus_txbr_avail(const struct vmbus_txbr *tbr)
 {
 	uint32_t rindex, windex;
@@ -180,7 +180,7 @@ vmbus_txbr_avail(const struct vmbus_txbr *tbr)
 	return (VMBUS_BR_WAVAIL(rindex, windex, tbr->txbr_dsize));
 }
 
-static __inline uint32_t
+static inline uint32_t
 vmbus_txbr_copyto(const struct vmbus_txbr *tbr, uint32_t windex,
     const void *src0, uint32_t cplen)
 {
@@ -266,7 +266,7 @@ vmbus_txbr_write(struct vmbus_txbr *tbr, const struct iovec iov[], int iovlen,
 	return (0);
 }
 
-static __inline uint32_t
+static inline uint32_t
 vmbus_rxbr_copyfrom(const struct vmbus_rxbr *rbr, uint32_t rindex,
     void *dst0, int cplen)
 {
