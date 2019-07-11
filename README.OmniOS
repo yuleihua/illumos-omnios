@@ -26,6 +26,11 @@ are included in the footer.
    Packages:
        All CTF
 
+## 11378 ncec_last_time_defended needs to be clock_t
+
+   Packages:
+       system/kernel
+
 =======================================================================
 
 =============================
