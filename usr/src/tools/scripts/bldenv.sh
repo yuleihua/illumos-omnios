@@ -25,6 +25,7 @@
 # Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
 # Copyright 2014 Garrett D'Amore <garrett@damore.org>
 # Copyright 2018 Joyent, Inc.
+# Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
 #
 # Uses supplied "env" file, based on /opt/onbld/etc/env, to set shell variables
 # before spawning a shell for doing a release-style builds interactively
@@ -259,6 +260,23 @@ BUILD_DATE=$(LC_ALL=C date +%Y-%b-%d)
 BASEWSDIR=$(basename -- "${CODEMGR_WS}")
 DEV_CM="\"@(#)SunOS Internal Development: $LOGNAME $BUILD_DATE [$BASEWSDIR]\""
 export DEV_CM RELEASE_DATE POUND_SIGN
+
+# If there is a built genunix in the tree, then override $VERSION to be
+# the same as that which did the last build. Otherwise incremental builds
+# are not possible due to differing labels in the CTF data.
+
+for f in obj64 debug64; do
+	[ -f $SRC/uts/intel/genunix/$f/genunix ] || continue
+	label="`/usr/bin/ctfdump -l $SRC/uts/intel/genunix/$f/genunix \
+	    | tail -1 | nawk '{print $2}'`"
+	[ -n "$label" ] || continue
+	[ "$label" = "$VERSION" ] && break
+	echo "***************************"
+	echo "** Found $f/genunix, overriding VERSION=$label"
+	echo "***************************"
+	export VERSION="$label"
+	break
+done
 
 print 'Build type   is  \c'
 if ${flags.d} ; then
