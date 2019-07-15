@@ -18,6 +18,6 @@
 #
 
 SUBDIRS = date dis dladm iconv libnvpair_json libsff printf xargs grep_xpg4
-SUBDIRS += demangle mergeq workq chown ctf
+SUBDIRS += demangle mergeq workq chown ctf smbios libjedec
 
 include $(SRC)/test/Makefile.com
