@@ -102,6 +102,7 @@ struct ctype {
 	unsigned long alignment;
 	struct context_list *contexts;
 	unsigned int as;
+	unsigned int is_packed:1;
 	struct symbol *base_type;
 };
 

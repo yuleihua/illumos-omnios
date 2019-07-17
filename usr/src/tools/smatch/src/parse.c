@@ -1007,6 +1007,7 @@ static struct token *ignore_attribute(struct token *token, struct symbol *attr, 
 
 static struct token *attribute_packed(struct token *token, struct symbol *attr, struct decl_state *ctx)
 {
+	ctx->ctype.is_packed = 1;
 	if (!ctx->ctype.alignment)
 		ctx->ctype.alignment = 1;
 	return token;
@@ -1237,6 +1238,9 @@ static struct token *attribute_specifier(struct token *token, struct decl_state 
 
 	token = expect(token, ')', "after attribute");
 	token = expect(token, ')', "after attribute");
+
+	if (ctx->ctype.is_packed && ctx->ctype.base_type)
+		ctx->ctype.base_type->ctype.is_packed = 1;
 	return token;
 }
 
