@@ -1522,12 +1522,13 @@ fi
 [[ -f "${CODEMGR_WS}/usr/src/Makefile" ]] || fatal_error "Error: ${CODEMGR_WS}/usr/src/Makefile not found."
 
 if [[ "$t_FLAG" = "y" ]]; then
-	echo "\n==== Bootstrapping cw ====\n" >> $LOGFILE
+	echo "\n==== Bootstrapping tools ====\n" >> $LOGFILE
 	( cd ${TOOLS}
 	  set_non_debug_build_flags
 	  rm -f $TMPDIR/make-state
-	  $MAKE -K $TMPDIR/make-state -e TARGET=install cw 2>&1 >> $LOGFILE
-	  [[ "$?" -ne 0 ]] && fatal_error "Error: could not bootstrap cw"
+	  $MAKE -K $TMPDIR/make-state -e TARGET=install bootstrap \
+		2>&1 >> $LOGFILE
+	  [[ "$?" -ne 0 ]] && fatal_error "Error: could not bootstrap tools"
 	)
 
 	# Switch ONBLD_TOOLS early if -t is specified so that
