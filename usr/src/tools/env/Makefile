@@ -36,6 +36,11 @@ all:	$(ENVFILES)
 
 install: all .WAIT $(ROOTONBLDENVFILES)
 
+omnios-%:
+	$(RM) $@
+	$(CAT) illumos.sh $@.sh > $@
+	$(CHMOD) +x $@
+
 clean:
 
 clobber:

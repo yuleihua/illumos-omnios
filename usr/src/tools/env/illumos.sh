@@ -79,13 +79,13 @@ export CODEMGR_WS="`git rev-parse --show-toplevel`"
 # To disable shadow compilation, unset SHADOW_* or set them to the empty string.
 #
 export GNUC_ROOT=/usr/gcc/7
-export PRIMARY_CCS=gcc7,$GNUC_ROOT/bin/gcc,gnu
-export PRIMARY_CCCS=gcc7,$GNUC_ROOT/bin/g++,gnu
+export PRIMARY_CC=gcc7,$GNUC_ROOT/bin/gcc,gnu
+export PRIMARY_CCC=gcc7,$GNUC_ROOT/bin/g++,gnu
 export SHADOW_CCS=gcc4,/opt/gcc/4.4.4/bin/gcc,gnu
 export SHADOW_CCCS=gcc4,/opt/gcc/4.4.4/bin/g++,gnu
 
-# uncomment to enable smatch
-#export ENABLE_SMATCH=1
+# comment to disable smatch
+export ENABLE_SMATCH=1
 
 # Comment this out to disable support for SMB printing, i.e. if you
 # don't want to bother providing the CUPS headers this needs.
