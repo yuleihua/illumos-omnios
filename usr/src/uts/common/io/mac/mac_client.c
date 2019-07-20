@@ -1636,7 +1636,7 @@ mac_rx_barrier(mac_client_handle_t mch)
 	i_mac_perim_enter(mip);
 
 	/* If a RX callback is set, quiesce and restart that datapath */
-	if (mcip->mci_rx_fn != mac_pkt_drop) {
+	if (mcip->mci_rx_fn != mac_rx_def) {
 		mac_rx_client_quiesce(mch);
 		mac_rx_client_restart(mch);
 	}
