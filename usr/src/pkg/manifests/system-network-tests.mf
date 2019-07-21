@@ -1,0 +1,45 @@
+#
+# CDDL HEADER START
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+# CDDL HEADER END
+#
+
+#
+# Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+#
+
+set name=pkg.fmri value=pkg:/system/network/tests@$(PKGVERS)
+set name=pkg.description value="Networking tests"
+set name=pkg.summary value="Networking tests"
+set name=info.classification \
+    value=org.opensolaris.category.2008:System/Network
+set name=variant.arch value=$(ARCH)
+dir path=opt/net-tests
+dir path=opt/net-tests/bin
+dir path=opt/net-tests/config
+dir path=opt/net-tests/runfiles
+dir path=opt/net-tests/tests
+dir path=opt/net-tests/tests/forwarding
+file path=opt/net-tests/bin/nettest mode=0555
+file path=opt/net-tests/config/ip_forwarding.config mode=0755 \
+    preserve=renamenew
+file path=opt/net-tests/runfiles/default.run mode=0444
+file path=opt/net-tests/tests/forwarding/README mode=0444
+file path=opt/net-tests/tests/forwarding/ip_forwarding mode=0555
+file path=opt/net-tests/tests/forwarding/ip_fwd_full_cksum mode=0555
+file path=opt/net-tests/tests/forwarding/ip_fwd_full_cksum_lso mode=0555
+file path=opt/net-tests/tests/forwarding/ip_fwd_no_cksum mode=0555
+file path=opt/net-tests/tests/forwarding/ip_fwd_partial_cksum mode=0555
+file path=opt/net-tests/tests/forwarding/ip_fwd_partial_cksum_lso mode=0555
+file path=opt/net-tests/tests/net_common mode=0555
+license lic_CDDL license=lic_CDDL
+depend fmri=system/test/testrunner type=require
