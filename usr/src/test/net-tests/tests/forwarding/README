@@ -1,7 +1,7 @@
 Running
 -------
 
-* Create three native zones and start them.
+* Create three native (sparse) zones and start them.
 
 * Edit config/ip_forwarding.config, entering the names of the zones
   you created.
@@ -75,7 +75,7 @@ Requirements
 
 * The user must both create and start the three required zones.
 
-* All three zones should be native zones.
+* All three zones should be native (sparse) zones.
 
 * You must edit the ip_forwarding.config file; providing it with the
   names of the zones you have created.
@@ -121,4 +121,4 @@ ip_fwd_full_cksum_lso
 config/ip_forwarding.config
 
 	This file must be modified to contain the names of the zones
-	the user crated for running these tests.
+	the user created for running these tests.
