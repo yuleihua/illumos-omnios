@@ -23,6 +23,7 @@
  * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved
  *
  * Copyright 2011 Nexenta Systems, Inc. All rights reserved.
+ * Copyright 2019 Joyent, Inc.
  */
 /* Copyright (c) 1990 Mentat Inc. */
 
@@ -978,9 +979,6 @@ ire_recv_forward_v6(ire_t *ire, mblk_t *mp, void *iph_arg, ip_recv_attr_t *ira)
 		ira->ira_pktlen = ntohs(ip6h->ip6_plen) + IPV6_HDR_LEN;
 	}
 
-	/* Packet is being forwarded. Turning off hwcksum flag. */
-	DB_CKSUMFLAGS(mp) = 0;
-
 	/*
 	 * Per RFC 3513 section 2.5.2, we must not forward packets with
 	 * an unspecified source address.
@@ -1102,7 +1100,14 @@ ip_forward_xmit_v6(nce_t *nce, mblk_t *mp, ip6_t *ip6h, ip_recv_attr_t *ira,
 
 	BUMP_MIB(dst_ill->ill_ip_mib, ipIfStatsHCOutForwDatagrams);
 
-	if (pkt_len > mtu) {
+	/*
+	 * If the packet arrived via MAC-loopback then it might be an
+	 * LSO packet; in this case the MAC layer will take care to
+	 * segment it. Otherwise, we have a normal packet that is
+	 * being forwarded from a source interface with an MTU larger
+	 * than the destination's; in this case IP must fragment it.
+	 */
+	if (pkt_len > mtu && (DB_CKSUMFLAGS(mp) & HW_LSO) == 0) {
 		BUMP_MIB(dst_ill->ill_ip_mib, ipIfStatsOutFragFails);
 		ip_drop_output("ipIfStatsOutFragFails", mp, dst_ill);
 		if (iraflags & IRAF_SYSTEM_LABELED) {
@@ -1892,6 +1897,16 @@ ip_input_cksum_v6(iaflags_t iraflags, mblk_t *mp, ip6_t *ip6h,
 		return (B_TRUE);
 	}
 
+	hck_flags = DB_CKSUMFLAGS(mp);
+
+	if (hck_flags & HW_LOCAL_MAC) {
+		/*
+		 * The packet is from a same-machine sender in which
+		 * case we assume data integrity.
+		 */
+		return (B_TRUE);
+	}
+
 	/*
 	 * Revert to software checksum calculation if the interface
 	 * isn't capable of checksum offload.
@@ -1908,9 +1923,6 @@ ip_input_cksum_v6(iaflags_t iraflags, mblk_t *mp, ip6_t *ip6h,
 	 * We apply this for all ULP protocols. Does the HW know to
 	 * not set the flags for SCTP and other protocols.
 	 */
-
-	hck_flags = DB_CKSUMFLAGS(mp);
-
 	if (hck_flags & HCK_FULLCKSUM_OK) {
 		/*
 		 * Hardware has already verified the checksum.
