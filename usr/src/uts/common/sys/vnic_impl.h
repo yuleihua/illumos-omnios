@@ -66,6 +66,7 @@ typedef struct vnic_s {
 	uint32_t		vn_hcksum_txflags;
 	mac_capab_lso_t		vn_cap_lso;
 	uint32_t		vn_mtu;
+	link_state_t		vn_ls;
 } vnic_t;
 
 #define	vn_mch	vn_mc_handles[0]
