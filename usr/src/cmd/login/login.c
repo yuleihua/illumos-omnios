@@ -358,7 +358,6 @@ static	void	establish_user_environment(char **);
 static	void	exec_the_shell(void);
 static	int	process_chroot_logins(void);
 static	void	chdir_to_dir_user(void);
-static	void	check_log(void);
 static	void	validate_account(void);
 static	void	doremoteterm(char *);
 static	int	get_options(int, char **);
