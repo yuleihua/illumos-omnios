@@ -31,12 +31,16 @@
 
 include ../Makefile.master
 
-# Bootstrap problem: 'cw' must be built before anything else can be built.
-# 'install.bin' should be built next, being the 'install' target dependency
-# for everything else.
+# Bootstrap problem: some utilities are pre-requisites for building everything
+# else:
+#    - smatch - as it is a shadow compiler
+#    - cw - as it is used to drive builds
+#    - install.bin - being the 'install' target dependency
+#    - ctf - being used to generate CTF data
 #
-# Because of somewhat cyclic dependency between them, both cw and install.bin
-# override the way we install binaries in their Makefiles.
+# Anything built before 'install.bin' is present must override binary
+# installation rules in their makefiles. This includes the Makefile for
+# 'install.bin' itself.
 BOOT_SUBDIRS= \
 	smatch \
 	.WAIT \
