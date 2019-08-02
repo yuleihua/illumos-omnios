@@ -3822,6 +3822,10 @@ usr/src/man/man9/phymap.9
 usr/src/man/man9/tgtmap.9
 usr/src/man/man9e/GLDv3.9e
 usr/src/man/man9e/MAC.9e
+usr/src/man/man9e/ddi_ufm_op_fill_image.9e
+usr/src/man/man9e/ddi_ufm_op_fill_slot.9e
+usr/src/man/man9e/ddi_ufm_op_getcaps.9e
+usr/src/man/man9e/ddi_ufm_op_nimages.9e
 usr/src/man/man9e/gldv3.9e
 usr/src/man/man9e/mc_close.9e
 usr/src/man/man9e/mc_stop.9e
@@ -3851,6 +3855,15 @@ usr/src/man/man9f/avl_numnodes.9f
 usr/src/man/man9f/avl_remove.9f
 usr/src/man/man9f/avl_swap.9f
 usr/src/man/man9f/bcanputnext.9f
+usr/src/man/man9f/ddi_ufm_fini.9f
+usr/src/man/man9f/ddi_ufm_image_set_desc.9f
+usr/src/man/man9f/ddi_ufm_image_set_misc.9f
+usr/src/man/man9f/ddi_ufm_image_set_nslots.9f
+usr/src/man/man9f/ddi_ufm_init.9f
+usr/src/man/man9f/ddi_ufm_slot_set_attrs.9f
+usr/src/man/man9f/ddi_ufm_slot_set_misc.9f
+usr/src/man/man9f/ddi_ufm_slot_set_version.9f
+usr/src/man/man9f/ddi_ufm_update.9f
 usr/src/man/man9f/dev_err.9f
 usr/src/man/man9f/firmware_close.9f
 usr/src/man/man9f/firmware_free.9f
@@ -4058,6 +4071,9 @@ usr/src/test/libc-tests/tests/wcsrtombs/wcsrtombs_test.i386
 usr/src/test/libc-tests/tests/wctype/wctype_test
 usr/src/test/libc-tests/tests/wctype/wctype_test.amd64
 usr/src/test/libc-tests/tests/wctype/wctype_test.i386
+usr/src/test/os-tests/tests/ddi_ufm/ufm-test
+usr/src/test/os-tests/tests/ddi_ufm/ufm-test-cleanup
+usr/src/test/os-tests/tests/ddi_ufm/ufm-test-setup
 usr/src/test/os-tests/tests/file-locking/acquire-lock.32
 usr/src/test/os-tests/tests/file-locking/acquire-lock.64
 usr/src/test/os-tests/tests/file-locking/runtests.32

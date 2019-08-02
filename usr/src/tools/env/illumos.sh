@@ -22,7 +22,7 @@
 # Copyright 2015 Nexenta Systems, Inc.  All rights reserved.
 # Copyright 2012 Joshua M. Clulow <josh@sysmgr.org>
 # Copyright 2015, OmniTI Computer Consulting, Inc. All rights reserved.
-# Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
+# Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
 # Copyright 2019, Joyent, Inc.
 #
 # - This file is sourced by "bldenv.sh" and "nightly.sh" and should not
