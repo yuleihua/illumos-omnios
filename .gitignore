@@ -830,13 +830,9 @@ usr/src/cmd/fs.d/tmpfs/mount
 usr/src/cmd/fs.d/udfs/fsck/fsck
 usr/src/cmd/fs.d/udfs/fsdb/fsdb
 usr/src/cmd/fs.d/udfs/fsdb/lex.yy.c
-usr/src/cmd/fs.d/udfs/fsdb/ud_lib.c
-usr/src/cmd/fs.d/udfs/fsdb/ud_lib.h
 usr/src/cmd/fs.d/udfs/fsdb/y.tab.c
 usr/src/cmd/fs.d/udfs/fsdb/y.tab.h
 usr/src/cmd/fs.d/udfs/labelit/labelit
-usr/src/cmd/fs.d/udfs/labelit/ud_lib.c
-usr/src/cmd/fs.d/udfs/labelit/ud_lib.h
 usr/src/cmd/fs.d/udfs/mkfs/mkfs
 usr/src/cmd/fs.d/udfs/mount/mount
 usr/src/cmd/fs.d/ufs/clri/clri
@@ -4198,7 +4194,6 @@ usr/src/test/zfs-tests/tests/functional/libzfs/many_fds
 usr/src/test/zfs-tests/tests/functional/threadsappend/threadsappend
 usr/src/tools/aw/aw
 usr/src/tools/btxld/btxld
-usr/src/tools/codereview/codereview
 usr/src/tools/codesign/findcrypto
 usr/src/tools/codesign/signit
 usr/src/tools/codesign/signproto
