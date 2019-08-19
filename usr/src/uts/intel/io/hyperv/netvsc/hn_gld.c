@@ -11,6 +11,7 @@
 
 /*
  * Copyright (c) 2017 by Delphix. All rights reserved.
+ * Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
  */
 
 /*
@@ -97,7 +98,7 @@ int
 hn_get_priv_prop(struct hn_softc *sc, const char *prop_name,
     uint_t prop_val_size, void *prop_val)
 {
-	int value;
+	int value, error = 0;
 
 	HN_LOCK(sc);
 
@@ -105,17 +106,19 @@ hn_get_priv_prop(struct hn_softc *sc, const char *prop_name,
 	 * Note: private prop values are always passed as strings
 	 */
 	if (strcmp(prop_name, HN_PROP_NVS_VERSION) == 0) {
-		(void) snprintf(prop_val, prop_val_size, "0x%x",
-		    sc->hn_nvs_ver);
+		if (snprintf(prop_val, prop_val_size, "0x%x",
+		    sc->hn_nvs_ver) >= prop_val_size)
+			error = EOVERFLOW;
 		goto done;
 	} else if (strcmp(prop_name, HN_PROP_NDIS_VERSION) == 0) {
-		(void) snprintf(prop_val, prop_val_size, "%u.%u",
+		if (snprintf(prop_val, prop_val_size, "%u.%u",
 		    HN_NDIS_VERSION_MAJOR(sc->hn_ndis_ver),
-		    HN_NDIS_VERSION_MINOR(sc->hn_ndis_ver));
+		    HN_NDIS_VERSION_MINOR(sc->hn_ndis_ver)) >= prop_val_size)
+			error = EOVERFLOW;
 		goto done;
 	} else if (strcmp(prop_name, HN_PROP_HOST_CAPABILITIES) == 0) {
 		uint32_t caps = sc->hn_caps;
-		(void) snprintf(prop_val, prop_val_size, "%s%s%s%s%s%s%s%s%s",
+		if (snprintf(prop_val, prop_val_size, "%s%s%s%s%s%s%s%s%s",
 		    (caps & HN_CAP_VLAN) ?	"VLAN " : "",
 		    (caps & HN_CAP_MTU) ?	"MTU " : "",
 		    (caps & HN_CAP_IPCS) ?	"IPCS " : "",
@@ -124,7 +127,8 @@ hn_get_priv_prop(struct hn_softc *sc, const char *prop_name,
 		    (caps & HN_CAP_UDP4CS) ?	"UDP4CS " : "",
 		    (caps & HN_CAP_UDP6CS) ?	"UDP6CS " : "",
 		    (caps & HN_CAP_TSO4) ?	"TSO4 " : "",
-		    (caps & HN_CAP_TSO6) ?	"TSO6 " : "");
+		    (caps & HN_CAP_TSO6) ?	"TSO6 " : "") >= prop_val_size)
+			error = EOVERFLOW;
 		goto done;
 	} else if (strcmp(prop_name, HN_PROP_RX_RINGS_USED) == 0) {
 		value = sc->hn_rx_ring_inuse;
@@ -141,14 +145,16 @@ hn_get_priv_prop(struct hn_softc *sc, const char *prop_name,
 	} else if (strcmp(prop_name, HN_PROP_TRUST_HOST_CKSUM) == 0) {
 		value = (sc->hn_rx_ring[0].hn_trust_hcsum == 0) ? 0 : 1;
 	} else {
-		HN_UNLOCK(sc);
-		return (ENOTSUP);
+		error = ENOTSUP;
+		goto done;
 	}
 
-	(void) snprintf(prop_val, prop_val_size, "%d", value);
+	if (snprintf(prop_val, prop_val_size, "%d", value) >= prop_val_size)
+		error = EOVERFLOW;
+
 done:
 	HN_UNLOCK(sc);
-	return (0);
+	return (error);
 }
 
 static int
@@ -160,7 +166,10 @@ hn_m_getprop(void *data, const char *prop_name, mac_prop_id_t prop_id,
 
 	switch (prop_id) {
 	case MAC_PROP_MTU:
-		ASSERT(prop_val_size >= sizeof (uint32_t));
+		if (prop_val_size < sizeof (uint32_t)) {
+			error = EOVERFLOW;
+			break;
+		}
 		bcopy(&sc->hn_mtu, prop_val, sizeof (uint32_t));
 		break;
 	case MAC_PROP_PRIVATE:
@@ -168,7 +177,8 @@ hn_m_getprop(void *data, const char *prop_name, mac_prop_id_t prop_id,
 		    prop_val);
 		break;
 	default:
-		HN_WARN(sc, "hn_get_prop property %d not supported", prop_id);
+		HN_DEBUG(sc, 1, "hn_get_prop property %d not supported",
+		    prop_id);
 		error = ENOTSUP;
 	}
 	return (error);
@@ -188,8 +198,8 @@ hn_set_priv_prop(struct hn_softc *sc, const char *prop_name,
 	 * Note: private prop values are always passed as strings
 	 */
 	if (strcmp(prop_name, HN_PROP_TRUST_HOST_CKSUM) == 0) {
-		(void) ddi_strtol(prop_val, (char **)NULL, 0, &value);
-		if (value == 0 || value == 1) {
+		if (ddi_strtol(prop_val, (char **)NULL, 0, &value) == 0 &&
+		    (value == 0 || value == 1)) {
 			int hcsum = (value == 1) ? HN_TRUST_HCSUM_ALL : 0;
 			HN_LOCK(sc);
 			for (int i = 0; i < sc->hn_rx_ring_inuse; ++i) {
@@ -202,8 +212,8 @@ hn_set_priv_prop(struct hn_softc *sc, const char *prop_name,
 			error = EINVAL;
 		}
 	} else if (strcmp(prop_name, HN_PROP_TX_CHIM_SIZE) == 0) {
-		(void) ddi_strtol(prop_val, (char **)NULL, 0, &value);
-		if (value >= 0 && value <= sc->hn_chim_szmax) {
+		if (ddi_strtol(prop_val, (char **)NULL, 0, &value) == 0 &&
+		    value >= 0 && value <= sc->hn_chim_szmax) {
 			HN_LOCK(sc);
 			hn_set_chim_size(sc, value);
 			HN_UNLOCK(sc);
@@ -230,7 +240,10 @@ hn_m_setprop(void *data, const char *prop_name, mac_prop_id_t prop_id,
 
 	switch (prop_id) {
 	case MAC_PROP_MTU:
-		ASSERT(prop_val_size >= sizeof (uint32_t));
+		if (prop_val_size < sizeof (uint32_t)) {
+			error = EOVERFLOW;
+			break;
+		}
 		bcopy(prop_val, &new_mtu, sizeof (new_mtu));
 		error = hn_change_mtu(sc, new_mtu);
 		break;
@@ -239,7 +252,8 @@ hn_m_setprop(void *data, const char *prop_name, mac_prop_id_t prop_id,
 		    prop_val);
 		break;
 	default:
-		HN_WARN(sc, "hn_set_prop property %d not supported", prop_id);
+		HN_DEBUG(sc, 1, "hn_set_prop property %d not supported",
+		    prop_id);
 		error = ENOTSUP;
 	}
 
@@ -274,7 +288,8 @@ hn_priv_prop_info(struct hn_softc *sc, const char *prop_name,
 		return;
 	}
 
-	(void) snprintf(valstr, sizeof (valstr), "%d", value);
+	if (snprintf(valstr, sizeof (valstr), "%d", value) >= sizeof (valstr))
+		return;
 	mac_prop_info_set_default_str(prh, valstr);
 }
 
@@ -287,13 +302,15 @@ hn_m_propinfo(void *data, const char *prop_name, mac_prop_id_t prop_id,
 
 	switch (prop_id) {
 	case MAC_PROP_MTU:
-		mac_prop_info_set_range_uint32(prop_handle, 0, HN_MTU_MAX);
+		mac_prop_info_set_range_uint32(prop_handle,
+		    HN_MTU_MIN, HN_MTU_MAX);
 		break;
 	case MAC_PROP_PRIVATE:
 		hn_priv_prop_info(sc, prop_name, prop_handle);
 		break;
 	default:
-		HN_WARN(sc, "hn_prop_info: property %d not supported", prop_id);
+		HN_DEBUG(sc, 1, "hn_prop_info: property %d not supported",
+		    prop_id);
 	}
 }
 
@@ -443,7 +460,6 @@ hn_rx_ring_stat(mac_ring_driver_t rh, uint_t stat, uint64_t *val)
 		break;
 
 	default:
-		*val = 0;
 		error = ENOTSUP;
 	}
 
@@ -478,7 +494,6 @@ hn_tx_ring_stat(mac_ring_driver_t rh, uint_t stat, uint64_t *val)
 		break;
 
 	default:
-		*val = 0;
 		error = ENOTSUP;
 	}
 
@@ -582,15 +597,16 @@ int
 hn_m_setpromisc(void *data, boolean_t promisc)
 {
 	struct hn_softc *sc = data;
+	int error = 0;
 
 	HN_LOCK(sc);
 	HN_DEBUG(sc, 2, "setpromisc(%s)", promisc ? "TRUE" : "FALSE");
 	sc->hn_promiscuous = promisc;
 
-	(void) hn_set_rxfilter(sc);
+	error = hn_set_rxfilter(sc);
 	HN_UNLOCK(sc);
 
-	return (0);
+	return (error);
 }
 
 /*ARGSUSED*/

@@ -21,9 +21,6 @@
  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 /*
@@ -44,7 +41,7 @@
 #ifndef _HV_UTILREG_H_
 #define	_HV_UTILREG_H_
 
-#include <sys/hyperv_illumos.h> /* for __packed */
+#include <sys/ccompile.h>
 
 /*
  * Some Hyper-V status codes.

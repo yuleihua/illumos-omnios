@@ -22,9 +22,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
- *
  */
 
 /*
@@ -42,8 +39,8 @@
  * Copyright (c) 2017 by Delphix. All rights reserved.
  */
 
-#ifndef	_SYS_BUF_RING_H_
-#define	_SYS_BUF_RING_H_
+#ifndef	_SYS_BUF_RING_H
+#define	_SYS_BUF_RING_H
 
 #include <sys/hyperv_illumos.h>
 #include <sys/errno.h>
@@ -100,4 +97,4 @@ void *buf_ring_dequeue_mc(struct buf_ring *br);
 void *buf_ring_dequeue_sc(struct buf_ring *br);
 
 
-#endif /* _SYS_BUF_RING_H_ */
+#endif /* _SYS_BUF_RING_H */

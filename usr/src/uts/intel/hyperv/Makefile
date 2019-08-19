@@ -17,28 +17,19 @@ UTSBASE=	../..
 
 MODULE=		hyperv
 OBJECTS=	$(HV_HYPERV_OBJS:%=$(OBJS_DIR)/%)
-LINTS=		$(HV_HYPERV_OBJS:%.o=$(LINTS_DIR)/%.ln)
 ROOTMODULE=	$(ROOT_MISC_DIR)/$(MODULE)
 
 include		$(UTSBASE)/intel/Makefile.intel
 
 ALL_TARGET=	$(BINARY)
-LINT_TARGET=	$(MODULE).lint
 INSTALL_TARGET=	$(BINARY) $(ROOTMODULE)
 
 INC_PATH +=	-I$(UTSBASE)/intel/io/hyperv
 LDFLAGS	+=	-dy
 
-LINTTAGS +=	-erroff=E_BAD_PTR_CAST_ALIGN
-LINTTAGS +=	-erroff=E_CONSTANT_CONDITION
-LINTTAGS +=	-erroff=E_STATIC_UNUSED
-LINTTAGS +=	-erroff=E_FUNC_SET_NOT_USED
-
 .KEEP_STATE:
 
 all:		$(ALL_DEPS)
-
-clean.lint:	$(CLEAN_LINT_DEPS)
 
 clean:		$(CLEAN_DEPS)
 
@@ -47,9 +38,5 @@ clobber:	$(CLOBBER_DEPS)
 def:		$(DEF_DEPS)
 
 install:	$(INSTALL_DEPS)
-
-lint:		$(LINT_DEPS)
-
-modlintlib:	$(MODLINTLIB_DEPS)
 
 include		$(UTSBASE)/intel/Makefile.targ

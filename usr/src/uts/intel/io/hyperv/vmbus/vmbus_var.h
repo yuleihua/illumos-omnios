@@ -22,8 +22,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 /*
@@ -53,19 +51,13 @@
 #include <sys/hyperv_illumos.h>
 
 /*
- * NOTE: DO NOT CHANGE THIS.
+ * Specify the SINTs (synthetic interrupt sources) to use for vmbus messages
+ * and the vmbus event timer. These should be non-zero and different to each
+ * other. The values below are taken from the FreeBSD driver.
  */
 #define	VMBUS_SINT_MESSAGE	2
-/*
- * NOTE:
- * - DO NOT set it to the same value as VMBUS_SINT_MESSAGE.
- * - DO NOT set it to 0.
- */
 #define	VMBUS_SINT_TIMER	4
 
-/*
- * NOTE: DO NOT CHANGE THESE
- */
 #define	VMBUS_CONNID_MESSAGE		1
 #define	VMBUS_CONNID_EVENT		2
 

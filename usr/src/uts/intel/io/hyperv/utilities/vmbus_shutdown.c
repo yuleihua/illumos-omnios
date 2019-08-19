@@ -157,20 +157,20 @@ vmbus_shutdown_cb(struct vmbus_channel *chan, void *xsc)
 		 * simply halt.
 		 */
 		mutex_enter(&pidlock);
-		initpp = prfind(P_INITPID);
+		initpp = prfind_zone(P_INITPID, ALL_ZONES);
+		if (initpp != NULL) {
+			/* Graceful shutdown */
+			psignal(initpp, SIGPWR);
+		}
 		mutex_exit(&pidlock);
+
 		if (initpp == NULL) {
 			extern void halt(char *);
 			halt("Power off the System");
+		} else {
+			(void) timeout(vmbus_poweroff, NULL,
+			    SHUTDOWN_TIMEOUT_SECS * drv_usectohz(MICROSEC));
 		}
-
-		/*
-		 * Graceful shutdown with inittab and all getting involved
-		 */
-		psignal(initpp, SIGPWR);
-
-		(void) timeout(vmbus_poweroff, NULL,
-		    SHUTDOWN_TIMEOUT_SECS * drv_usectohz(MICROSEC));
 	}
 }
 

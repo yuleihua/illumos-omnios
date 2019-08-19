@@ -12,6 +12,7 @@
 
 #
 # Copyright (c) 2017 by Delphix. All rights reserved.
+# Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
 #
 
 #
@@ -24,7 +25,6 @@ UTSBASE		= ../..
 #
 MODULE		= hv_shutdown
 OBJECTS		= $(HV_SHUTDOWN_OBJS:%=$(OBJS_DIR)/%)
-LINTS		= $(HV_SHUTDOWN_OBJS:%.o=$(LINTS_DIR)/%.ln)
 ROOTMODULE	= $(ROOT_DRV_DIR)/$(MODULE)
 
 #
@@ -36,7 +36,6 @@ include $(UTSBASE)/intel/Makefile.intel
 #	Define targets
 #
 ALL_TARGET	= $(BINARY)
-LINT_TARGET	= $(MODULE).lint
 INSTALL_TARGET	= $(BINARY) $(ROOTMODULE)
 
 #
@@ -46,11 +45,6 @@ INSTALL_TARGET	= $(BINARY) $(ROOTMODULE)
 INC_PATH += -I$(UTSBASE)/intel/io/hyperv
 LDFLAGS += -dy -N misc/hyperv -N drv/hv_vmbus
 
-LINTTAGS += -erroff=E_STATIC_UNUSED
-
-#
-# lint pass one enforcement
-#
 CFLAGS += $(CCVERBOSE)
 
 #
@@ -65,12 +59,6 @@ all:		$(ALL_DEPS)
 clean:		$(CLEAN_DEPS)
 
 clobber:	$(CLOBBER_DEPS)
-
-lint:		$(LINT_DEPS)
-
-modlintlib:	$(MODLINTLIB_DEPS)
-
-clean.lint:	$(CLEAN_LINT_DEPS)
 
 install:	$(INSTALL_DEPS)
 

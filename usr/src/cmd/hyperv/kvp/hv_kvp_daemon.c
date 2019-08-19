@@ -138,14 +138,12 @@ int is_debugging = 0;
 			syslog(priority, fmt);		\
 		else					\
 			(void) printf(fmt);		\
-	_NOTE(CONSTCOND)				\
 	} else if (priority < LOG_DEBUG) {		\
 		if (is_daemon == 1)			\
 			syslog(priority, fmt);		\
 		else					\
 			(void) printf(fmt);		\
 	}						\
-	_NOTE(CONSTCOND)				\
 } while (0)
 
 /*

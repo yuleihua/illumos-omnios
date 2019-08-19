@@ -201,19 +201,17 @@ hyperv_guid2str(const struct hyperv_guid *guid, char *buf, size_t sz)
 }
 
 void
-do_cpuid(uint32_t eax, uint32_t *regs)
+do_cpuid(uint32_t eax, struct cpuid_regs *cp)
 {
-	struct cpuid_regs cp;
-	cp.cp_eax = eax;
-	(void) __cpuid_insn(&cp);
-	regs[0] = cp.cp_eax;
-	regs[1] = cp.cp_ebx;
-	regs[2] = cp.cp_ecx;
-	regs[3] = cp.cp_edx;
+	bzero(cp, sizeof (struct cpuid_regs));
+	cp->cp_eax = eax;
+
+	(void) __cpuid_insn(cp);
+
 	cmn_err(CE_CONT,
 	    "?do_cpuid: cpuid leaf=0x%08x, eax=0x%08x, ebx=0x%08x, "
-	    "ecx=0x%08x, edx=0x%08x\n", eax, regs[0], regs[1],
-	    regs[2], regs[3]);
+	    "ecx=0x%08x, edx=0x%08x\n", eax,
+	    cp->cp_eax, cp->cp_ebx, cp->cp_ecx, cp->cp_edx);
 }
 
 /*
@@ -223,7 +221,7 @@ do_cpuid(uint32_t eax, uint32_t *regs)
 static boolean_t
 hyperv_identify(void)
 {
-	uint32_t regs[4];
+	struct cpuid_regs regs;
 	unsigned int maxleaf;
 
 	if ((get_hwenv() & HW_MICROSOFT) == 0) {
@@ -234,8 +232,9 @@ hyperv_identify(void)
 	}
 
 	cmn_err(CE_CONT, "?hyperv_identify: Checking Hyper-V features...\n");
-	do_cpuid(CPUID_LEAF_HV_MAXLEAF, regs);
-	maxleaf = regs[0];
+
+	do_cpuid(CPUID_LEAF_HV_MAXLEAF, &regs);
+	maxleaf = regs.cp_eax;
 	if (maxleaf < CPUID_LEAF_HV_LIMITS) {
 		cmn_err(CE_WARN,
 		    "hyperv_identify: max leaves mismatch, maxleaf=0x%08x",
@@ -243,16 +242,16 @@ hyperv_identify(void)
 		return (B_FALSE);
 	}
 
-	do_cpuid(CPUID_LEAF_HV_INTERFACE, regs);
-	if (regs[0] != CPUID_HV_IFACE_HYPERV) {
+	do_cpuid(CPUID_LEAF_HV_INTERFACE, &regs);
+	if (regs.cp_eax != CPUID_HV_IFACE_HYPERV) {
 		cmn_err(CE_WARN,
 		    "hyperv_identify: Hyper-V signature mismatch=0x%08x",
-		    regs[0]);
+		    regs.cp_eax);
 		return (B_FALSE);
 	}
 
-	do_cpuid(CPUID_LEAF_HV_FEATURES, regs);
-	if ((regs[0] & CPUID_HV_MSR_HYPERCALL) == 0) {
+	do_cpuid(CPUID_LEAF_HV_FEATURES, &regs);
+	if ((regs.cp_eax & CPUID_HV_MSR_HYPERCALL) == 0) {
 		/*
 		 * Hyper-V w/o Hypercall is impossible; someone
 		 * is faking Hyper-V.
@@ -263,22 +262,25 @@ hyperv_identify(void)
 		return (B_FALSE);
 	}
 
-	hyperv_features = regs[0]; /* EAX */
-	hyperv_features1 = regs[1]; /* EBX */
-	hyperv_pm_features = regs[2]; /* ECX */
-	hyperv_features3 = regs[3]; /* EDX */
+	hyperv_features = regs.cp_eax;
+	hyperv_features1 = regs.cp_ebx;
+	hyperv_pm_features = regs.cp_ecx;
+	hyperv_features3 = regs.cp_edx;
 
-	do_cpuid(CPUID_LEAF_HV_IDENTITY, regs);
+	do_cpuid(CPUID_LEAF_HV_IDENTITY, &regs);
 
 	cmn_err(CE_CONT, "?Hyper-V Version: %d.%d.%d [SP%d]\n",
-	    regs[1] >> 16, regs[1] & 0xffff, regs[0], regs[2]);
+	    regs.cp_ebx >> 16, regs.cp_ebx & 0xffff,
+	    regs.cp_eax, regs.cp_ecx);
+
 	/*
 	 * Hyper-V version numbering is based on Linux source code, in
 	 * function ms_hyperv_init_platform().
 	 */
 	cmn_err(CE_CONT, "?Hyper-V Host Build: %d-%d.%d-%d-%d.%d\n",
-	    regs[0], regs[1] >> 16, regs[1] & 0xffff, regs[2],
-	    regs[3] >> 24, regs[3] & 0xffffff);
+	    regs.cp_eax, regs.cp_ebx >> 16,
+	    regs.cp_ebx & 0xffff, regs.cp_ecx,
+	    regs.cp_edx >> 24, regs.cp_edx & 0xffffff);
 
 	if (boothowto & RB_VERBOSE) {
 		printf("  Features=0x%b\n", hyperv_features,
@@ -340,21 +342,20 @@ hyperv_identify(void)
 		cmn_err(CE_CONT, "?Features3=0x%x", hyperv_features3);
 	}
 
-	do_cpuid(CPUID_LEAF_HV_RECOMMENDS, regs);
-	hyperv_recommends = regs[0];
-	cmn_err(CE_CONT,
-	    "?hyperv_identify:  Recommends: %08x %08x\n", regs[0], regs[1]);
+	do_cpuid(CPUID_LEAF_HV_RECOMMENDS, &regs);
+	hyperv_recommends = regs.cp_eax;
+	cmn_err(CE_CONT, "?hyperv_identify:  Recommends: %08x %08x\n",
+	    regs.cp_eax, regs.cp_ebx);
 
-	do_cpuid(CPUID_LEAF_HV_LIMITS, regs);
-	cmn_err(CE_CONT,
-	    "?hyperv_identify:  Limits: Vcpu:%d Lcpu:%d Int:%d\n",
-	    regs[0], regs[1], regs[2]);
+	do_cpuid(CPUID_LEAF_HV_LIMITS, &regs);
+	cmn_err(CE_CONT, "?hyperv_identify:  Limits: Vcpu:%d Lcpu:%d Int:%d\n",
+	    regs.cp_eax, regs.cp_ebx, regs.cp_ecx);
 
 	if (maxleaf >= CPUID_LEAF_HV_HWFEATURES) {
-		do_cpuid(CPUID_LEAF_HV_HWFEATURES, regs);
+		do_cpuid(CPUID_LEAF_HV_HWFEATURES, &regs);
 		cmn_err(CE_CONT,
 		    "?hyperv_identify:  HW Features: %08x, AMD: %08x\n",
-		    regs[0], regs[3]);
+		    regs.cp_eax, regs.cp_edx);
 	}
 
 	return (B_TRUE);

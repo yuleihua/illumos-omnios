@@ -3516,7 +3516,7 @@ static void
 ata_init_pm(dev_info_t *dip)
 {
 	int		instance;
-	ata_ctl_t 	*ata_ctlp;
+	ata_ctl_t	*ata_ctlp;
 #ifdef	ATA_USE_AUTOPM
 	char		pmc_name[16];
 	char		*pmc[] = {
@@ -3606,7 +3606,7 @@ static int
 ata_resume(dev_info_t *dip)
 {
 	int		instance;
-	ata_ctl_t 	*ata_ctlp;
+	ata_ctl_t	*ata_ctlp;
 	ddi_acc_handle_t io_hdl2;
 	caddr_t		ioaddr2;
 
@@ -3640,7 +3640,7 @@ static int
 ata_suspend(dev_info_t *dip)
 {
 	int		instance;
-	ata_ctl_t 	*ata_ctlp;
+	ata_ctl_t	*ata_ctlp;
 	ddi_acc_handle_t io_hdl2;
 
 	instance = ddi_get_instance(dip);
@@ -3670,7 +3670,7 @@ static int
 ata_power(dev_info_t *dip, int component, int level)
 {
 	int		instance;
-	ata_ctl_t 	*ata_ctlp;
+	ata_ctl_t	*ata_ctlp;
 	uint8_t		cmd;
 
 	ADBG_TRACE(("ata_power entered, component = %d, level = %d\n",

@@ -22,8 +22,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 /*
@@ -191,7 +189,6 @@ struct vmbus_chanpkt_prplist {
 	struct vmbus_chanpkt_hdr cp_hdr;
 	uint32_t	cp_rsvd;
 	uint32_t	cp_range_cnt;
-	/* LINTED E_ARY_DERIVED_FROM_FLEX_MBR */
 	struct vmbus_gpa_range cp_range[];
 } __packed;
 
@@ -277,7 +274,6 @@ struct vmbus_chanmsg_gpadl_conn {
 	uint32_t	chm_gpadl;
 	uint16_t	chm_range_len;
 	uint16_t	chm_range_cnt;
-	/* LINTED E_STRUCT_DERIVED_FROM_FLEX_MBR */
 	struct vmbus_gpa_range chm_range;
 } __packed;
 

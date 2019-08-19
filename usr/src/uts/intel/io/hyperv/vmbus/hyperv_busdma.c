@@ -66,7 +66,7 @@ static ddi_dma_attr_t hc_default_dma_attr = {
 	.dma_attr_seg = 0xFFFFFFFFULL,
 	.dma_attr_sgllen = 1,
 	.dma_attr_granular = 0x00000001,
-	.dma_attr_flags = DDI_DMA_FLAGERR,
+	.dma_attr_flags = 0,
 };
 
 
@@ -80,10 +80,10 @@ hyperv_dmamem_alloc(dev_info_t *dip, uint64_t alignment,
 	ddi_dma_attr_t hc_dma_attr;
 	uint_t ccnt = 0; /* cookie count */
 	static ddi_device_acc_attr_t hc_acc_attr = {
-		DDI_DEVICE_ATTR_V0,
-		DDI_STRUCTURE_LE_ACC,
-		DDI_STRICTORDER_ACC,
-		DDI_DEFAULT_ACC,
+		.devacc_attr_version =		DDI_DEVICE_ATTR_V1,
+		.devacc_attr_endian_flags =	DDI_STRUCTURE_LE_ACC,
+		.devacc_attr_dataorder =	DDI_STRICTORDER_ACC,
+		.devacc_attr_access =		DDI_DEFAULT_ACC
 	};
 
 	ASSERT(dip);
@@ -118,15 +118,9 @@ hyperv_dmamem_alloc(dev_info_t *dip, uint64_t alignment,
 		goto fail;
 	}
 
-	if (size != real_size) {
-		dev_err(dip, CE_WARN,
-		    "requested size: %lu != real size: %lu", size, real_size);
-	}
-
 	/* dma_flags => DDI_DMA_WRITE/READ etc */
 	error = ddi_dma_addr_bind_handle(dma->hv_dmah, NULL, dma->hv_vaddr,
-	    real_size, dma_flags, DDI_DMA_SLEEP,
-	    NULL, &dma->hv_dmac, &ccnt);
+	    real_size, dma_flags, DDI_DMA_SLEEP, NULL, &dma->hv_dmac, &ccnt);
 	if (error != DDI_SUCCESS) {
 		dev_err(dip, CE_WARN,
 		    "failed to bind DMA memory, err: 0x%x", error);

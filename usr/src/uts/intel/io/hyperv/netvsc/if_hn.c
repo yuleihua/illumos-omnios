@@ -132,7 +132,7 @@ static uchar_t hn_broadcast[ETHERADDRL] = {
 #define	HN_PKTBUF_LEN_DEF		(16 * 1024)
 
 struct hn_txdesc {
-	mblk_t			*m;
+	mblk_t			*txd_m;
 	struct hn_tx_ring	*txr;
 	uint32_t		flags;		/* HN_TXD_FLAG_ */
 	struct hn_nvs_sendctx	send_ctx;
@@ -215,9 +215,7 @@ static void			hn_chan_drain(struct hn_softc *,
 				    struct vmbus_channel *);
 
 static void			hn_update_link_status(struct hn_softc *);
-static void			hn_change_network(struct hn_softc *);
 static void			hn_link_taskfunc(void *);
-static void			hn_netchg_taskfunc(void *);
 static void			hn_link_status(struct hn_softc *);
 
 static int			hn_create_rx_data(struct hn_softc *, int);
@@ -234,10 +232,6 @@ static int			hn_create_tx_data(struct hn_softc *, int);
 static void			hn_fixup_tx_data(struct hn_softc *);
 static void			hn_destroy_tx_data(struct hn_softc *);
 static void			hn_txdesc_dmamap_destroy(struct hn_txdesc *);
-#ifdef txagg
-static void			hn_txdesc_gc(struct hn_tx_ring *,
-				    struct hn_txdesc *);
-#endif
 static int			hn_encap(struct hn_tx_ring *,
 				    struct hn_txdesc *, mblk_t *);
 static int			hn_txpkt(struct hn_tx_ring *,
@@ -724,6 +718,10 @@ hn_attach(dev_info_t *dip, ddi_attach_cmd_t cmd)
 
 	/*
 	 * Set the leader CPU for channels.
+	 * The intention of this is to use a distribute the ring channels
+	 * across the per-CPU event task queues. In the FreeBSD driver these
+	 * queues are bound to specific CPUs but in the illumos driver they
+	 * are not.
 	 */
 	sc->hn_cpu = (atomic_add_32_nv(&hn_cpu_index, sc->hn_rx_ring_cnt) -
 	    sc->hn_rx_ring_cnt) % ncpus;
@@ -882,15 +880,19 @@ hn_link_status(struct hn_softc *sc)
 
 	error = hn_rndis_get_linkstatus(sc, &link_status);
 	if (error) {
-		/* XXX what to do? */
 		HN_WARN(sc, "Failed to get link status, %d", error);
 		return;
 	}
 
-	if (link_status == NDIS_MEDIA_STATE_CONNECTED)
+	if (link_status == NDIS_MEDIA_STATE_CONNECTED) {
+		if ((sc->hn_link_flags & HN_LINK_FLAG_LINKUP))
+			return;
 		sc->hn_link_flags |= HN_LINK_FLAG_LINKUP;
-	else
+	} else {
+		if (!(sc->hn_link_flags & HN_LINK_FLAG_LINKUP))
+			return;
 		sc->hn_link_flags &= ~HN_LINK_FLAG_LINKUP;
+	}
 
 	mac_link_update(sc->hn_mac_hdl,
 	    (sc->hn_link_flags & HN_LINK_FLAG_LINKUP) ?
@@ -902,36 +904,6 @@ hn_link_taskfunc(void *xsc)
 {
 	struct hn_softc *sc = xsc;
 
-	if (sc->hn_link_flags & HN_LINK_FLAG_NETCHG)
-		return;
-	hn_link_status(sc);
-}
-
-/*
- * TODO: test this function.
- */
-static void
-hn_netchg_taskfunc(void *xsc)
-{
-	struct hn_softc *sc = xsc;
-
-	/* Prevent any link status checks from running. */
-	sc->hn_link_flags |= HN_LINK_FLAG_NETCHG;
-
-	/*
-	 * FreeBSD comment:
-	 * Fake up a [link down --> link up] state change; 5 seconds
-	 * delay is used, which closely simulates miibus reaction
-	 * upon link down event.
-	 */
-
-	sc->hn_link_flags &= ~HN_LINK_FLAG_LINKUP;
-	mac_link_update(sc->hn_mac_hdl, LINK_STATE_DOWN);
-
-	delay(SEC_TO_TICK(5));
-
-	/* Re-allow link status checks. */
-	sc->hn_link_flags &= ~HN_LINK_FLAG_NETCHG;
 	hn_link_status(sc);
 }
 
@@ -941,17 +913,6 @@ hn_update_link_status(struct hn_softc *sc)
 	mutex_enter(&sc->hn_mgmt_lock);
 	if (sc->hn_mgmt_taskq != NULL) {
 		(void) ddi_taskq_dispatch(sc->hn_mgmt_taskq, hn_link_taskfunc,
-		    sc, TQ_SLEEP);
-	}
-	mutex_exit(&sc->hn_mgmt_lock);
-}
-
-static void
-hn_change_network(struct hn_softc *sc)
-{
-	mutex_enter(&sc->hn_mgmt_lock);
-	if (sc->hn_mgmt_taskq != NULL) {
-		(void) ddi_taskq_dispatch(sc->hn_mgmt_taskq, hn_netchg_taskfunc,
 		    sc, TQ_SLEEP);
 	}
 	mutex_exit(&sc->hn_mgmt_lock);
@@ -1010,7 +971,7 @@ hn_txdesc_dmamap_load(struct hn_tx_ring *txr, struct hn_txdesc *txd,
 	}
 	txr->hn_gpa_cnt = nsegs;
 
-	DTRACE_PROBE2(segs, int, nsegs, int, txr->hn_pkt_length);
+	DTRACE_PROBE2(segs, int, nsegs, uint32_t, txr->hn_pkt_length);
 
 	txd->flags |= HN_TXD_FLAG_DMAMAP;
 
@@ -1030,9 +991,9 @@ hn_txdesc_put(struct hn_tx_ring *txr, struct hn_txdesc *txd)
 		txd->flags &= ~HN_TXD_FLAG_DMAMAP;
 	}
 
-	if (txd->m != NULL) {
-		freemsg(txd->m);
-		txd->m = NULL;
+	if (txd->txd_m != NULL) {
+		freemsg(txd->txd_m);
+		txd->txd_m = NULL;
 	}
 
 	txd->flags |= HN_TXD_FLAG_ONLIST;
@@ -1053,7 +1014,7 @@ hn_txdesc_get(struct hn_tx_ring *txr)
 #ifdef DEBUG
 		atomic_dec_32((uint32_t *)&txr->hn_txdesc_avail);
 #endif
-		ASSERT3P(txd->m, ==, NULL);
+		ASSERT3P(txd->txd_m, ==, NULL);
 		ASSERT3U(txd->chim_index, ==, HN_NVS_CHIM_IDX_INVALID);
 		ASSERT(txd->flags & HN_TXD_FLAG_ONLIST);
 		ASSERT0(txd->flags & HN_TXD_FLAG_DMAMAP);
@@ -1328,7 +1289,7 @@ hn_encap(struct hn_tx_ring *txr, struct hn_txdesc *txd, mblk_t *mp)
 
 	ASSERT3P(mp->b_next, ==, NULL);
 
-	int dlen = 0;
+	uint32_t dlen = 0;
 	for (mblk_t *m = mp; m != NULL; m = m->b_cont) {
 		dlen += MBLKL(m);
 	}
@@ -1369,7 +1330,7 @@ hn_encap(struct hn_tx_ring *txr, struct hn_txdesc *txd, mblk_t *mp)
 
 			/* Copy message into chimney (mblk is freed) */
 			mcopymsg(mp, chim + pktlen);
-			txd->m = NULL;
+			txd->txd_m = NULL;
 
 			txd->chim_size = pkt->rm_len;
 			txr->hn_gpa_cnt = 0;
@@ -1402,7 +1363,7 @@ hn_encap(struct hn_tx_ring *txr, struct hn_txdesc *txd, mblk_t *mp)
 		return (error);
 	}
 
-	txd->m = mp;
+	txd->txd_m = mp;
 	txd->chim_index = HN_NVS_CHIM_IDX_INVALID;
 	txd->chim_size = 0;
 	txr->hn_sendpkt = hn_txpkt_sglist;
@@ -1448,6 +1409,8 @@ hn_txpkt(struct hn_tx_ring *txr, struct hn_txdesc *txd)
 	return (error);
 }
 
+#define	IP_ALIGNMENT_BYTES 2
+
 int
 hn_rxpkt(struct hn_rx_ring *rxr, const void *data, int dlen,
     const struct hn_rxinfo *info)
@@ -1468,12 +1431,13 @@ hn_rxpkt(struct hn_rx_ring *rxr, const void *data, int dlen,
 		return (0);
 	}
 
-	mblk_t *mp = allocb(dlen, 0);
+	mblk_t *mp = allocb(dlen + IP_ALIGNMENT_BYTES, 0);
 	if (mp == NULL) {
 		stats->norxbufs++;
 		stats->ierrors++;
 		return (0);
 	}
+	mp->b_rptr += IP_ALIGNMENT_BYTES;
 	/*
 	 * We cannot bind the buffer provided by vsc, so we must always
 	 * copy it.
@@ -1594,7 +1558,7 @@ static uint32_t
 hn_get_implied_hcksum(struct hn_rx_ring *rxr, const mblk_t *mp)
 {
 	unsigned char *ptr = mp->b_rptr;
-	int dlen = MBLKL(mp);
+	uint32_t dlen = MBLKL(mp);
 	uint32_t sap;
 
 	ASSERT3P(mp->b_cont, ==, NULL);
@@ -1645,9 +1609,6 @@ hn_get_implied_hcksum(struct hn_rx_ring *rxr, const mblk_t *mp)
 
 	switch (ipha->ipha_protocol) {
 	case IPPROTO_TCP:
-		/*
-		 * TODO: not sure if we need those checks in Illumos
-		 */
 		if (iplen < iphlen + sizeof (tcph_t))
 			return (0);
 		int tcphlen = TCP_HDR_LENGTH(ptr);
@@ -1660,9 +1621,6 @@ hn_get_implied_hcksum(struct hn_rx_ring *rxr, const mblk_t *mp)
 		}
 		break;
 	case IPPROTO_UDP:
-		/*
-		 * TODO: not sure if we need this check in Illumos
-		 */
 		if (iplen < iphlen + sizeof (struct udphdr))
 			return (0);
 
@@ -1816,10 +1774,10 @@ static ddi_dma_attr_t hn_tx_dma_attr = {
 };
 
 static ddi_device_acc_attr_t hn_dev_acc_attr = {
-	DDI_DEVICE_ATTR_V0,
-	DDI_STRUCTURE_LE_ACC,
-	DDI_STRICTORDER_ACC,
-	DDI_DEFAULT_ACC,
+	.devacc_attr_version =		DDI_DEVICE_ATTR_V1,
+	.devacc_attr_endian_flags =	DDI_STRUCTURE_LE_ACC,
+	.devacc_attr_dataorder =	DDI_STRICTORDER_ACC,
+	.devacc_attr_access =		DDI_DEFAULT_ACC
 };
 
 static int
@@ -1919,30 +1877,13 @@ hn_tx_ring_create(struct hn_softc *sc, int id)
 static void
 hn_txdesc_dmamap_destroy(struct hn_txdesc *txd)
 {
-	ASSERT3P(txd->m, ==, NULL);
+	ASSERT3P(txd->txd_m, ==, NULL);
 	ASSERT0(txd->flags & HN_TXD_FLAG_DMAMAP);
 
 	(void) ddi_dma_unbind_handle(txd->rndis_pkt_dmah);
 	ddi_dma_mem_free(&txd->rndis_pkt_datah);
 	ddi_dma_free_handle(&txd->rndis_pkt_dmah);
 }
-
-#ifdef txagg
-static void
-hn_txdesc_gc(struct hn_tx_ring *txr, struct hn_txdesc *txd)
-{
-	KASSERT(txd->refs == 0 || txd->refs == 1,
-	    ("invalid txd refs %d", txd->refs));
-
-	/* Aggregated txds will be freed by their aggregating txd. */
-	if (txd->refs > 0 && (txd->flags & HN_TXD_FLAG_ONAGG) == 0) {
-		int freed;
-
-		freed = hn_txdesc_put(txr, txd);
-		KASSERT(freed, ("can't free txdesc"));
-	}
-}
-#endif
 
 static void
 hn_tx_ring_destroy(struct hn_tx_ring *txr)
@@ -1956,22 +1897,6 @@ hn_tx_ring_destroy(struct hn_tx_ring *txr)
 	if (txr->hn_data_dmah != NULL)
 		ddi_dma_free_handle(&txr->hn_data_dmah);
 
-#ifdef txagg
-	/*
-	 * NOTE:
-	 * Because the freeing of aggregated txds will be deferred
-	 * to the aggregating txd, two passes are used here:
-	 * - The first pass GCes any pending txds.  This GC is necessary,
-	 *   since if the channels are revoked, hypervisor will not
-	 *   deliver send-done for all pending txds.
-	 * - The second pass frees the busdma stuffs, i.e. after all txds
-	 *   were freed.
-	 */
-	for (int i = 0; i < txr->hn_txdesc_cnt; ++i)
-		hn_txdesc_gc(txr, &txr->hn_txdesc[i]);
-	for (int i = 0; i < txr->hn_txdesc_cnt; ++i)
-		hn_txdesc_dmamap_destroy(&txr->hn_txdesc[i]);
-#else
 	mutex_enter(&txr->hn_tx_lock);
 	if (i_ddi_devi_attached(sc->hn_dev) && hn_tx_ring_pending(txr)) {
 		HN_WARN(sc, "leaking %d descriptors from tx ring %d",
@@ -1980,7 +1905,6 @@ hn_tx_ring_destroy(struct hn_tx_ring *txr)
 	while ((txd = buf_ring_dequeue_sc(txr->hn_txdesc_br)) != NULL)
 		hn_txdesc_dmamap_destroy(txd);
 	mutex_exit(&txr->hn_tx_lock);
-#endif
 
 	kmem_free(txr->hn_txdesc, sizeof (struct hn_txdesc) *
 	    txr->hn_txdesc_cnt);
@@ -2215,7 +2139,7 @@ hn_chan_detach(struct hn_softc *sc, struct vmbus_channel *chan)
 	idx = vmbus_chan_subidx(chan);
 
 	/*
-	 * Link this channel to RX/TX ring.
+	 * Unlink this channel from RX/TX ring.
 	 */
 	ASSERT3S(idx, >=, 0);
 	ASSERT3S(idx, <, sc->hn_rx_ring_inuse);
@@ -2598,11 +2522,20 @@ hn_chan_drain(struct hn_softc *sc, struct vmbus_channel *chan)
 	 * The TX bufring will not be drained by the hypervisor,
 	 * if the primary channel is revoked.
 	 */
+#define	WAIT_COUNT	200	/* 200ms */
+
+	int i = 0;
+
 	while (!vmbus_chan_rx_empty(chan) ||
 	    (!vmbus_chan_is_revoked(sc->hn_prichan) &&
-	    !vmbus_chan_tx_empty(chan)))
-		delay(1);
+	    !vmbus_chan_tx_empty(chan))) {
+		delay(drv_usectohz(1));
+		if (++i >= WAIT_COUNT)
+			break;
+	}
 	vmbus_chan_intr_drain(chan);
+
+#undef WAIT_COUNT
 }
 
 static void
@@ -2632,15 +2565,22 @@ hn_suspend_data(struct hn_softc *sc)
 		 * We will _not_ receive all pending send-done, if the
 		 * primary channel is revoked.
 		 */
+#define	WAIT_COUNT	200	/* 200ms */
+
+		int j = 0;
+
 		while (hn_tx_ring_pending(txr) &&
-		    !vmbus_chan_is_revoked(sc->hn_prichan))
-			delay(1); /* 1 tick */
-		/* TODO: timeout ? */
+		    !vmbus_chan_is_revoked(sc->hn_prichan)) {
+			delay(drv_usectohz(1));
+			if (++j >= WAIT_COUNT)
+				break;
+		}
 		if (hn_tx_ring_pending(txr)) {
 			HN_WARN(sc, "tx ring %d suspended while %d "
 			    "descriptors are still inflight", i,
 			    buf_ring_count(txr->hn_txdesc_br));
 		}
+#undef WAIT_COUNT
 	}
 
 	/*
@@ -2741,16 +2681,7 @@ hn_resume_mgmt(struct hn_softc *sc)
 	sc->hn_mgmt_taskq = sc->hn_mgmt_taskq0;
 	mutex_exit(&sc->hn_mgmt_lock);
 
-	/*
-	 * Kick off network change detection, if it was pending.
-	 * If no network change was pending, start link status
-	 * checks, which is more lightweight than network change
-	 * detection.
-	 */
-	if (sc->hn_link_flags & HN_LINK_FLAG_NETCHG)
-		hn_change_network(sc);
-	else
-		hn_update_link_status(sc);
+	hn_update_link_status(sc);
 }
 
 static void
@@ -2796,7 +2727,7 @@ hn_rndis_rx_status(struct hn_softc *sc, const void *data, int dlen)
 			    sizeof (change));
 			HN_WARN(sc, "network changed, change %u", change);
 		}
-		hn_change_network(sc);
+		hn_update_link_status(sc);
 		break;
 
 	default:
@@ -2935,7 +2866,6 @@ hn_rndis_rx_data(struct hn_rx_ring *rxr, const void *data, int dlen)
 	((ofs) < RNDIS_PACKET_MSG_OFFSET_MIN ||	\
 	((ofs) & RNDIS_PACKET_MSG_OFFSET_ALIGNMASK))
 
-	/* XXX Hyper-V does not meet data offset alignment requirement */
 	if (__predict_false(pkt->rm_dataoffset < RNDIS_PACKET_MSG_OFFSET_MIN)) {
 		HN_WARN(sc, "invalid RNDIS packet msg, data offset %u",
 		    pkt->rm_dataoffset);
