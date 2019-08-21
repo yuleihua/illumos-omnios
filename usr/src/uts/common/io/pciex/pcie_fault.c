@@ -20,6 +20,7 @@
  */
 /*
  * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Joyent, Inc.
  */
 
 #include <sys/sysmacros.h>
@@ -941,12 +942,12 @@ pf_default_hdl(dev_info_t *dip, pf_impl_t *impl)
 		    DDI_NOSLEEP, FM_VERSION, DATA_TYPE_UINT8, 0, NULL);
 
 		/*
-		 * For IOV/Hotplug purposes skip gathering info fo this device,
+		 * For IOV/Hotplug purposes skip gathering info for this device,
 		 * but populate affected info and severity.  Clear out any data
 		 * that maybe been saved in the last fabric scan.
 		 */
 		pf_reset_pfd(pfd_p);
-		pfd_p->pe_severity_flags = PF_ERR_PANIC_BAD_RESPONSE;
+		pfd_p->pe_severity_flags = PF_ERR_BAD_RESPONSE;
 		PFD_AFFECTED_DEV(pfd_p)->pe_affected_flags = PF_AFFECTED_SELF;
 
 		/* Add the snapshot to the error q */
@@ -1404,7 +1405,7 @@ pf_analyse_error(ddi_fm_error_t *derr, pf_impl_t *impl)
 		sts_flags = 0;
 
 		/* skip analysing error when no error info is gathered */
-		if (pfd_p->pe_severity_flags == PF_ERR_PANIC_BAD_RESPONSE)
+		if (pfd_p->pe_severity_flags == PF_ERR_BAD_RESPONSE)
 			goto done;
 
 		switch (PCIE_PFD2BUS(pfd_p)->bus_dev_type) {
