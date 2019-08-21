@@ -31,6 +31,11 @@ are included in the footer.
    Packages:
        system/kernel
 
+## 11556 ip_attr.c functions need to not dereference conn_ixa directly
+
+  Packages:
+       system/kernel
+
 =======================================================================
 
 =============================
