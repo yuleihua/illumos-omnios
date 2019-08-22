@@ -45,6 +45,7 @@ extern "C" {
 #include <sys/processor.h>
 #include <sys/pset.h>
 #include <sys/avl.h>
+#include <sys/ccompile.h>
 
 /* No CPU present at this CPU position */
 #define	ID_NO_CPU -1
@@ -228,7 +229,7 @@ struct snapshot {
 };
 
 /* print a message and exit with failure */
-void fail(int do_perror, char *message, ...);
+void fail(int do_perror, char *message, ...) __NORETURN;
 
 /* strdup str, or exit with failure */
 char *safe_strdup(char *str);
