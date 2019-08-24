@@ -444,6 +444,7 @@ usr/src/cmd/cmd-inet/usr.sbin/traceroute/traceroute
 usr/src/cmd/cmd-inet/usr.sbin/wificonfig/wificonfig
 usr/src/cmd/col/col
 usr/src/cmd/compress/compress
+usr/src/cmd/connstat/connstat
 usr/src/cmd/consadm/i386/consadm
 usr/src/cmd/coreadm/coreadm
 usr/src/cmd/cpc/cpustat/cpustat
@@ -1432,6 +1433,7 @@ usr/src/cmd/passwd/passwd
 usr/src/cmd/pathchk/pathchk
 usr/src/cmd/pbind/amd64/pbind
 usr/src/cmd/pcidr/pcidr
+usr/src/cmd/pcieb/pcieb
 usr/src/cmd/pcitool/i386/pcitool
 usr/src/cmd/perl/contrib/Sun/Solaris/Intrs/amd64/
 usr/src/cmd/perl/contrib/Sun/Solaris/Intrs/i386/
@@ -2005,6 +2007,7 @@ usr/src/cmd/shcomp/shcomp
 usr/src/cmd/smbios/smbios
 usr/src/cmd/smbsrv/bind-helper/bind-helper
 usr/src/cmd/smbsrv/fksmbd/fksmbd
+usr/src/cmd/smbsrv/nvlprint/nvlprint
 usr/src/cmd/smbsrv/smbadm/smbadm
 usr/src/cmd/smbsrv/smbd/smbd
 usr/src/cmd/smbsrv/smbstat/smbstat
