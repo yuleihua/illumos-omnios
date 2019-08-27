@@ -23,8 +23,8 @@
  * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2014 Nexenta Systems, Inc.  All rights reserved.
  * Copyright 2014 Gary Mills
- * Copyright 2016, Joyent Inc.
  * Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+ * Copyright 2019 Joyent, Inc.
  */
 
 /*
