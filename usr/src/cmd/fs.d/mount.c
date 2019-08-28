@@ -19,18 +19,15 @@
  * CDDL HEADER END
  */
 
-/*
- * Copyright 2015 Nexenta Systems, Inc.  All rights reserved.
- * Copyright 2016 Joyent, Inc.
- */
-
 /*	Copyright (c) 1984, 1986, 1987, 1988, 1989 AT&T	*/
 /*	  All Rights Reserved	*/
-
 
 /*
  * Copyright 2010 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
+ *
+ * Copyright 2016 Joyent, Inc.
+ * Copyright 2019 Nexenta by DDN, Inc. All rights reserved.
  */
 
 #include	<stdio.h>
@@ -57,6 +54,7 @@
 #include	<sys/conf.h>
 #include	<locale.h>
 #include	<zone.h>
+#include	<priv.h>
 #include	"fslib.h"
 
 #define	VFS_PATH	"/usr/lib/fs"
@@ -823,6 +821,17 @@ doexec(char *fstype, char *newargv[])
 		printf("\n");
 		fflush(stdout);
 		exit(0);
+	}
+
+	/*
+	 * Some file system types need pfexec.
+	 */
+	if (strcmp(fstype, "smbfs") == 0 &&
+	    setpflags(PRIV_PFEXEC, 1) != 0) {
+		(void) fprintf(stderr,
+		    gettext("mount: unable to set PFEXEC flag: %s\n"),
+		    strerror(errno));
+		exit(1);
 	}
 
 	/*
