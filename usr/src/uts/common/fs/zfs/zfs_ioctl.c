@@ -25,7 +25,7 @@
  * Portions Copyright 2011 Martin Matuska
  * Copyright 2015, OmniTI Computer Consulting, Inc. All rights reserved.
  * Copyright 2016 Nexenta Systems, Inc.  All rights reserved.
- * Copyright (c) 2014, 2016 Joyent, Inc. All rights reserved.
+ * Copyright 2019 Joyent, Inc.
  * Copyright (c) 2011, 2017 by Delphix. All rights reserved.
  * Copyright (c) 2013 by Saso Kiselkov. All rights reserved.
  * Copyright (c) 2013 Steven Hartland. All rights reserved.
