@@ -1274,7 +1274,8 @@ vmbus_xcall(vmbus_xcall_func_t func, void *arg)
 	cpuset_t set;
 	CPUSET_ALL(set);
 	uint32_t spl = ddi_enter_critical();
-	xc_sync((xc_arg_t)arg, NULL, NULL, CPUSET2BV(set), (xc_func_t)func);
+	xc_sync((xc_arg_t)arg, (uintptr_t)NULL, (uintptr_t)NULL,
+	    CPUSET2BV(set), (xc_func_t)func);
 	ddi_exit_critical(spl);
 }
 
