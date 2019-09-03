@@ -95,7 +95,8 @@ qlc_fm_ereport_t qlc_fm_ereport_tbl[] = {
 
 	/* Reporting Standard I/O controller Errors */
 
-	NULL,	/* End of table */
+	/* End of table */
+	{0, NULL, NULL, NULL, 0},
 };
 
 

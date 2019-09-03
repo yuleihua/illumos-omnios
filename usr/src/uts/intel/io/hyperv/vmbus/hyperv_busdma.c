@@ -98,7 +98,7 @@ hyperv_dmamem_alloc(dev_info_t *dip, uint64_t alignment,
 
 	dma->hv_dmah = NULL;
 	dma->hv_vaddr = NULL;
-	dma->hv_paddr = NULL;
+	dma->hv_paddr = 0;
 	dma->hv_acch = NULL;
 
 	if ((error = ddi_dma_alloc_handle(dip, &hc_dma_attr, DDI_DMA_SLEEP,

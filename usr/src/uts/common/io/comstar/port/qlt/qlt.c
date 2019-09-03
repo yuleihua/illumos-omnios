@@ -1641,11 +1641,11 @@ qlt_vpd_lookup(qlt_state_t *qlt, uint8_t *opcode, uint8_t *bp,
 		}
 		/* copy the data back */
 		(void) strncpy((int8_t *)bp, (int8_t *)(vpd+3), (int64_t)len);
-		bp[len] = NULL;
+		bp[len] = '\0';
 	} else {
 		/* error -- couldn't find tag */
-		bp[0] = NULL;
-		if (opcode[1] != NULL) {
+		bp[0] = '\0';
+		if (opcode[1] != '\0') {
 			EL(qlt, "unable to find tag '%s'\n", opcode);
 		} else {
 			EL(qlt, "unable to find tag '%xh'\n", opcode[0]);

@@ -9875,7 +9875,7 @@ ql_dump_cmd(ql_adapter_state_t *ha, EXT_IOCTL *cmd, int mode)
 
 	if (ha->ql_dump_state & QL_DUMP_VALID &&
 	    !(ha->ql_dump_state & QL_DUMP_UPLOADED) &&
-	    ha->ql_dump_state != NULL) {
+	    ha->ql_dump_state != 0) {
 		sdm_valid_dump = 1;
 	} else {
 		EL(ha, "dump does not exist for instance %d (%x, %p)\n",
