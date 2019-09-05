@@ -47,6 +47,12 @@ are included in the footer.
 	system/data/hardware-registry
 	system/data/zoneinfo
 
+#  OS-7980 lx getsockopt should return EOPNOTSUPP when TCP options are used
+#  with AF_UNIX
+
+  Packages:
+	system/zones/brand/lx
+
 =======================================================================
 
 =============================
