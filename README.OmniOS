@@ -41,6 +41,12 @@ are included in the footer.
   Packages:
 	system/kernel/platform
 
+## Update timezone and hardware data
+
+  Packages:
+	system/data/hardware-registry
+	system/data/zoneinfo
+
 =======================================================================
 
 =============================
