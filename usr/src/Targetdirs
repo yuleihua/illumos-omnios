@@ -187,6 +187,7 @@ DIRS= \
 	/etc/tm  \
 	/etc/usb   \
 	/etc/user_attr.d \
+	/etc/versions \
 	/etc/zfs  \
 	/etc/zones  \
 	/export  \
