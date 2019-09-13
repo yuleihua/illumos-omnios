@@ -78,6 +78,8 @@
 #define	F_KILL		0x0040	/* Pkill semantics active (vs pgrep) */
 #define	F_LONG_OUT	0x0080	/* Long output format (pgrep -l) */
 #define	F_OLDEST	0x0100	/* Match only oldest pid */
+#define	F_LONGLONG_FMT	0x0200	/* Match against the complete command line */
+				/* from /proc/nnnn/cmdline */
 
 static int opt_euid(char, char *);
 static int opt_uid(char, char *);
@@ -102,7 +104,7 @@ static optdesc_t g_optdtab[] = {
 	{ 0, 0, 0, 0 },					/* 'C' */
 	{ OPT_STR, 0, 0, &g_procdir },			/* -D procfsdir */
 	{ 0, 0, 0, 0 },					/* 'E' */
-	{ 0, 0, 0, 0 },					/* 'F' */
+	{ OPT_SETB, F_LONGLONG_FMT, 0, &g_flags },	/* -F */
 	{ OPT_FUNC | OPT_CRIT, 0, opt_gid, 0 },		/* -G gid */
 	{ 0, 0, 0, 0 },					/* 'H' */
 	{ 0, 0, 0, 0 },					/* 'I' */
@@ -158,17 +160,17 @@ static optdesc_t g_optdtab[] = {
 };
 
 static const char PGREP_USAGE[] = "\
-Usage: %s [-flnovx] [-d delim] [-P ppidlist] [-g pgrplist] [-s sidlist]\n\
+Usage: %s [-fFlnovx] [-d delim] [-P ppidlist] [-g pgrplist] [-s sidlist]\n\
 	[-u euidlist] [-U uidlist] [-G gidlist] [-J projidlist]\n\
 	[-T taskidlist] [-t termlist] [-z zonelist] [-c ctidlist] [pattern]\n";
 
 static const char PKILL_USAGE[] = "\
-Usage: %s [-signal] [-fnovx] [-P ppidlist] [-g pgrplist] [-s sidlist]\n\
+Usage: %s [-signal] [-fFnovx] [-P ppidlist] [-g pgrplist] [-s sidlist]\n\
 	[-u euidlist] [-U uidlist] [-G gidlist] [-J projidlist]\n\
 	[-T taskidlist] [-t termlist] [-z zonelist] [-c ctidlist] [pattern]\n";
 
-static const char PGREP_OPTS[] = ":flnovxc:d:D:u:U:G:P:g:s:t:z:J:T:";
-static const char PKILL_OPTS[] = ":fnovxc:D:u:U:G:P:g:s:t:z:J:T:";
+static const char PGREP_OPTS[] = ":fFlnovxc:d:D:u:U:G:P:g:s:t:z:J:T:";
+static const char PKILL_OPTS[] = ":fFnovxc:D:u:U:G:P:g:s:t:z:J:T:";
 
 static const char LSEP[] = ",\t ";	/* Argument list delimiter chars */
 
@@ -278,7 +280,7 @@ get_argv(int flags, psinfo_t *ps, char *buf, size_t bufsize)
 		return;
 	}
 
-	if (getenv("SHORT_PSARGS") != NULL) {
+	if (!(flags & F_LONGLONG_FMT)) {
 		(void) strlcpy(buf, ps->pr_psargs, bufsize);
 		return;
 	}
@@ -733,6 +735,15 @@ main(int argc, char *argv[])
 		print_usage(stderr);
 		return (E_USAGE);
 	}
+
+	if ((g_flags & F_LONG_FMT) && (g_flags & F_LONGLONG_FMT)) {
+		uu_warn(gettext("-f and -F are mutually exclusive\n"));
+		print_usage(stderr);
+		return (E_USAGE);
+	}
+
+	if ((g_flags & F_LONGLONG_FMT) != 0)
+		g_flags |= F_LONG_FMT;
 
 	if ((g_flags & F_HAVE_CRIT) == 0) {
 		uu_warn(gettext("No matching criteria specified\n"));

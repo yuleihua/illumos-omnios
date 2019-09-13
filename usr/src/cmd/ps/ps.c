@@ -235,6 +235,7 @@ static	int	Wflg;
 static	int	yflg;
 static	int	pflg;
 static	int	fflg;
+static	int	Fflg;
 static	int	cflg;
 static	int	jflg;
 static	int	gflg;
@@ -444,7 +445,7 @@ stdmain(int argc, char **argv)
 
 	fname[F_STIME].width = fname[F_STIME].minwidth = len;
 
-	while ((c = getopt(argc, argv, "jlfceAadLPWyZHh:t:p:g:u:U:G:n:s:o:z:"))
+	while ((c = getopt(argc, argv, "jlfFceAadLPWyZHh:t:p:g:u:U:G:n:s:o:z:"))
 	    != EOF)
 		switch (c) {
 		case 'H':		/* Show home lgroups */
@@ -501,6 +502,9 @@ stdmain(int argc, char **argv)
 		case 'l':		/* long listing */
 			lflg++;
 			break;
+		case 'F':		/* full process arguments */
+			Fflg++;
+			/* FALLTHROUGH */
 		case 'f':		/* full listing */
 			fflg++;
 			break;
@@ -1583,7 +1587,7 @@ prcom(psinfo_t *psinfo, char *ttyp)
 		return;
 	}
 
-	get_psargs(false, fflg, psinfo, psargs, sizeof (psargs));
+	get_psargs(false, Fflg, psinfo, psargs, sizeof (psargs));
 	print_psargs(psargs, 0);
 	printf("\n");
 }
@@ -1650,8 +1654,7 @@ get_psargs(bool comm, bool full, psinfo_t *psinfo, char *buf, size_t bufsize)
 
 	assert(psinfo->pr_psargs[PRARGSZ - 1] == '\0');
 
-	if (full && getenv("SHORT_PSARGS") == NULL &&
-	    asprintf(&path, "%s/%d/cmdline", procdir,
+	if (full && asprintf(&path, "%s/%d/cmdline", procdir,
 	    (int)psinfo->pr_pid) != -1 && (fd = open(path, O_RDONLY)) != -1) {
 		size = read(fd, buf, bufsize);
 		(void) close(fd);
@@ -1998,7 +2001,7 @@ print_field(psinfo_t *psinfo, struct field *f, const char *ttyp)
 			break;
 		}
 
-		get_psargs(false, fflg, psinfo, psargs, sizeof (psargs));
+		get_psargs(false, Fflg, psinfo, psargs, sizeof (psargs));
 		print_psargs(psargs, f->next != NULL ? width : 0);
 		break;
 

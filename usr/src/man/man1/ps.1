@@ -45,13 +45,14 @@
 .\" Copyright (c) 2009, Sun Microsystems, Inc. All Rights Reserved
 .\" Copyright (c) 2013 Gary Mills
 .\" Copyright 2019 Joyent, Inc.
+.\" Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
 .\"
 .TH PS 1 "August 28, 2019"
 .SH NAME
 ps \- report process status
 .SH SYNOPSIS
 .nf
-\fBps\fR [\fB-aAcdefjHlLPWyZ\fR] [\fB-g\fR \fIgrplist\fR] [\fB-h\fR \fIlgrplist\fR]
+\fBps\fR [\fB-aAcdefFjHlLPWyZ\fR] [\fB-g\fR \fIgrplist\fR] [\fB-h\fR \fIlgrplist\fR]
      [\fB-n\fR \fInamelist\fR] [\fB-o\fR \fIformat\fR]... [\fB-p\fR \fIproclist\fR]
      [\fB-s\fR \fIsidlist\fR] [\fB-t\fR \fIterm\fR] [\fB-u\fR \fIuidlist\fR] [\fB-U\fR \fIuidlist\fR]
      [\fB-G\fR \fIgidlist\fR] [\fB-z\fR \fIzonelist\fR]
@@ -133,6 +134,17 @@ have no effect.
 .RS 15n
 Generates a \fBf\fRull listing. (See below for significance of columns in a
 full listing.)
+.RE
+
+.sp
+.ne 2
+.na
+\fB-F\fR
+.ad
+.RS 15n
+Generates a \fBf\fRull listing but shows the complete current command
+arguments for a process (which may have been changed since the process was
+launched).
 .RE
 
 .sp
@@ -369,11 +381,13 @@ Many of the options shown are used to select processes to list. If any are
 specified, the default list is ignored and \fBps\fR selects the processes
 represented by the inclusive OR of all the selection-criteria options.
 .SH DISPLAY FORMATS
-Under the \fB-f\fR option, \fBps\fR uses the \fB\fB/proc/\fInnnnn\fR\fB/cmdline\fR\fR
-file to read the full process arguments. The process may have changed these
-since it was started.
+Under the \fB-f\fR and \fB-F\fR options, \fBps\fR tries to determine the
+command name and arguments for the process. For \fB-f\fR these are the
+arguments given when the process was created and they are truncated.
+For \fB-F\fR the arguments are read from the fB/proc/\fInnnnn\fR\fB/cmdline\fR
+file. The process may have changed these since it was started.
 Failing this, the command name is printed, as it would have appeared without
-the \fB-f\fR option, in square brackets.
+the \fB-f\fR or \fB-F\fR options, in square brackets.
 .sp
 .LP
 The column headings and the meaning of the columns in a \fBps\fR listing are
@@ -602,8 +616,9 @@ The execution time for the lwp being reported.
 \fB\fBCMD\fR(all)\fR
 .ad
 .RS 14n
-The command name (or, with the \fB-f\fR option, the full current process
-arguments).
+The command name (or, with the \fB-f\fR option, the full command name and its
+arguments up to a limited of 80 characters or, with the \fB-F\fR option, the
+full current process arguments).
 .RE
 
 .sp
@@ -879,7 +894,7 @@ started, or is a version of the arguments as they might have been modified by
 the application. Applications cannot depend on being able to modify their
 argument list and having that modification be reflected in the output of
 \fBps\fR. However, the current implementation will display the full modified
-process arguments when given the \fB-f\fR argument; otherwise this is the
+process arguments when given the \fB-F\fR argument; otherwise this is the
 initial process arguments, but limited to 80 bytes.
 .RE
 
