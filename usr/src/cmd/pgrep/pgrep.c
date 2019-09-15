@@ -24,6 +24,10 @@
  */
 /* Copyright (c) 2012 by Delphix. All rights reserved */
 
+/*
+ * Copyright 2019 Joyent, Inc.
+ */
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/param.h>
@@ -59,11 +63,11 @@
 #define	TEXT_DOMAIN	"SYS_TEST"
 #endif
 
-#define	OPT_SETB 	0x0001	/* Set the bits specified by o_bits */
-#define	OPT_CLRB 	0x0002	/* Clear the bits specified by o_bits */
-#define	OPT_FUNC 	0x0004	/* Call the function specified by o_func */
-#define	OPT_STR  	0x0008	/* Set the string specified by o_ptr */
-#define	OPT_CRIT 	0x0010	/* Option is part of selection criteria */
+#define	OPT_SETB	0x0001	/* Set the bits specified by o_bits */
+#define	OPT_CLRB	0x0002	/* Clear the bits specified by o_bits */
+#define	OPT_FUNC	0x0004	/* Call the function specified by o_func */
+#define	OPT_STR		0x0008	/* Set the string specified by o_ptr */
+#define	OPT_CRIT	0x0010	/* Option is part of selection criteria */
 
 #define	F_LONG_FMT	0x0001	/* Match against long format cmd */
 #define	F_NEWEST	0x0002	/* Match only newest pid */
@@ -74,6 +78,8 @@
 #define	F_KILL		0x0040	/* Pkill semantics active (vs pgrep) */
 #define	F_LONG_OUT	0x0080	/* Long output format (pgrep -l) */
 #define	F_OLDEST	0x0100	/* Match only oldest pid */
+#define	F_LONGLONG_FMT	0x0200	/* Match against the complete command line */
+				/* from /proc/nnnn/cmdline */
 
 static int opt_euid(char, char *);
 static int opt_uid(char, char *);
@@ -98,7 +104,7 @@ static optdesc_t g_optdtab[] = {
 	{ 0, 0, 0, 0 },					/* 'C' */
 	{ OPT_STR, 0, 0, &g_procdir },			/* -D procfsdir */
 	{ 0, 0, 0, 0 },					/* 'E' */
-	{ 0, 0, 0, 0 },					/* 'F' */
+	{ OPT_SETB, F_LONGLONG_FMT, 0, &g_flags },	/* -F */
 	{ OPT_FUNC | OPT_CRIT, 0, opt_gid, 0 },		/* -G gid */
 	{ 0, 0, 0, 0 },					/* 'H' */
 	{ 0, 0, 0, 0 },					/* 'I' */
@@ -138,7 +144,7 @@ static optdesc_t g_optdtab[] = {
 	{ 0, 0, 0, 0 },					/* 'k' */
 	{ OPT_SETB, F_LONG_OUT, 0, &g_flags },		/* 'l' */
 	{ 0, 0, 0, 0 },					/* 'm' */
-	{ OPT_SETB, F_NEWEST, 0, &g_flags },    	/* -n */
+	{ OPT_SETB, F_NEWEST, 0, &g_flags },		/* -n */
 	{ OPT_SETB, F_OLDEST, 0, &g_flags },		/* -o */
 	{ 0, 0, 0, 0 },					/* 'p' */
 	{ 0, 0, 0, 0 },					/* 'q' */
@@ -154,17 +160,17 @@ static optdesc_t g_optdtab[] = {
 };
 
 static const char PGREP_USAGE[] = "\
-Usage: %s [-flnovx] [-d delim] [-P ppidlist] [-g pgrplist] [-s sidlist]\n\
+Usage: %s [-fFlnovx] [-d delim] [-P ppidlist] [-g pgrplist] [-s sidlist]\n\
 	[-u euidlist] [-U uidlist] [-G gidlist] [-J projidlist]\n\
 	[-T taskidlist] [-t termlist] [-z zonelist] [-c ctidlist] [pattern]\n";
 
 static const char PKILL_USAGE[] = "\
-Usage: %s [-signal] [-fnovx] [-P ppidlist] [-g pgrplist] [-s sidlist]\n\
+Usage: %s [-signal] [-fFnovx] [-P ppidlist] [-g pgrplist] [-s sidlist]\n\
 	[-u euidlist] [-U uidlist] [-G gidlist] [-J projidlist]\n\
 	[-T taskidlist] [-t termlist] [-z zonelist] [-c ctidlist] [pattern]\n";
 
-static const char PGREP_OPTS[] = ":flnovxc:d:D:u:U:G:P:g:s:t:z:J:T:";
-static const char PKILL_OPTS[] = ":fnovxc:D:u:U:G:P:g:s:t:z:J:T:";
+static const char PGREP_OPTS[] = ":fFlnovxc:d:D:u:U:G:P:g:s:t:z:J:T:";
+static const char PKILL_OPTS[] = ":fFnovxc:D:u:U:G:P:g:s:t:z:J:T:";
 
 static const char LSEP[] = ",\t ";	/* Argument list delimiter chars */
 
@@ -173,7 +179,7 @@ static pid_t g_pid;			/* Current pid */
 static int g_signal = SIGTERM;		/* Signal to send */
 
 static void
-print_proc(psinfo_t *psinfo)
+print_proc(psinfo_t *psinfo, char *argv __unused, size_t len __unused)
 {
 	if (g_flags & F_OUTPUT)
 		(void) printf("%s%d", g_delim, (int)psinfo->pr_pid);
@@ -183,7 +189,7 @@ print_proc(psinfo_t *psinfo)
 	}
 }
 
-static char *
+static void
 mbstrip(char *buf, size_t nbytes)
 {
 	wchar_t wc;
@@ -191,6 +197,7 @@ mbstrip(char *buf, size_t nbytes)
 	int n;
 
 	buf[nbytes - 1] = '\0';
+
 	p = buf;
 
 	while (*p != '\0') {
@@ -212,30 +219,23 @@ mbstrip(char *buf, size_t nbytes)
 			p += n;
 		}
 	}
-
-	return (buf);
 }
 
 static void
-print_proc_long(psinfo_t *psinfo)
+print_proc_long(psinfo_t *psinfo, char *argv, size_t len)
 {
-	char *name;
-
-	if (g_flags & F_LONG_FMT)
-		name = mbstrip(psinfo->pr_psargs, PRARGSZ);
-	else
-		name = psinfo->pr_fname;
+	mbstrip(argv, len);
 
 	if (g_flags & F_OUTPUT)
-		(void) printf("%s%5d %s", g_delim, (int)psinfo->pr_pid, name);
+		(void) printf("%s%5d %s", g_delim, (int)psinfo->pr_pid, argv);
 	else {
-		(void) printf("%5d %s", (int)psinfo->pr_pid, name);
+		(void) printf("%5d %s", (int)psinfo->pr_pid, argv);
 		g_flags |= F_OUTPUT;
 	}
 }
 
 static void
-kill_proc(psinfo_t *psinfo)
+kill_proc(psinfo_t *psinfo, char *argv __unused, size_t len __unused)
 {
 	if (psinfo->pr_pid > 0 && kill(psinfo->pr_pid, g_signal) == -1)
 		uu_warn(gettext("Failed to signal pid %d"),
@@ -268,6 +268,46 @@ open_proc_dir(const char *dirpath)
 	return (dirp);
 }
 
+static void
+get_argv(int flags, psinfo_t *ps, char *buf, size_t bufsize)
+{
+	char *path = NULL;
+	ssize_t size = 0;
+	int fd;
+
+	if (!(flags & F_LONG_FMT)) {
+		(void) strlcpy(buf, ps->pr_fname, bufsize);
+		return;
+	}
+
+	if (!(flags & F_LONGLONG_FMT)) {
+		(void) strlcpy(buf, ps->pr_psargs, bufsize);
+		return;
+	}
+
+	if (asprintf(&path, "%s/%d/cmdline", g_procdir,
+	    (int)ps->pr_pid) != -1 && (fd = open(path, O_RDONLY)) != -1) {
+		size = read(fd, buf, bufsize);
+		(void) close(fd);
+	}
+
+	free(path);
+
+	if (size <= 0) {
+		(void) strlcpy(buf, ps->pr_psargs, bufsize);
+	} else {
+		buf[bufsize - 1] = '\0';
+		for (char *cp = buf; cp - buf < size; cp++) {
+			if (*cp == '\0' && (cp - buf) + 1 < size)
+				*cp = ' ';
+		}
+	}
+
+	for (ssize_t i = strlen(buf) - 1; i >= 0 && isspace(buf[i]); i--) {
+		buf[i] = '\0';
+	}
+}
+
 #define	NEWER(ps1, ps2) \
 	((ps1.pr_start.tv_sec > ps2.pr_start.tv_sec) || \
 	    (ps1.pr_start.tv_sec == ps2.pr_start.tv_sec && \
@@ -275,18 +315,16 @@ open_proc_dir(const char *dirpath)
 
 static int
 scan_proc_dir(const char *dirpath, DIR *dirp, psexp_t *psexp,
-	void (*funcp)(psinfo_t *))
+    void (*funcp)(psinfo_t *, char *, size_t))
 {
 	char procpath[MAXPATHLEN];
+	char argv[PRMAXARGVLEN] = "";
 	psinfo_t ps, ops;
 	dirent_t *dent;
 	int procfd;
 
 	int reverse = (g_flags & F_REVERSE) ? 1 : 0;
 	int ovalid = 0, nmatches = 0, flags = 0;
-
-	if (g_flags & F_LONG_FMT)
-		flags |= PSEXP_PSARGS;
 
 	if (g_flags & F_EXACT_MATCH)
 		flags |= PSEXP_EXACT;
@@ -302,12 +340,17 @@ scan_proc_dir(const char *dirpath, DIR *dirp, psexp_t *psexp,
 		if ((procfd = open(procpath, O_RDONLY)) == -1)
 			continue;
 
-		if ((read(procfd, &ps, sizeof (ps)) == sizeof (psinfo_t)) &&
-		    (ps.pr_nlwp != 0) && (ps.pr_pid != g_pid) &&
-		    (psexp_match(psexp, &ps, flags) ^ reverse)) {
+		if (read(procfd, &ps, sizeof (ps)) != sizeof (psinfo_t)) {
+			(void) close(procfd);
+			continue;
+		}
+
+		get_argv(g_flags, &ps, argv, sizeof (argv));
+
+		if ((ps.pr_nlwp != 0) && (ps.pr_pid != g_pid) &&
+		    (psexp_match(psexp, &ps, argv, flags) ^ reverse)) {
 
 			if (g_flags & F_NEWEST) {
-				/* LINTED - opsinfo use ok */
 				if (!ovalid || NEWER(ps, ops)) {
 					(void) memcpy(&ops, &ps,
 					    sizeof (psinfo_t));
@@ -320,7 +363,7 @@ scan_proc_dir(const char *dirpath, DIR *dirp, psexp_t *psexp,
 					ovalid = 1;
 				}
 			} else {
-				(*funcp)(&ps);
+				(*funcp)(&ps, argv, sizeof (argv));
 				nmatches++;
 			}
 		}
@@ -329,7 +372,8 @@ scan_proc_dir(const char *dirpath, DIR *dirp, psexp_t *psexp,
 	}
 
 	if ((g_flags & (F_NEWEST | F_OLDEST)) && ovalid) {
-		(*funcp)(&ops);
+		(*funcp)(&ops, argv, sizeof (argv));
+
 		nmatches++;
 	}
 
@@ -592,7 +636,7 @@ print_usage(FILE *stream)
 int
 main(int argc, char *argv[])
 {
-	void (*funcp)(psinfo_t *);
+	void (*funcp)(psinfo_t *, char *, size_t);
 
 	const char *optstr;
 	optdesc_t *optd;
@@ -691,6 +735,15 @@ main(int argc, char *argv[])
 		print_usage(stderr);
 		return (E_USAGE);
 	}
+
+	if ((g_flags & F_LONG_FMT) && (g_flags & F_LONGLONG_FMT)) {
+		uu_warn(gettext("-f and -F are mutually exclusive\n"));
+		print_usage(stderr);
+		return (E_USAGE);
+	}
+
+	if ((g_flags & F_LONGLONG_FMT) != 0)
+		g_flags |= F_LONG_FMT;
 
 	if ((g_flags & F_HAVE_CRIT) == 0) {
 		uu_warn(gettext("No matching criteria specified\n"));
