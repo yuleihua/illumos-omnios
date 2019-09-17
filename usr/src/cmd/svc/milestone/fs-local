@@ -21,6 +21,7 @@
 #
 #
 # Copyright (c) 1988, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
 #
 
 . /lib/svc/share/smf_include.sh
@@ -99,6 +100,36 @@ if [ -x /usr/sbin/zfs ]; then
 		echo $msg
 		echo "$SMF_FMRI:" $msg >/dev/msglog
 		result=$SMF_EXIT_ERR_FATAL
+	else
+		# Mount all encrypted datasets for which the key is available
+		numenc=0
+		failed=
+		echo 'Loading encryption keys: \c'
+		/usr/sbin/zfs list -Ho name,encryption,keylocation | \
+		    while read name enc loc; do
+			[ "$enc" = off ] && continue
+			[[ "$loc" = file:///* ]] || continue
+			[ -f "${loc#file://}" ] || continue
+			/usr/sbin/zfs load-key "$name" </dev/null >/dev/msglog
+			if [ $? -eq 0 ]; then
+				echo "$name \\c"
+				((numenc++))
+			else
+				failed+="$name "
+			fi
+		done
+		echo
+		if [ -n "$failed" ]; then
+			msg="WARNING: Failed to load keys for $failed"
+			echo $msg
+			echo "$SMF_FMRI:" $msg >/dev/msglog
+		fi
+		if [ $numenc -gt 0 ]; then
+			msg="Mounting encrypted filesystems"
+			echo $msg
+			echo "$SMF_FMRI:" $msg >/dev/msglog
+			/usr/sbin/zfs mount -va >/dev/msglog 2>&1
+		fi
 	fi
 fi
 
