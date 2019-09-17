@@ -29,6 +29,7 @@
 # Copyright 2019 Peter Tribble.
 # Copyright 2019 Joyent, Inc.
 # Copyright (c) 2011, 2015 by Delphix. All rights reserved.
+# Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
 #
 
 <include SUNWcs.man1.inc>
@@ -473,7 +474,8 @@ file path=etc/ttydefs group=sys preserve=true
 file path=etc/ttysrch group=sys preserve=true
 file path=etc/user_attr group=sys preserve=true timestamp=19700101T000000Z
 file path=etc/user_attr.d/SUNWcs group=sys
-file path=etc/versions/build group=sys
+file path=etc/versions/build group=sys preserve=true
+file path=etc/versions/build.$(PROJECT) group=sys
 file path=etc/vfstab group=sys preserve=true
 file path=lib/inet/in.mpathd mode=0555
 file path=lib/inet/ipmgmtd mode=0555

@@ -35,6 +35,9 @@
 #
 # Makefile.master, global definitions for system source
 #
+
+PROJECT=	illumos-omnios
+
 ROOT=		/proto
 
 #
