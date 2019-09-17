@@ -19,9 +19,8 @@ PROG=		man
 LINKS=		apropos whatis catman
 LIBLINKS =	makewhatis
 OBJS=		makewhatis.o man.o stringlist.o
-SRCS=		$(OBJS:%.o=%.c)
-MANIFEST=	rebuild-whatis.xml
-SVCMETHOD=	rebuild-whatis
+MANIFEST=	update-man-index.xml
+SVCMETHOD=	update-man-index
 
 include		$(SRC)/cmd/Makefile.cmd
 
