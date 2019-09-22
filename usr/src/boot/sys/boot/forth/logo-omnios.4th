@@ -77,20 +77,16 @@ variable PNGLogo
 
 : logo ( x y -- )
 	framebuffer? if
-		s" framebuffer set 800x600" evaluate
 		s" loadfont /boot/fonts/10x18.fnt" evaluate
-		\ Check that the screen height is now 600
-		s" screen-height" getenv s" 600" compare invert if
-			clear
-			at-bl
-			ooce if
-				dragon drop
-				illumos_png drop
-				1 PNGLogo !
-				13 menupos
-				2drop
-				exit
-			then
+		clear
+		at-bl
+		ooce if
+			dragon drop
+			illumos_png drop
+			1 PNGLogo !
+			13 menupos
+			2drop
+			exit
 		then
 	then
 
