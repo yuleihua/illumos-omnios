@@ -40,6 +40,7 @@ s" arch-i386" environment? [if] [if]
 [then] [then]
 
 include /boot/forth/support.4th
+include /boot/forth/screen.4th
 include /boot/forth/color.4th
 include /boot/forth/delay.4th
 include /boot/forth/check-password.4th
@@ -55,6 +56,7 @@ only forth definitions
   ." Booting..."
   if me then
   clear
+  s" boot_resolution" set_resolution
 ;
 
 : try-menu-unset

@@ -553,6 +553,7 @@ also menu-namespace also menu-command-helpers
 
 : be_draw_screen
 	clear		\ Clear the screen (in screen.4th)
+	s" loader_resolution" set_resolution
 	print_version	\ print version string (bottom-right; see version.4th)
 	draw-beastie	\ Draw FreeBSD logo at right (in beastie.4th)
 	draw-brand	\ Draw brand.4th logo at top (in brand.4th)
