@@ -1162,7 +1162,13 @@ $(i386_ONLY)file path=platform/i86pc/ucode/GenuineIntel/000406E3-40 group=sys \
     mode=0444 reboot-needed=true
 $(i386_ONLY)file path=platform/i86pc/ucode/GenuineIntel/000406F1-01 group=sys \
     mode=0444 reboot-needed=true
+$(i386_ONLY)file path=platform/i86pc/ucode/GenuineIntel/00050653-01 group=sys \
+    mode=0444 reboot-needed=true
 $(i386_ONLY)file path=platform/i86pc/ucode/GenuineIntel/00050654-01 group=sys \
+    mode=0444 reboot-needed=true
+$(i386_ONLY)file path=platform/i86pc/ucode/GenuineIntel/00050655-01 group=sys \
+    mode=0444 reboot-needed=true
+$(i386_ONLY)file path=platform/i86pc/ucode/GenuineIntel/00050656-01 group=sys \
     mode=0444 reboot-needed=true
 $(i386_ONLY)file path=platform/i86pc/ucode/GenuineIntel/00050657-01 group=sys \
     mode=0444 reboot-needed=true
@@ -1663,6 +1669,14 @@ $(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/000406F1-40 \
     target=000406F1-01
 $(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/000406F1-80 \
     target=000406F1-01
+$(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050653-02 \
+    target=00050653-01
+$(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050653-04 \
+    target=00050653-01
+$(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050653-10 \
+    target=00050653-01
+$(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050653-80 \
+    target=00050653-01
 $(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050654-02 \
     target=00050654-01
 $(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050654-04 \
@@ -1673,6 +1687,26 @@ $(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050654-20 \
     target=00050654-01
 $(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050654-80 \
     target=00050654-01
+$(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050655-02 \
+    target=00050655-01
+$(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050655-04 \
+    target=00050655-01
+$(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050655-10 \
+    target=00050655-01
+$(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050655-20 \
+    target=00050655-01
+$(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050655-80 \
+    target=00050655-01
+$(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050656-02 \
+    target=00050656-01
+$(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050656-04 \
+    target=00050656-01
+$(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050656-08 \
+    target=00050656-01
+$(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050656-10 \
+    target=00050656-01
+$(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050656-20 \
+    target=00050656-01
 $(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050657-02 \
     target=00050657-01
 $(i386_ONLY)hardlink path=platform/i86pc/ucode/GenuineIntel/00050657-04 \
