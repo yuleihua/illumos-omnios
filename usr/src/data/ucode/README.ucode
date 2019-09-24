@@ -30,7 +30,7 @@ the release that the microcode was obtained from here.
 AMD: Updated in March 2012 as part of illumos#2546. Exact revision
 unknown.
 
-Intel: Linux 20190514 release
+Intel: Linux 20190918 release
 
 Intel microcode updates can be found at:
   https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files/releases

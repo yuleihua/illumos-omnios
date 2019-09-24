@@ -36,7 +36,7 @@ are included in the footer.
   Packages:
        system/kernel
 
-## Update Intel Microcode to 20190618
+## Update Intel Microcode to 20190918
 
   Packages:
 	system/kernel/platform
