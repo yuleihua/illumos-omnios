@@ -3540,7 +3540,7 @@ metaslab_sync_done(metaslab_t *msp, uint64_t txg)
 		 * make sure that we wait for the load to complete so that we
 		 * have a consistent view at the in-core side of the metaslab.
 		 */
-		metaslab_load_wait(msp, txg);
+		metaslab_load_wait(msp);
 	} else {
 		ASSERT(spa_feature_is_active(spa, SPA_FEATURE_LOG_SPACEMAP));
 	}

@@ -1104,6 +1104,7 @@ static int
 spa_ld_log_sm_data(spa_t *spa)
 {
 	int error = 0;
+	uint64_t txg = spa_syncing_txg(spa);
 
 	/*
 	 * If we are not going to do any writes there is no need
@@ -1191,7 +1192,7 @@ out:
 		    metaslab_unflushed_changes_memused(m);
 
 		if (metaslab_debug_load && m->ms_sm != NULL) {
-			VERIFY0(metaslab_load(m), spa_syncing_txg(spa));
+			VERIFY0(metaslab_load(m, txg));
 		}
 		mutex_exit(&m->ms_lock);
 	}
