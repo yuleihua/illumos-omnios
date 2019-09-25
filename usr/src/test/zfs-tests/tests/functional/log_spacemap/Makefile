@@ -10,11 +10,12 @@
 #
 
 #
-# Copyright (c) 2012 by Delphix. All rights reserved.
-# Copyright 2015 Nexenta Systems, Inc.  All rights reserved.
+# Copyright 2019 Joyent, Inc.
 #
 
-BASEPROG = aes_gcm
+include $(SRC)/Makefile.master
 
-include $(SRC)/cmd/Makefile.cmd
-include ../Makefile.subdirs
+ROOTOPTPKG = $(ROOT)/opt/zfs-tests
+TARGETDIR = $(ROOTOPTPKG)/tests/functional/log_spacemap
+
+include $(SRC)/test/zfs-tests/Makefile.com
