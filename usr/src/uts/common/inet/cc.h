@@ -52,6 +52,8 @@
 #ifndef _NETINET_CC_H_
 #define	_NETINET_CC_H_
 
+#if (defined(_KERNEL) || defined(_KMEMUSER))
+
 #ifdef	__cplusplus
 extern "C" {
 #endif
@@ -210,5 +212,7 @@ extern int	cc_walk_algos(cc_walk_func_t *, void *);
 #ifdef	__cplusplus
 }
 #endif
+
+#endif	/* (defined(_KERNEL) || defined(_KMEMUSER)) */
 
 #endif /* _NETINET_CC_H_ */
