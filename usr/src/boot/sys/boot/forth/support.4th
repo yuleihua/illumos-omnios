@@ -234,16 +234,17 @@ create last_module_option sizeof module.next allot 0 last_module_option !
 
 \ Set the screen resolution based on an environment variable.
 \ If the framebuffer is not active or the variable is not set, do nothing
-: set_resolution ( varname -- )
+: set_resolution ( addr len -- )
 	framebuffer? if
 		getenv dup -1 = if
 			\ variable not set
 			drop
 		else
-			s" framebuffer set "
-			2swap strcat evaluate
+			s" set" 2 framebuffer
 		then
-	else drop then
+	else
+		2drop
+	then
 ;
 
 \ determine if a word appears in a string, case-insensitive
