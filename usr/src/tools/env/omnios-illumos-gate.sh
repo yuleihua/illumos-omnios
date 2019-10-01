@@ -241,8 +241,10 @@ ONLY_LINT_DEFS=-I${SPRO_ROOT}/sunstudio12.1/prod/include/lint; export ONLY_LINT_
 # Makefile.master contains your new defaults OR your .env file sets them.
 # Stock illumos-gate does not have these set already.
 export PERL_VERSION=5.28
-export PERL_ARCH=i86pc-solaris-thread-multi-64int
 export PERL_PKGVERS=
+export PERL_VARIANT=-thread-multi
+# This next line is needed to build a pre-7661 gate and does no harm post 7661
+export PERL_ARCH=i86pc-solaris-thread-multi-64int
 
 export ONNV_BUILDNUM=`grep '^VERSION=r' /etc/os-release | cut -c10-15`
 export PKGVERS_BRANCH=$ONNV_BUILDNUM.0
