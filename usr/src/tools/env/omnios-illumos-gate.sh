@@ -6,8 +6,10 @@
 NIGHTLY_OPTIONS=${NIGHTLY_OPTIONS/F/}
 
 export PERL_VERSION=5.28
-export PERL_ARCH=i86pc-solaris-thread-multi-64int
 export PERL_PKGVERS=
+export PERL_VARIANT=-thread-multi
+# This next line is needed to build a pre-7661 gate and does no harm post 7661
+export PERL_ARCH=i86pc-solaris-thread-multi-64int
 
 export JAVA_ROOT=/usr/jdk/openjdk1.8.0
 export JAVA_HOME=$JAVA_ROOT
