@@ -16,7 +16,7 @@
 include $(SRC)/lib/Makefile.lib
 
 # PERL_VERSION and PERL_ARCH used to be set here,
-# but as it is also needed in usr/src/pkg/Makefile, 
+# but as they were also needed in usr/src/pkg/Makefile,
 # the definition was moved to usr/src/Makefile.master
 
 PERLDIR = $(ADJUNCT_PROTO)/usr/perl5/$(PERL_VERSION)
