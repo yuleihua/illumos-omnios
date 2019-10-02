@@ -9,21 +9,26 @@
 # http://www.illumos.org/license/CDDL.
 #
 #
-# Copyright (c) 2014 Racktop Systems.
-# Copyright 2014, OmniTI Computer Consulting, Inc. All right reserved.
+# Copyright 2015, OmniTI Computer Consulting, Inc. All rights reserved.
+# Copyright 2016 RackTop Systems.
 #
 
 include $(SRC)/lib/Makefile.lib
 
 # PERL_VERSION and PERL_ARCH used to be set here,
-# but as it is also needed in usr/src/pkg/Makefile, 
+# but as they were also needed in usr/src/pkg/Makefile,
 # the definition was moved to usr/src/Makefile.master
 
 PERLDIR = $(ADJUNCT_PROTO)/usr/perl5/$(PERL_VERSION)
 PERLLIBDIR = $(PERLDIR)/lib/$(PERL_ARCH)
-PERLLIBDIR64 = $(PERLDIR)/lib/$(PERL_ARCH64)
 PERLINCDIR = $(PERLLIBDIR)/CORE
+PERLLIBDIR64 = $(PERLDIR)/lib/$(PERL_ARCH64)
 PERLINCDIR64 = $(PERLLIBDIR64)/CORE
+
+PERLBINDIR = $(PERLDIR)/bin
+PERLBINDIR64 = $(PERLDIR)/bin
+$(BUILDPERL64)PERLBINDIR = $(PERLDIR)/bin/$(MACH)
+$(BUILDPERL32)PERLBINDIR64 = $(PERLDIR)/bin/$(MACH64)
 
 PERLMOD = $(MODULE).pm
 PERLEXT = $(MACH)/$(MODULE).so
@@ -42,10 +47,9 @@ ROOTPERLEXT = $(ROOTPERLEXTDIR)/$(MODULE).so
 ROOTPERLMOD64 = $(ROOTPERLMODDIR64)/$(MODULE).pm
 ROOTPERLEXT64 = $(ROOTPERLEXTDIR64)/$(MODULE).so
 
-XSUBPP = $(PERLDIR)/bin/$(MACH)/perl $(PERLDIR)/lib/ExtUtils/xsubpp \
+XSUBPP = $(PERLBINDIR)/perl $(PERLDIR)/lib/ExtUtils/xsubpp \
 	-typemap $(PERLDIR)/lib/ExtUtils/typemap
-
-XSUBPP64 = $(PERLDIR)/bin/$(MACH64)/perl $(PERLDIR)/lib/ExtUtils/xsubpp \
+XSUBPP64 = $(PERLBINDIR64)/perl $(PERLDIR)/lib/ExtUtils/xsubpp \
 	-typemap $(PERLDIR)/lib/ExtUtils/typemap
 
 CSTD = $(CSTD_GNU99)

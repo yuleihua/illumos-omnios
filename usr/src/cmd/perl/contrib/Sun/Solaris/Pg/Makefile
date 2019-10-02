@@ -9,8 +9,8 @@
 # http://www.illumos.org/license/CDDL.
 #
 #
-# Copyright (c) 2014 Racktop Systems.
 # Copyright 2014, OmniTI Computer Consulting, Inc. All rights reserved.
+# Copyright 2016 RackTop Systems.
 #
 
 MODULE = Pg
@@ -29,4 +29,3 @@ all: $(PERLMOD)
 install: $(ROOTPERLMOD)
 
 clean clobber:
-	$(RM) -r $(MACH) $(MACH64)
