@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2007-2008
- * 	Swinburne University of Technology, Melbourne, Australia.
+ *	Swinburne University of Technology, Melbourne, Australia.
  * Copyright (c) 2009-2010 Lawrence Stewart <lstewart@freebsd.org>
  * Copyright (c) 2010 The FreeBSD Foundation
  * All rights reserved.

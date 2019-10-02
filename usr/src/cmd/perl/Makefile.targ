@@ -9,11 +9,11 @@
 # http://www.illumos.org/license/CDDL.
 #
 #
-# Copyright (c) 2014 Racktop Systems.
 # Copyright 2015, OmniTI Computer Consulting, Inc. All rights reserved.
+# Copyright (c) 2016 Racktop Systems.
 # Copyright (c) 2018, Joyent, Inc.
 
-# Link against libc as perl solaris specs
+# Link against libc as per solaris specs
 $(PERLEXT):= LDLIBS += -lc
 $(PERLEXT64):= LDLIBS += -lc
 
@@ -49,19 +49,17 @@ $(PERLEXT): $(MACH)/$(MODULE).o
 $(PERLEXT64): $(MACH64)/$(MODULE).o
 	$(BUILD64.SO) $(MACH64)/$(MODULE).o
 
-# NOTE: With later version of Perl, we need to define PERL_EUPXS_ALWAYS_EXPORT
-# which is a backward-compatibility definition for the assumes-5.10 stuff here.
 $(MACH)/$(MODULE).o: $(MACH)/$(MODULE).c
 	$(COMPILE.c) $(PCFLAGS) $(C_PICFLAGS) -I$(PERLINCDIR) $< -o $@
 
 $(MACH64)/$(MODULE).o: $(MACH64)/$(MODULE).c
 	$(COMPILE64.c) $(PCFLAGS64) $(C_PICFLAGS) -I$(PERLINCDIR64) $< -o $@
 
-$(MACH)/$(MODULE).c: $(MACH) $(MODULE).xs 
+$(MACH)/$(MODULE).c: $(MACH) $(MODULE).xs
 	$(XSUBPP) $(XSUBPPFLAGS) $(MODULE).xs >$@
 
-$(MACH64)/$(MODULE).c: $(MACH64) $(MODULE).xs 
-	$(XSUBPP64) $(XSUBPPFLAGS) $(MODULE).xs >$@
+$(MACH64)/$(MODULE).c: $(MACH64) $(MODULE).xs
+	$(XSUBPP64) $(XSUBPPFLAGS64) $(MODULE).xs >$@
 
 $(ROOTPERLMODDIR) $(ROOTPERLMODDIR64):
 	$(INS.dir)

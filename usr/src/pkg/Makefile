@@ -23,6 +23,7 @@
 # Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
 # Copyright 2015, OmniTI Computer Consulting, Inc. All rights reserved.
 # Copyright 2015 Igor Kozhukhov <ikozhukhov@gmail.com>
+# Copyright 2016 RackTop Systems.
 # Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
 #
 
@@ -191,6 +192,8 @@ PKGMOG_DEFINES= \
 	PERL_ARCH64=$(PERL_ARCH64) \
 	PERL_VERSION=$(PERL_VERSION) \
 	PERL_PKGVERS=$(PERL_PKGVERS) \
+	BUILDPERL32=$(BUILDPERL32) \
+	BUILDPERL64=$(BUILDPERL64) \
 	PYTHON_VERSION=$(PYTHON_VERSION) \
 	PYTHON3_VERSION=$(PYTHON3_VERSION) \
 	PYTHON_PKGVERS=$(PYTHON_PKGVERS) \
