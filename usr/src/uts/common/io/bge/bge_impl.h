@@ -1097,7 +1097,7 @@ typedef struct bge {
 #ifdef	DEBUG
 #define	BGE_DEBUGGING		1
 #else
-#define	BGE_DEBUGGING		1
+#define	BGE_DEBUGGING		0
 #endif	/* DEBUG */
 
 
