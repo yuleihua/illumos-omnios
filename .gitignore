@@ -3903,6 +3903,14 @@ usr/src/test/crypto-tests/tests/digest/sha384_32_kcf
 usr/src/test/crypto-tests/tests/digest/sha384_32_pkcs
 usr/src/test/crypto-tests/tests/digest/sha384_64_kcf
 usr/src/test/crypto-tests/tests/digest/sha384_64_pkcs
+usr/src/test/crypto-tests/tests/digest/sha512_224_32_kcf
+usr/src/test/crypto-tests/tests/digest/sha512_224_32_pkcs
+usr/src/test/crypto-tests/tests/digest/sha512_224_64_kcf
+usr/src/test/crypto-tests/tests/digest/sha512_224_64_pkcs
+usr/src/test/crypto-tests/tests/digest/sha512_256_32_kcf
+usr/src/test/crypto-tests/tests/digest/sha512_256_32_pkcs
+usr/src/test/crypto-tests/tests/digest/sha512_256_64_kcf
+usr/src/test/crypto-tests/tests/digest/sha512_256_64_pkcs
 usr/src/test/crypto-tests/tests/digest/sha512_32_kcf
 usr/src/test/crypto-tests/tests/digest/sha512_32_pkcs
 usr/src/test/crypto-tests/tests/digest/sha512_64_kcf
@@ -4200,7 +4208,6 @@ usr/src/tools/scripts/elfcmp
 usr/src/tools/scripts/find_elf
 usr/src/tools/scripts/flg.flp
 usr/src/tools/scripts/genoffsets
-usr/src/tools/scripts/gensetdefs
 usr/src/tools/scripts/git-pbchk
 usr/src/tools/scripts/hdrchk
 usr/src/tools/scripts/interface_check
