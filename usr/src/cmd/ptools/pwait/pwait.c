@@ -21,6 +21,8 @@
 /*
  * Copyright 2006 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
+ *
+ * Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
  */
 
 #include <stdio.h>
@@ -98,9 +100,9 @@ main(int argc, char **argv)
 		(void) enable_extended_FILE_stdio(-1, -1);
 	}
 
-	pollfd = (struct pollfd *)malloc(argc*sizeof (struct pollfd));
+	pollfd = calloc(argc, sizeof (struct pollfd));
 	if (pollfd == NULL) {
-		perror("malloc");
+		perror("calloc");
 		return (2);
 	}
 
@@ -109,13 +111,12 @@ main(int argc, char **argv)
 
 		arg = argv[i];
 		if (strchr(arg, '/') != NULL)
-			(void) strncpy(psinfofile, arg, sizeof (psinfofile));
+			(void) strlcpy(psinfofile, arg, sizeof (psinfofile));
 		else {
 			(void) strcpy(psinfofile, buf);
-			(void) strncat(psinfofile, arg, sizeof (psinfofile)-6);
+			(void) strlcat(psinfofile, arg, sizeof (psinfofile));
 		}
-		(void) strncat(psinfofile, "/psinfo",
-		    sizeof (psinfofile)-strlen(psinfofile));
+		(void) strlcat(psinfofile, "/psinfo", sizeof (psinfofile));
 
 		pfd = &pollfd[i];
 		if ((pfd->fd = open(psinfofile, O_RDONLY)) >= 0) {
@@ -188,9 +189,8 @@ main(int argc, char **argv)
 	return (0);
 }
 
-/* ARGSUSED1 */
 static int
-do_count(void *nofilesp, int fd)
+do_count(void *nofilesp, int fd __unused)
 {
 	(*(int *)nofilesp)++;
 	return (0);
