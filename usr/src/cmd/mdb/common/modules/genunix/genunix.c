@@ -422,7 +422,7 @@ ps_help(void)
 	mdb_printf("TASK\tThe task id of the process.\n");
 	mdb_printf("PROJ\tThe project id of the process.\n");
 	mdb_printf("ZONE\tThe zone id of the process.\n");
-	mdb_printf("SERVICE\tThe SMF service FMRI of the process.\n");
+	mdb_printf("SERVICE The SMF service FMRI of the process.\n");
 	mdb_printf("UID\tThe user id of the process.\n");
 	mdb_printf("FLAGS\tThe process flags (see ::pflags).\n");
 	mdb_printf("ADDR\tThe kernel address of the proc_t structure of the "

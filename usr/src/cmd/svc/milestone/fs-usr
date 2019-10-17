@@ -177,12 +177,9 @@ if [ -f "${UPDATEFILE}" ]; then
 			exit $SMF_EXIT_OK
 		fi
 		cecho ""
-		cecho "WARNING: Reboot required."
-		cecho "The system has updated the cache of files (boot archive)"
-		cecho "that is used during the early boot sequence. To avoid"
-		cecho "booting and running the system with the previously"
-		cecho "out-of-sync version of these files, reboot the system"
-		cecho "from the same device that was previously booted."
+		cecho "It has not been possible to restart automatically."
+		cecho "Reboot the system from the same device that was"
+		cecho "previously booted."
 		cecho ""
 		exit $SMF_EXIT_ERR_FATAL
 	fi

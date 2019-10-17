@@ -3891,6 +3891,10 @@ usr/src/pkg/install-nd-i386.out
 usr/src/pkg/license-list
 usr/src/pkg/packages.i386/
 usr/src/pkg/proto_list_i386
+usr/src/test/crypto-tests/tests/digest/md5_32_kcf
+usr/src/test/crypto-tests/tests/digest/md5_32_pkcs
+usr/src/test/crypto-tests/tests/digest/md5_64_kcf
+usr/src/test/crypto-tests/tests/digest/md5_64_pkcs
 usr/src/test/crypto-tests/tests/digest/sha1_32_kcf
 usr/src/test/crypto-tests/tests/digest/sha1_32_pkcs
 usr/src/test/crypto-tests/tests/digest/sha1_64_kcf
@@ -4188,9 +4192,9 @@ usr/src/tools/ndrgen/ndrgen
 usr/src/tools/ndrgen/ndrgen1
 usr/src/tools/ndrgen/y.tab.c
 usr/src/tools/ndrgen/y.tab.h
-usr/src/tools/onbld/Checks/py3/python3.5/
-usr/src/tools/onbld/Scm/py3/python3.5/
-usr/src/tools/onbld/py3/python3.5/
+usr/src/tools/onbld/Checks/py3/python3.7/
+usr/src/tools/onbld/Scm/py3/python3.7/
+usr/src/tools/onbld/py3/python3.7/
 usr/src/tools/proto/
 usr/src/tools/protocmp/protocmp
 usr/src/tools/protolist/protolist
