@@ -10848,8 +10848,6 @@ ahci_em_ioctl(dev_info_t *dip, int cmd, intptr_t arg)
 static void
 ahci_em_quiesce(ahci_ctl_t *ahci_ctlp)
 {
-	ASSERT(ahci_ctlp->ahcictl_em_flags & AHCI_EM_PRESENT);
-
 	mutex_enter(&ahci_ctlp->ahcictl_mutex);
 	if ((ahci_ctlp->ahcictl_em_flags & AHCI_EM_PRESENT) == 0) {
 		mutex_exit(&ahci_ctlp->ahcictl_mutex);
@@ -10857,6 +10855,7 @@ ahci_em_quiesce(ahci_ctl_t *ahci_ctlp)
 	}
 	ahci_ctlp->ahcictl_em_flags |= AHCI_EM_QUIESCE;
 	mutex_exit(&ahci_ctlp->ahcictl_mutex);
+
 	ddi_taskq_wait(ahci_ctlp->ahcictl_em_taskq);
 }
 
@@ -10864,6 +10863,7 @@ static void
 ahci_em_suspend(ahci_ctl_t *ahci_ctlp)
 {
 	ahci_em_quiesce(ahci_ctlp);
+
 	mutex_enter(&ahci_ctlp->ahcictl_mutex);
 	ahci_ctlp->ahcictl_em_flags &= ~AHCI_EM_READY;
 	mutex_exit(&ahci_ctlp->ahcictl_mutex);
@@ -10892,7 +10892,6 @@ ahci_em_fini(ahci_ctl_t *ahci_ctlp)
 	}
 
 	ahci_em_quiesce(ahci_ctlp);
-
 	ddi_taskq_destroy(ahci_ctlp->ahcictl_em_taskq);
 	ahci_ctlp->ahcictl_em_taskq = NULL;
 }
