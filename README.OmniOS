@@ -13,45 +13,13 @@ are included in the footer.
 
 =======================================================================
 
-## NEX-15023 Windows usernames should be treated as case insensitive
+## 11767 mpt_sas hangs after config header request timeout
 
-   Packages:
-       service/file-system/smb
+    Packages:
+        driver/storage/mpt_sas
 
    Archive:
-       https://hf.omnios.org/r151030/11026.p5p
-
-## OS-7850 AMD F17 core topology is per process node
-
-   Packages:
-       All CTF
-
-## 11378 ncec_last_time_defended needs to be clock_t
-
-   Packages:
-       system/kernel
-
-## 11556 ip_attr.c functions need to not dereference conn_ixa directly
-
-  Packages:
-       system/kernel
-
-## Update Intel Microcode to 20190918
-
-  Packages:
-	system/kernel/platform
-
-## Update timezone and hardware data
-
-  Packages:
-	system/data/hardware-registry
-	system/data/zoneinfo
-
-#  OS-7980 lx getsockopt should return EOPNOTSUPP when TCP options are used
-#  with AF_UNIX
-
-  Packages:
-	system/zones/brand/lx
+       https://hf.omnios.org/r151030/11767.p5p
 
 =======================================================================
 
