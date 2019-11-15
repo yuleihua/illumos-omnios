@@ -53,7 +53,8 @@ sec_dcmd(uintptr_t addr, uint_t flags, int argc, const mdb_arg_t *argv)
 	int opt_p = FALSE;
 	enum vuln_status vuln = VULN_UNKNOWN;
 
-	if (mdb_getopts(argc, argv, 'p', MDB_OPT_SETBITS, TRUE, &opt_p) != argc)
+	if (mdb_getopts(argc, argv, 'p', MDB_OPT_SETBITS, TRUE, &opt_p, NULL)
+	    != argc)
 		return (DCMD_USAGE);
 
 	/* Retrieve CPU feature list */
