@@ -622,7 +622,7 @@ vdev_trim_calculate_progress(vdev_t *vd)
 		 * metaslab.  Load it and walk the free tree for more
 		 * accurate progress estimation.
 		 */
-		VERIFY0(metaslab_load(msp, spa_syncing_txg(vd->vdev_spa)));
+		VERIFY0(metaslab_load(msp));
 
 		for (range_seg_t *rs = avl_first(&msp->ms_allocatable->rt_root);
 		    rs; rs = AVL_NEXT(&msp->ms_allocatable->rt_root, rs)) {
@@ -730,7 +730,7 @@ vdev_trim_range_add(void *arg, uint64_t start, uint64_t size)
 	 */
 	if (zfs_flags & ZFS_DEBUG_TRIM) {
 		metaslab_t *msp = ta->trim_msp;
-		VERIFY0(metaslab_load(msp, spa_syncing_txg(vd->vdev_spa)));
+		VERIFY0(metaslab_load(msp));
 		VERIFY3B(msp->ms_loaded, ==, B_TRUE);
 		VERIFY(range_tree_find(msp->ms_allocatable, start, size));
 	}
@@ -842,7 +842,7 @@ vdev_trim_thread(void *arg)
 		spa_config_exit(spa, SCL_CONFIG, FTAG);
 		metaslab_disable(msp);
 		mutex_enter(&msp->ms_lock);
-		VERIFY0(metaslab_load(msp, spa_syncing_txg(spa)));
+		VERIFY0(metaslab_load(msp));
 
 		/*
 		 * If a partial TRIM was requested skip metaslabs which have
@@ -1291,8 +1291,7 @@ vdev_autotrim_thread(void *arg)
 			 */
 			if (zfs_flags & ZFS_DEBUG_TRIM) {
 				mutex_enter(&msp->ms_lock);
-				VERIFY0(metaslab_load(msp,
-				    spa_syncing_txg(spa)));
+				VERIFY0(metaslab_load(msp));
 				VERIFY3P(tap[0].trim_msp, ==, msp);
 				range_tree_walk(trim_tree,
 				    vdev_trim_range_verify, &tap[0]);
