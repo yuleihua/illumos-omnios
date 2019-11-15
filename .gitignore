@@ -4126,6 +4126,8 @@ usr/src/test/crypto-tests/tests/modes/aes/cbc/aes_cbc_32_kcf
 usr/src/test/crypto-tests/tests/modes/aes/cbc/aes_cbc_32_pkcs
 usr/src/test/crypto-tests/tests/modes/aes/cbc/aes_cbc_64_kcf
 usr/src/test/crypto-tests/tests/modes/aes/cbc/aes_cbc_64_pkcs
+usr/src/test/crypto-tests/tests/modes/aes/cbc_pad/aes_cbc_pad_32_pkcs
+usr/src/test/crypto-tests/tests/modes/aes/cbc_pad/aes_cbc_pad_64_pkcs
 usr/src/test/crypto-tests/tests/modes/aes/ccm/aes_ccm_32_kcf
 usr/src/test/crypto-tests/tests/modes/aes/ccm/aes_ccm_32_pkcs
 usr/src/test/crypto-tests/tests/modes/aes/ccm/aes_ccm_64_kcf
@@ -4395,8 +4397,14 @@ usr/src/tools/ndrgen/ndrgen
 usr/src/tools/ndrgen/ndrgen1
 usr/src/tools/ndrgen/y.tab.c
 usr/src/tools/ndrgen/y.tab.h
+usr/src/tools/onbld/Checks/py2/python2.7/
+usr/src/tools/onbld/Checks/py3/python3.5/
 usr/src/tools/onbld/Checks/py3/python3.7/
+usr/src/tools/onbld/Scm/py2/python2.7/
+usr/src/tools/onbld/Scm/py3/python3.5/
 usr/src/tools/onbld/Scm/py3/python3.7/
+usr/src/tools/onbld/py2/python2.7/
+usr/src/tools/onbld/py3/python3.5/
 usr/src/tools/onbld/py3/python3.7/
 usr/src/tools/proto/
 usr/src/tools/protocmp/protocmp
