@@ -21,6 +21,11 @@ are included in the footer.
    Archive:
        https://hf.omnios.org/r151030/11767.p5p
 
+## 11952 large USB hard disks experience I/O failures
+
+    Packages:
+        driver/usb
+
 =======================================================================
 
 =============================
