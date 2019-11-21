@@ -43,6 +43,17 @@ are included in the footer.
 	SUNWcs
 	service/file-system/smb
 
+## 12001 cpu_uarray_free(NULL) panics
+
+  Packages:
+	system/kernel
+	system/kernel/platform
+
+## 11999 installboot: multiple stage1 locations are mismanaged
+
+  Packages:
+	SUNWcs
+
 
 =======================================================================
 
