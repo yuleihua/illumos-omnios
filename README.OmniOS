@@ -13,46 +13,8 @@ are included in the footer.
 
 =======================================================================
 
-## 11952 large USB hard disks experience I/O failures
 
-  Packages:
-	driver/usb
-
-## 11949 make -C caches wrong directory contents
-  Packages:
-	developer/build/make
-	developer/build/onbld
-
-## 11947 zfs diff on encrypted dataset leaks key reference
-
-   Packages:
-       system/file-system/zfs
-
-## 11038 SMB2 server should require signed Validate Negotiate requests
-## 11852 SMB should explicitly fail deletion of mountpoints
-## 11773 Need ways to override Domain Admins' full control
-## 11853 Administrators should have Backup and Restore privileges by default
-## 11854 Domain Admins shouldn't always be Administrators
-
-  Packages:
-	service/file-system/smb
-
-## 11039 All zfs/nfs/smb threads in door calls to idle idmap
-
-  Packages:
-	SUNWcs
-	service/file-system/smb
-
-## 12001 cpu_uarray_free(NULL) panics
-
-  Packages:
-	system/kernel
-	system/kernel/platform
-
-## 11999 installboot: multiple stage1 locations are mismanaged
-
-  Packages:
-	SUNWcs
+## None pending
 
 
 =======================================================================
