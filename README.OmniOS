@@ -13,18 +13,9 @@ are included in the footer.
 
 =======================================================================
 
-## 11767 mpt_sas hangs after config header request timeout
 
-    Packages:
-        driver/storage/mpt_sas
+## None pending
 
-   Archive:
-       https://hf.omnios.org/r151030/11767.p5p
-
-## 11952 large USB hard disks experience I/O failures
-
-    Packages:
-        driver/usb
 
 =======================================================================
 
