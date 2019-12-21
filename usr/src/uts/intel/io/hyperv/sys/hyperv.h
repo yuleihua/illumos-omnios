@@ -69,5 +69,6 @@ struct hyperv_guid {
 int		hyperv_guid2str(const struct hyperv_guid *, char *, size_t);
 
 extern uint_t	hyperv_features;	/* CPUID_HV_MSR_ */
+extern uint_t	hyperv_ver_major;
 
 #endif /* _SYS_HYPERV_H */
