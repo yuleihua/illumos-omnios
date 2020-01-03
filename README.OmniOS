@@ -14,8 +14,10 @@ are included in the footer.
 =======================================================================
 
 
-## None pending
+## 11825 PKCS#11 CKM_AES_CBC_PAD decryption can fail
 
+    Package: system/library
+    Archive: https://hf.omnios.org/r151032/11825.p5p
 
 =======================================================================
 
