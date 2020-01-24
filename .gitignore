@@ -3909,6 +3909,7 @@ usr/src/man/man3proc/pr_stat64.3proc
 usr/src/man/man3proc/proc_arg_xgrab.3proc
 usr/src/man/man3proc/proc_arg_xpsinfo.3proc
 usr/src/man/man3proc/proc_dmodelname.3proc
+usr/src/man/man3proc/proc_fdinfo_free.3proc
 usr/src/man/man3proc/proc_finistdio.3proc
 usr/src/man/man3proc/proc_flushstdio.3proc
 usr/src/man/man3proc/proc_free_priv.3proc
