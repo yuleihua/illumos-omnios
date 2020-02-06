@@ -28,7 +28,6 @@ SUBDIRS =       \
 		spoof-ras \
 		stress \
 		timer \
-		tmpfs \
 		$(SUBDIRS_$(MACH))
 
 PROGS = \
