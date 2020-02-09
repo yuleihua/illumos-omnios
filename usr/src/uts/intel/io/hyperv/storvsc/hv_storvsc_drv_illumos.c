@@ -1635,18 +1635,19 @@ handle_dma_cookies:
 		 * store cookies for further processing.
 		 */
 		for (i = 0; i < cmd->cmd_cookiec; i++) {
-			reqp->prp_list.gpa_page[i] =
-			    btop(cmd->cmd_cookie.dmac_laddress);
+			const ddi_dma_cookie_t *cookie;
 
-			ASSERT(!P2BOUNDARY(cmd->cmd_cookie.dmac_laddress,
-			    cmd->cmd_cookie.dmac_size, PAGESIZE));
+			cookie = ddi_dma_cookie_get(cmd->cmd_handle, i);
 
-			IMPLY(i > 0,
-			    (cmd->cmd_cookie.dmac_laddress & PAGEOFFSET) == 0);
+			reqp->prp_list.gpa_page[i] = btop(cookie->dmac_laddress);
 
-			cmd->cmd_dma_count += cmd->cmd_cookie.dmac_size;
-			cmd->cmd_total_dma_count += cmd->cmd_cookie.dmac_size;
-			ddi_dma_nextcookie(cmd->cmd_handle, &cmd->cmd_cookie);
+			ASSERT(!P2BOUNDARY(cookie->dmac_laddress,
+			    cookie->dmac_size, PAGESIZE));
+
+			IMPLY(i > 0, (cookie->dmac_laddress & PAGEOFFSET) == 0);
+
+			cmd->cmd_dma_count += cookie->dmac_size;
+			cmd->cmd_total_dma_count += cookie->dmac_size;
 		}
 		reqp->prp_list.gpa_range.gpa_len = cmd->cmd_dma_count;
 		ASSERT3U(reqp->prp_list.gpa_range.gpa_len, <=,

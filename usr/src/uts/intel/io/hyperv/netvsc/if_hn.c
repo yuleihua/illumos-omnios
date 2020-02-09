@@ -946,16 +946,19 @@ hn_txdesc_dmamap_load(struct hn_tx_ring *txr, struct hn_txdesc *txd,
 			return (ENOMEM);
 		}
 		ASSERT(cookie_count > 0);
-		for (int i = 0; i < cookie_count; i++) {
+
+		const ddi_dma_cookie_t *c;
+
+		for (c = ddi_dma_cookie_iter(txr->hn_data_dmah, NULL);
+		    c != NULL; c = ddi_dma_cookie_iter(txr->hn_data_dmah, c)) {
 			if (nsegs == HN_GPACNT_MAX) {
 				(void) ddi_dma_unbind_handle(txr->hn_data_dmah);
 				return (EAGAIN);
 			}
 			struct vmbus_gpa *gpa = &txr->hn_gpa[nsegs];
-			gpa->gpa_page = btop(cookie.dmac_laddress);
-			gpa->gpa_ofs = cookie.dmac_laddress & PAGEOFFSET;
-			gpa->gpa_len = cookie.dmac_size;
-			ddi_dma_nextcookie(txr->hn_data_dmah, &cookie);
+			gpa->gpa_page = btop(c->dmac_laddress);
+			gpa->gpa_ofs = c->dmac_laddress & PAGEOFFSET;
+			gpa->gpa_len = c->dmac_size;
 			nsegs++;
 		}
 		/*
