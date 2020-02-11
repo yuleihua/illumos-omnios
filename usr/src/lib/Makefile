@@ -739,7 +739,7 @@ sun_fc:		libdevinfo libsysevent
 sun_sas:	libdevinfo libsysevent libkstat libdevid
 udapl:		libdevinfo libdladm
 varpd:		libavl libidspace libumem libnsl libnvpair libmd5 librename \
-		libbunyan libcmdutils
+		libbunyan libcustr
 
 #
 # The reason this rule checks for the existence of the
