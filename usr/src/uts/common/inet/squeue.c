@@ -241,7 +241,7 @@ squeue_init(void)
 }
 
 squeue_t *
-squeue_create(pri_t pri, boolean_t isip)
+squeue_create(pri_t pri)
 {
 	squeue_t *sqp = kmem_cache_alloc(squeue_cache, KM_SLEEP);
 
@@ -407,7 +407,7 @@ squeue_enter(squeue_t *sqp, mblk_t *mp, mblk_t *tail, uint32_t cnt,
 				 * still be best to process a single queued
 				 * item if it matches the active connection.
 				 */
-				if (sqp->sq_first != NULL && sqp->sq_isip) {
+				if (sqp->sq_first != NULL) {
 					squeue_try_drain_one(sqp, connp);
 				}
 
@@ -1374,7 +1374,6 @@ squeue_try_drain_one(squeue_t *sqp, conn_t *compare_conn)
 	ASSERT(MUTEX_HELD(&sqp->sq_lock));
 	ASSERT((sqp->sq_state & SQS_PROC) == 0);
 	ASSERT(sqp->sq_run == NULL);
-	ASSERT(sqp->sq_isip);
 	VERIFY(mp != NULL);
 
 	/*
@@ -1452,7 +1451,6 @@ squeue_synch_exit(conn_t *connp, int flag)
 {
 	squeue_t *sqp = connp->conn_sqp;
 
-	VERIFY(sqp->sq_isip == B_TRUE);
 	ASSERT(flag == SQ_NODRAIN || flag == SQ_PROCESS);
 
 	mutex_enter(&sqp->sq_lock);

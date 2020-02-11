@@ -77,7 +77,7 @@ typedef enum {
 
 struct ip_recv_attr_s;
 extern void squeue_init(void);
-extern squeue_t *squeue_create(pri_t, boolean_t);
+extern squeue_t *squeue_create(pri_t);
 extern void squeue_bind(squeue_t *, processorid_t);
 extern void squeue_unbind(squeue_t *);
 extern void squeue_enter(squeue_t *, mblk_t *, mblk_t *,
