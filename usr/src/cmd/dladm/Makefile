@@ -39,7 +39,7 @@ XGETFLAGS +=	-a -x $(PROG).xcl
 
 LDLIBS +=	-L$(ROOT)/lib -lsocket
 LDLIBS +=	-ldladm -ldlpi -lkstat -lsecdb -lbsm -lofmt -linetutil -ldevinfo
-LDLIBS +=	$(ZLAZYLOAD) -lrstp $(ZNOLAZYLOAD) -lnsl -lumem -lcmdutils
+LDLIBS +=	$(ZLAZYLOAD) -lrstp $(ZNOLAZYLOAD) -lnsl -lumem -lcustr
 
 CERRWARN +=	-_gcc=-Wno-switch
 CERRWARN +=	-_gcc=-Wno-unused-label
