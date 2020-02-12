@@ -21,7 +21,7 @@ include ../../../Makefile.lib
 include ../../Makefile.plugin
 
 LIBS =		$(DYNLIB)
-LDLIBS +=	-lc -lumem -lnvpair -lnsl
+LDLIBS +=	-lc -lumem -lnvpair
 CPPFLAGS +=	-I../common
 
 C99MODE=	-xc99=%all
