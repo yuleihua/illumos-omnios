@@ -204,7 +204,6 @@ static ofmt_cb_t print_xaggr_cb, print_aggr_stats_cb;
 static ofmt_cb_t print_phys_one_hwgrp_cb, print_wlan_attr_cb;
 static ofmt_cb_t print_wifi_status_cb, print_link_attr_cb;
 static ofmt_cb_t print_overlay_cb, print_overlay_fma_cb, print_overlay_targ_cb;
-static void dladm_ofmt_check(ofmt_status_t, boolean_t, ofmt_handle_t);
 
 typedef void cmdfunc_t(int, char **, const char *);
 
