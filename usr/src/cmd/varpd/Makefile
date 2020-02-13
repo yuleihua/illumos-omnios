@@ -59,9 +59,6 @@ lint: lint_PROG
 
 check: $(CHKMANIFEST)
 
-clobber: clean
-	$(RM) $(PROG)
-
 install: $(PROG) $(ROOTLIBVARPDPROG) $(ROOTMANIFEST)
 
 $(ROOTLIBVARPD):
