@@ -293,7 +293,7 @@ typedef struct stdata {
 #define	SNDMREAD	0x00008000	/* used for read notification */
 #define	OLDNDELAY	0x00010000	/* use old TTY semantics for */
 					/* NDELAY reads and writes */
-	/*		0x00020000	   unused */
+#define	STRXPG4TTY	0x00020000	/* Use XPG4 TTY semantics */
 	/*		0x00040000	   unused */
 #define	STRTOSTOP	0x00080000	/* block background writes */
 #define	STRCMDWAIT	0x00100000	/* someone is doing an _I_CMD */
