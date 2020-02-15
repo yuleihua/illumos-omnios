@@ -42,16 +42,22 @@
 #include <sys/syscall.h>
 #include "libc.h"
 
+#ifdef _DISABLED_PENDING_12306
 static int xpg4_fixup(int fd);
 static void push_module(int fd);
 static int isptsfd(int fd);
 static void itoa(int i, char *ptr);
+#endif
 
 int
 __openat(int dfd, const char *path, int oflag, mode_t mode)
 {
 	int fd = syscall(SYS_openat, dfd, path, oflag, mode);
+#ifdef _DISABLED_PENDING_12306
 	return (xpg4_fixup(fd));
+#else
+	return (fd);
+#endif
 }
 
 int
@@ -59,7 +65,11 @@ __open(const char *path, int oflag, mode_t mode)
 {
 #if defined(_RETAIN_OLD_SYSCALLS)
 	int fd = syscall(SYS_open, path, oflag, mode);
+#ifdef _DISABLED_PENDING_12306
 	return (xpg4_fixup(fd));
+#else
+	return (fd);
+#endif
 #else
 	return (__openat(AT_FDCWD, path, oflag, mode));
 #endif
@@ -71,7 +81,11 @@ int
 __openat64(int dfd, const char *path, int oflag, mode_t mode)
 {
 	int fd = syscall(SYS_openat64, dfd, path, oflag, mode);
+#ifdef _DISABLED_PENDING_12306
 	return (xpg4_fixup(fd));
+#else
+	return (fd);
+#endif
 }
 
 int
@@ -79,7 +93,11 @@ __open64(const char *path, int oflag, mode_t mode)
 {
 #if defined(_RETAIN_OLD_SYSCALLS)
 	int fd = syscall(SYS_open64, path, oflag, mode);
+#ifdef _DISABLED_PENDING_12306
 	return (xpg4_fixup(fd));
+#else
+	return (fd);
+#endif
 #else
 	return (__openat64(AT_FDCWD, path, oflag, mode));
 #endif
@@ -87,6 +105,7 @@ __open64(const char *path, int oflag, mode_t mode)
 
 #endif	/* !_LP64 */
 
+#ifdef _DISABLED_PENDING_12306
 /*
  * XPG4v2 requires that open of a slave pseudo terminal device
  * provides the process with an interface that is identical to
@@ -181,3 +200,4 @@ push_module(int fd)
 	}
 	errno = oerrno;
 }
+#endif
