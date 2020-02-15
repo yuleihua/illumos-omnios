@@ -3384,7 +3384,6 @@ out1:
 		VOP_RWUNLOCK(vp, V_WRITELOCK_FALSE, NULL);
 		VN_RELE(vp);
 	}
-	vattr_to_post_op_attr(vap, &resp->resfail.dir_attributes);
 }
 
 void *
@@ -3743,6 +3742,8 @@ good:
 #endif
 
 	kmem_free(namlen, args->dircount);
+	if (ndata != data)
+		kmem_free(data, args->dircount);
 
 	resp->status = NFS3_OK;
 	vattr_to_post_op_attr(vap, &resp->resok.dir_attributes);
@@ -3782,8 +3783,6 @@ out1:
 
 	if (namlen != NULL)
 		kmem_free(namlen, args->dircount);
-
-	vattr_to_post_op_attr(vap, &resp->resfail.dir_attributes);
 }
 
 void *
