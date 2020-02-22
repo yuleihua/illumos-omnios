@@ -20,8 +20,9 @@
 #
 
 #
-# Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
-# Use is subject to license terms.
+# Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+#
+# Copyright 2020 Joyent, Inc.
 #
 # Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 
@@ -44,7 +45,7 @@ $mapfile_version 2
 #
 # Scope everything local -- our .init section is our only public interface.
 #
-SYMBOL_VERSION SUNWprivate_1.1 {
+SYMBOL_SCOPE {
 	local:
 		*;
 };

@@ -21,7 +21,7 @@
 #
 # Copyright 2006 Sun Microsystems, Inc.  All rights reserved.
 # Use is subject to license terms.
-# Copyright 2019 Joyent, Inc.
+# Copyright 2020 Joyent, Inc.
 #
 
 LX_CMN  =	$(SRC)/common/brand/lx
@@ -69,9 +69,9 @@ SRCDIR =	../common
 UTSBASE	=	../../../../../uts
 
 LIBS =		$(DYNLIB)
-LDLIBS +=	-lc -lsocket -lmapmalloc -lrpcsvc -lnsl
+LDLIBS +=	-lmapmalloc -lsocket -lrpcsvc -lnsl -lc
 DYNFLAGS +=	$(DYNFLAGS_$(CLASS))
-DYNFLAGS +=	$(BLOCAL) $(ZNOVERSION) -Wl,-e_start -M../common/mapfile
+DYNFLAGS +=	$(BLOCAL) $(ZNOVERSION) -Wl,-e_start
 CFLAGS +=	$(CCVERBOSE)
 CPPFLAGS +=	-D_REENTRANT -I. -I../ -I$(UTSBASE)/common/brand/lx -I$(LX_CMN)
 ASFLAGS =	-P $(ASFLAGS_$(CURTYPE)) -D_ASM -I../	\
