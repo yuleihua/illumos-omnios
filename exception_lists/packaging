@@ -416,7 +416,6 @@ usr/include/libdloverlay.h
 usr/include/libvarpd.h
 usr/include/libvarpd_client.h
 usr/include/libvarpd_provider.h
-usr/include/libvarpd_svp_prot.h
 usr/include/sys/overlay.h
 usr/include/sys/overlay_common.h
 usr/include/sys/overlay_target.h

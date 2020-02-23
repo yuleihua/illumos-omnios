@@ -53,10 +53,8 @@ file path=usr/lib/$(ARCH64)/libvarpd.so.1 mode=0755
 file path=usr/lib/libvarpd.so.1 mode=0755
 file path=usr/lib/varpd/$(ARCH64)/libvarpd_direct.so.1
 file path=usr/lib/varpd/$(ARCH64)/libvarpd_files.so.1
-file path=usr/lib/varpd/$(ARCH64)/libvarpd_svp.so.1
 file path=usr/lib/varpd/libvarpd_direct.so.1
 file path=usr/lib/varpd/libvarpd_files.so.1
-file path=usr/lib/varpd/libvarpd_svp.so.1
 file path=usr/lib/varpd/varpd mode=0555
 file path=usr/share/man/man4/overlay_files.4
 file path=usr/share/man/man5/overlay.5
@@ -65,9 +63,7 @@ license lic_CDDL license=lic_CDDL
 link path=usr/lib/varpd/$(ARCH64)/libvarpd_direct.so \
     target=libvarpd_direct.so.1
 link path=usr/lib/varpd/$(ARCH64)/libvarpd_files.so target=libvarpd_files.so.1
-link path=usr/lib/varpd/$(ARCH64)/libvarpd_svp.so target=libvarpd_svp.so.1
 link path=usr/lib/varpd/64 target=$(ARCH64)
 link path=usr/lib/varpd/libvarpd_direct.so target=libvarpd_direct.so.1
 link path=usr/lib/varpd/libvarpd_files.so target=libvarpd_files.so.1
-link path=usr/lib/varpd/libvarpd_svp.so target=libvarpd_svp.so.1
 link path=usr/share/man/man7p/VXLAN.7p target=vxlan.7p
