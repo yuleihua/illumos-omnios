@@ -23,6 +23,7 @@
 # Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 #
 
+<include global_zone_only_component>
 set name=pkg.fmri value=pkg:/system/network/overlay@$(PKGVERS)
 set name=pkg.description value="Device driver implementing network overlays"
 set name=pkg.summary value="ilumos overlay driver"
