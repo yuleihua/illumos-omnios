@@ -38,17 +38,12 @@ LDLIBS +=	-lc -lumem -lnvpair -lsocket -lavl \
 		-lcmdutils -lidspace -lbunyan
 CPPFLAGS +=	-I../common
 
-LINTFLAGS +=	-erroff=E_BAD_PTR_CAST_ALIGN
-LINTFLAGS64 +=	-erroff=E_BAD_PTR_CAST_ALIGN
 SRCDIR =	../common
 
 C99MODE=	-xc99=%all
-C99LMODE=	-Xc99=%all
 
 .KEEP_STATE:
 
 all:	$(LIBS)
-
-lint:	lintcheck
 
 include ../../../Makefile.targ

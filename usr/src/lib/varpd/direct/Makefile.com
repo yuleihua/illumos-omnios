@@ -33,6 +33,4 @@ SRCDIR =	../common
 
 all:	$(LIBS)
 
-lint:	lintcheck
-
 include ../../../Makefile.targ

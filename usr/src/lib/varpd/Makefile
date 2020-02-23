@@ -21,11 +21,10 @@ clobber :=	TARGET = clobber
 check :=	TARGET = check
 install :=	TARGET = install
 install_h :=	TARGET = install_h
-lint :=		TARGET = lint
 
 .KEEP_STATE:
 
-all clean clobber install install_h check lint: $(SUBDIRS)
+all clean clobber install install_h check: $(SUBDIRS)
 direct files svp: libvarpd
 
 $(SUBDIRS):  FRC
