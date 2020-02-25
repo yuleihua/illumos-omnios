@@ -5,6 +5,7 @@
  Use is subject to license terms.
 
  Copyright 2019 Joyent, Inc.
+ Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 
  CDDL HEADER START
 
@@ -45,6 +46,14 @@
 		restart_on='none'
 		type='service'>
 		<service_fmri value='svc:/network/loopback' />
+	</dependency>
+
+	<dependency
+		name='network-physical-varpd'
+		grouping='require_all'
+		restart_on='none'
+		type='service'>
+		<service_fmri value='svc:/network/varpd' />
 	</dependency>
 
 	<instance name='default' enabled='true'>

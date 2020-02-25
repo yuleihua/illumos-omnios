@@ -22,6 +22,7 @@
 #
 # Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
 # Copyright 2012 Milan Jurik. All rights reserved.
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 #
 
 . /lib/svc/share/smf_include.sh
@@ -560,6 +561,7 @@ case "$1" in
 		# Initialize VNICs, VLANs and flows.  Though they are brought
 		# up here, NWAM will not automatically manage VNICs and VLANs.
 		#
+		/sbin/dladm up-overlay
 		/sbin/dladm up-vnic
 		/sbin/dladm up-vlan
 		/sbin/dladm up-part

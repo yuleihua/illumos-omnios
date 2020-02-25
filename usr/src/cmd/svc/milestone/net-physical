@@ -26,18 +26,18 @@
 # Copyright (c) 1984, 1986, 1987, 1988, 1989 AT&T.
 # All rights reserved.
 #
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 
 . /lib/svc/share/smf_include.sh
 . /lib/svc/share/net_include.sh
 
 #
 # In a shared-IP zone we need this service to be up, but all of the work
-# it tries to do is irrelevant (and will actually lead to the service 
-# failing if we try to do it), so just bail out. 
+# it tries to do is irrelevant (and will actually lead to the service
+# failing if we try to do it), so just bail out.
 # In the global zone and exclusive-IP zones we proceed.
 #
 smf_configure_ip || exit $SMF_EXIT_OK
-
 
 # Make sure that the libraries essential to this stage of booting can be found.
 LD_LIBRARY_PATH=/lib; export LD_LIBRARY_PATH
@@ -50,14 +50,14 @@ if smf_is_globalzone; then
 	# Update PVID on interfaces configured with VLAN 1
 	update_pvid
 
-	# 
+	#
 	# Upgrade handling. The upgrade file consists of a series of dladm(1M)
 	# commands. Note that after we are done, we cannot rename the upgrade
 	# script file as the file system is still read-only at this point.
 	# Defer this to the manifest-import service.
 	#
 	upgrade_script=/var/svc/profile/upgrade_datalink
-	if [ -f "${upgrade_script}" ]; then 
+	if [ -f "${upgrade_script}" ]; then
 		. "${upgrade_script}"
 	fi
 
@@ -97,6 +97,15 @@ if smf_is_globalzone; then
 	# Create flows via flowadm.
 	#
 	/sbin/flowadm init-flow
+	#
+	# Bring up overlays
+	# Note that there may be VNICs configured over these overlays but
+	# these cannot be brought up until the network interface on which
+	# varpd will listen is enabled, and that doesn't happen until
+	# near the end of this script. Therefore VNICs initialisation is
+	# repeated below if overlays are present.
+	#
+	/sbin/dladm up-overlay
 fi
 
 #
@@ -333,7 +342,7 @@ for showif_output in `/sbin/ipadm show-if -p -o ifname,state,current`; do
 			    "ignoring ipadm configuration" > /dev/msglog
 			continue;
 		else
-			echo "Ignoring /etc/hostname*.$intf" > /dev/msglog 
+			echo "Ignoring /etc/hostname*.$intf" > /dev/msglog
 			/sbin/ifconfig $intf unplumb > /dev/null 2>&1
 			/sbin/ifconfig $intf inet6 unplumb > /dev/null 2>&1
 		fi
@@ -422,6 +431,13 @@ if [ "$interface_names" != '/etc/dhcp.*[0-9]' ]; then
 	IFS="$ORIGIFS"
 	unset ORIGIFS
 	[ -n "$i4d_fail" ] && warn_failed_ifs "configure IPv4 DHCP" "$i4d_fail"
+fi
+
+# If this system has any overlay devices, bring VNICs up again now that
+# IP interfaces are active.
+if smf_is_globalzone && dladm show-link -p -o class | egrep -s 'overlay'; then
+	echo "Bringing up any remaining VNICs on overlays"
+	/sbin/dladm up-vnic
 fi
 
 # In order to avoid bringing up the interfaces that have

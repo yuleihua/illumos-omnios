@@ -176,7 +176,7 @@ dladm \- administer data links
 .LP
 .nf
 \fBdladm create-overlay\fR [\fB-t\fR] \fB-e\fR \fIencap\fR \fB-s\fR \fIsearch\fR \fB-v\fR \fIvnetid\fR [\fB-p\fR \fIprop\fR=\fIvalue\fR[,...]] \fIoverlay\fR
-\fBdladm delete-overlay\fR \fIoverlay\fR
+\fBdladm delete-overlay\fR [\fB-t\fR] \fIoverlay\fR
 \fBdladm modify-overlay\fR \fB-d\fR \fImac\fR | \fB-f\fR | \fB-s\fR \fImac=ip:port\fR \fIoverlay\fR
 \fBdladm show-overlay\fR [ \fB-f\fR | \fB-t\fR ] [[\fB-p\fR] \fB-o\fR \fIfield\fR[,...]] [\fIoverlay\fR]
 .fi
@@ -4505,12 +4505,21 @@ determined by the encapsulation plugin specified by \fB-e\fR.
 .sp
 .ne 2
 .na
-\fBdladm delete-overlay\fR \fIoverlay\fR
+\fBdladm delete-overlay\fR [\fB-t\fR] \fIoverlay\fR
 .ad
 .sp .6
 .RS 4n
 Delete the specified overlay. This will fail if there are VNICs on top of the
 device.
+.sp
+.ne 2
+.na
+\fB-t\fR, \fB--temporary\fR
+.ad
+.sp .6
+.RS 4n
+Specifies that the deletion is temporary. Temporary deletions last until the
+next reboot.
 .RE
 
 .sp
@@ -4556,10 +4565,11 @@ Flushes all values in the target table for \fIoverlay\fR.
 .RS 4n
 Sets the value of \fIoverlay\fR's target table entry for \fImac\fR to the
 specified value. The specified value varies upon the encapsulation plugin. The
-value may be a combination of a MAC address, IP adress, and port. Generall, this
-looks like [\fImac\fR,][\fIIP\fR:][\fIport\fR]. If a component is the last one,
-then there is no need for a separator. eg. if just the MAC address or IP is
-needed, it would look like \fImac\fR and \fIIP\fR respectively.
+value may be a combination of a MAC address, IP address, and port.
+Generally, this looks like [\fImac\fR,][\fIIP\fR:][\fIport\fR].
+If a component is the last one, then there is no need for a separator. eg. if
+just the MAC address or IP is needed, it would look like \fImac\fR and \fIIP\fR
+respectively.
 .RE
 
 .RE
@@ -4738,12 +4748,12 @@ fields listed under \fB-L\fR, above, can be used with \fB-o\fR.
 .sp
 .ne 2
 .na
-\fB\fB-p\fR, \fB--parseable\fR\fR
+\fB\fB-p\fR, \fB--parsable\fR\fR
 .ad
 .sp .6
 .RS 4n
-Display using a stable machine-parseable format. The \fB-o\fR option is
-required with \fB-p\fR. See "Parseable Output Format", below.
+Display using a stable machine-parsable format. The \fB-o\fR option is
+required with \fB-p\fR. See "Parsable Output Format", below.
 .RE
 
 .sp

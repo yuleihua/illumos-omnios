@@ -24,7 +24,7 @@
  */
 
 /*
- * Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+ * Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
  */
 
 #ifndef _LIBDLADM_IMPL_H
@@ -73,10 +73,21 @@ extern void		dladm_free_args(dladm_arg_list_t *);
 /*
  * Link attributes persisted by dlmgmtd.
  */
+
+/*
+ * Set for VLANs and overlays
+ */
+#define	FVLANID		"vid"		/* uint64_t */
+
+/*
+ * Set for overlays only
+ */
+#define	FENCAP		"encap"		/* string */
+#define	FSEARCH		"search"	/* string */
+
 /*
  * Set for VLANs only
  */
-#define	FVLANID		"vid"		/* uint64_t */
 #define	FLINKOVER	"linkover"	/* uint64_t */
 
 /*

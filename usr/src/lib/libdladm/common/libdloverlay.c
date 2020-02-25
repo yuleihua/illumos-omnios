@@ -11,6 +11,7 @@
 
 /*
  * Copyright (c) 2015 Joyent, Inc.
+ * Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
  */
 
 #include <libdladm_impl.h>
@@ -134,10 +135,35 @@ dladm_overlay_parse_prop(overlay_prop_type_t type, void *buf, uint32_t *sizep,
 	return (DLADM_STATUS_OK);
 }
 
+static dladm_status_t
+i_dladm_overlay_setprop_db(dladm_handle_t handle, datalink_id_t linkid,
+    uint_t type, const char *prop_name, char *const *prop_val,
+    uint8_t *buf, uint32_t size)
+{
+	dladm_conf_t	conf;
+	dladm_status_t	status;
+
+	status = dladm_open_conf(handle, linkid, &conf);
+	if (status != DLADM_STATUS_OK)
+		return (status);
+
+	/* Store everything as a string for now */
+
+	status = dladm_set_conf_field(handle, conf, prop_name, DLADM_TYPE_STR,
+	    prop_val[0]);
+	if (status == DLADM_STATUS_OK)
+		status = dladm_write_conf(handle, conf);
+
+done:
+	dladm_destroy_conf(handle, conf);
+	return (status);
+}
+
 /* ARGSUSED */
 static dladm_status_t
-dladm_overlay_varpd_setprop(dladm_handle_t handle, varpd_client_handle_t *chdl,
-    uint64_t inst, const char *name, char *const *valp, uint_t cnt)
+dladm_overlay_varpd_setprop(dladm_handle_t handle,
+    varpd_client_handle_t *chdl, uint64_t inst, datalink_id_t linkid,
+    const char *name, char *const *valp, uint_t cnt, uint_t flags)
 {
 	int ret;
 	uint32_t size;
@@ -166,15 +192,25 @@ dladm_overlay_varpd_setprop(dladm_handle_t handle, varpd_client_handle_t *chdl,
 		return (status);
 	}
 
+	status = DLADM_STATUS_OK;
 	ret = libvarpd_c_prop_set(phdl, buf, size);
 	libvarpd_c_prop_handle_free(phdl);
+	if (ret != 0)
+		status = dladm_errno2status(ret);
 
-	return (dladm_errno2status(ret));
+	if (status != DLADM_STATUS_OK)
+		return (status);
+
+	if (flags & DLADM_OPT_PERSIST)
+		status = i_dladm_overlay_setprop_db(handle, linkid,
+		    type, name, valp, buf, size);
+
+	return (status);
 }
 
 dladm_status_t
 dladm_overlay_setprop(dladm_handle_t handle, datalink_id_t linkid,
-    const char *name, char *const *valp, uint_t cnt)
+    const char *name, char *const *valp, uint_t cnt, uint_t flags)
 {
 	int			ret;
 	dladm_status_t		status;
@@ -203,16 +239,23 @@ dladm_overlay_setprop(dladm_handle_t handle, datalink_id_t linkid,
 	prop.oip_linkid = linkid;
 	prop.oip_id = info.oipi_id;
 	prop.oip_name[0] = '\0';
-	if ((ret = dladm_overlay_parse_prop(info.oipi_type, prop.oip_value,
+	if ((status = dladm_overlay_parse_prop(info.oipi_type, prop.oip_value,
 	    &prop.oip_size, valp[0])) != DLADM_STATUS_OK)
-		return (ret);
+		return (status);
 
 	status = DLADM_STATUS_OK;
 	ret = ioctl(dladm_dld_fd(handle), OVERLAY_IOC_SETPROP, &prop);
 	if (ret != 0)
 		status = dladm_errno2status(errno);
 
-	return (ret);
+	if (status != DLADM_STATUS_OK)
+		return (status);
+
+	if (flags & DLADM_OPT_PERSIST)
+		status = i_dladm_overlay_setprop_db(handle, linkid,
+		    info.oipi_type, name, valp, prop.oip_value, prop.oip_size);
+
+	return (status);
 }
 
 /*
@@ -257,18 +300,22 @@ dladm_overlay_activate_cb(dladm_handle_t handle, datalink_id_t linkid,
  * datalink id. If we fail to do that, then that name will become lost to time.
  */
 dladm_status_t
-dladm_overlay_delete(dladm_handle_t handle, datalink_id_t linkid)
+dladm_overlay_delete(dladm_handle_t handle, datalink_id_t linkid,
+    uint32_t flags)
 {
 	datalink_class_t class;
 	overlay_ioc_delete_t oid;
 	varpd_client_handle_t *chdl;
 	int ret;
-	uint32_t flags;
 	uint64_t varpdid;
 
-	if (dladm_datalink_id2info(handle, linkid, &flags, &class, NULL,
-	    NULL, 0) != DLADM_STATUS_OK)
+	if (flags == 0)
 		return (DLADM_STATUS_BADARG);
+
+	if (dladm_datalink_id2info(handle, linkid, NULL, &class, NULL,
+	    NULL, 0) != DLADM_STATUS_OK) {
+		return (DLADM_STATUS_BADARG);
+	}
 
 	if (class != DATALINK_CLASS_OVERLAY)
 		return (DLADM_STATUS_BADARG);
@@ -294,7 +341,10 @@ dladm_overlay_delete(dladm_handle_t handle, datalink_id_t linkid)
 	ret = libvarpd_c_instance_destroy(chdl, varpdid);
 finish:
 	(void) libvarpd_c_destroy(chdl);
-	(void) dladm_destroy_datalink_id(handle, linkid, flags);
+	if ((flags & DLADM_OPT_PERSIST) != 0) {
+		(void) dladm_remove_conf(handle, linkid);
+		(void) dladm_destroy_datalink_id(handle, linkid, flags);
+	}
 
 	return (dladm_errno2status(ret));
 }
@@ -473,29 +523,50 @@ dladm_overlay_walk_prop(dladm_handle_t handle, datalink_id_t linkid,
 	return (ret);
 }
 
-dladm_status_t
-dladm_overlay_create(dladm_handle_t handle, const char *name,
-    const char *encap, const char *search, uint64_t vid,
-    dladm_arg_list_t *props, dladm_errlist_t *errs, uint32_t flags)
+static dladm_status_t
+dladm_overlay_persist_conf(dladm_handle_t handle, dladm_overlay_attr_t *attr)
 {
-	int ret, i;
+	dladm_conf_t conf;
 	dladm_status_t status;
-	datalink_id_t linkid;
-	overlay_ioc_create_t oic;
-	overlay_ioc_activate_t oia;
-	size_t slen;
-	varpd_client_handle_t *vch;
-	uint64_t id;
 
-	status = dladm_create_datalink_id(handle, name, DATALINK_CLASS_OVERLAY,
-	    DL_ETHER, flags, &linkid);
-	if (status != DLADM_STATUS_OK)
+	if ((status = dladm_create_conf(handle, attr->oa_name, attr->oa_linkid,
+	    DATALINK_CLASS_OVERLAY, DL_ETHER, &conf)) != DLADM_STATUS_OK) {
 		return (status);
+	}
+
+	status = dladm_set_conf_field(handle, conf, FVLANID,
+	    DLADM_TYPE_UINT64, &attr->oa_vid);
+	if (status != DLADM_STATUS_OK)
+		goto done;
+
+	status = dladm_set_conf_field(handle, conf, FENCAP,
+	    DLADM_TYPE_STR, attr->oa_encap);
+	if (status != DLADM_STATUS_OK)
+		goto done;
+
+	status = dladm_set_conf_field(handle, conf, FSEARCH,
+	    DLADM_TYPE_STR, attr->oa_search);
+	if (status != DLADM_STATUS_OK)
+		goto done;
+
+	status = dladm_write_conf(handle, conf);
+
+done:
+	dladm_destroy_conf(handle, conf);
+	return (status);
+}
+
+static dladm_status_t
+i_dladm_overlay_create_sys(dladm_handle_t handle, dladm_overlay_attr_t *attr)
+{
+	overlay_ioc_create_t oic;
+	dladm_status_t status;
+	int ret;
 
 	bzero(&oic, sizeof (oic));
-	oic.oic_linkid = linkid;
-	oic.oic_vnetid = vid;
-	(void) strlcpy(oic.oic_encap, encap, MAXLINKNAMELEN);
+	oic.oic_linkid = attr->oa_linkid;
+	oic.oic_vnetid = attr->oa_vid;
+	(void) strlcpy(oic.oic_encap, attr->oa_encap, MAXLINKNAMELEN);
 
 	status = DLADM_STATUS_OK;
 	ret = ioctl(dladm_dld_fd(handle), OVERLAY_IOC_CREATE, &oic);
@@ -507,12 +578,22 @@ dladm_overlay_create(dladm_handle_t handle, const char *name,
 		status = dladm_errno2status(errno);
 	}
 
-	if (status != DLADM_STATUS_OK) {
-		(void) dladm_destroy_datalink_id(handle, linkid, flags);
-		return (status);
-	}
+	return (status);
+}
 
-	slen = strlen(search);
+static dladm_status_t
+i_dladm_overlay_commit_sys(dladm_handle_t handle, dladm_overlay_attr_t *attr,
+    dladm_arg_list_t *props, dladm_errlist_t *errs)
+{
+	overlay_ioc_activate_t oia;
+	varpd_client_handle_t *vch;
+	dladm_status_t status;
+	size_t slen;
+	uint64_t id;
+	int ret;
+	uint_t i;
+
+	slen = strlen(attr->oa_search);
 	for (i = 0; props != NULL && i < props->al_count; i++) {
 		dladm_arg_info_t	*aip = &props->al_info[i];
 
@@ -521,16 +602,14 @@ dladm_overlay_create(dladm_handle_t handle, const char *name,
 		 * prefix '<search>/', then we don't set the property on the
 		 * overlay device and instead set it on the varpd instance.
 		 */
-		if (strncmp(aip->ai_name, search, slen) == 0 &&
+		if (strncmp(aip->ai_name, attr->oa_search, slen) == 0 &&
 		    aip->ai_name[slen] == '/')
 			continue;
-		status = dladm_overlay_setprop(handle, linkid, aip->ai_name,
-		    aip->ai_val, aip->ai_count);
+		status = dladm_overlay_setprop(handle, attr->oa_linkid,
+		    aip->ai_name, aip->ai_val, aip->ai_count, attr->oa_flags);
 		if (status != DLADM_STATUS_OK) {
 			(void) dladm_errlist_append(errs,
-			    "failed to set property %s",
-			    aip->ai_name);
-			(void) dladm_overlay_delete(handle, linkid);
+			    "failed to set property %s", aip->ai_name);
 			return (status);
 		}
 	}
@@ -538,16 +617,14 @@ dladm_overlay_create(dladm_handle_t handle, const char *name,
 	if ((ret = libvarpd_c_create(&vch, dladm_overlay_doorpath)) != 0) {
 		(void) dladm_errlist_append(errs,
 		    "failed to create libvarpd handle: %s", strerror(ret));
-		(void) dladm_overlay_delete(handle, linkid);
 		return (dladm_errno2status(ret));
 	}
 
-	if ((ret = libvarpd_c_instance_create(vch, linkid, search,
-	    &id)) != 0) {
+	if ((ret = libvarpd_c_instance_create(vch, attr->oa_linkid,
+	    attr->oa_search, &id)) != 0) {
 		(void) dladm_errlist_append(errs,
 		    "failed to create varpd instance: %s", strerror(ret));
 		libvarpd_c_destroy(vch);
-		(void) dladm_overlay_delete(handle, linkid);
 		return (dladm_errno2status(ret));
 	}
 
@@ -557,21 +634,18 @@ dladm_overlay_create(dladm_handle_t handle, const char *name,
 		/*
 		 * Skip arguments we've processed already.
 		 */
-		if (strncmp(aip->ai_name, search, slen) != 0)
+		if (strncmp(aip->ai_name, attr->oa_search, slen) != 0 ||
+		    aip->ai_name[slen] != '/')
 			continue;
 
-		if (aip->ai_name[slen] != '/')
-			continue;
-
-		ret = dladm_overlay_varpd_setprop(handle, vch, id, aip->ai_name,
-		    aip->ai_val, aip->ai_count);
+		ret = dladm_overlay_varpd_setprop(handle, vch, id,
+		    attr->oa_linkid, aip->ai_name, aip->ai_val, aip->ai_count,
+		    attr->oa_flags);
 		if (ret != 0) {
 			(void) dladm_errlist_append(errs,
-			    "failed to set varpd prop: %s\n",
-			    aip->ai_name);
+			    "failed to set varpd prop: %s\n", aip->ai_name);
 			(void) libvarpd_c_instance_destroy(vch, id);
 			libvarpd_c_destroy(vch);
-			(void) dladm_overlay_delete(handle, linkid);
 			return (dladm_errno2status(ret));
 		}
 	}
@@ -579,17 +653,16 @@ dladm_overlay_create(dladm_handle_t handle, const char *name,
 	if ((ret = libvarpd_c_instance_activate(vch, id)) != 0) {
 		(void) dladm_errlist_append(errs,
 		    "failed to activate varpd instance: %s", strerror(ret));
-		(void) dladm_overlay_walk_varpd_prop(handle, linkid, id,
-		    dladm_overlay_activate_cb, errs);
+		(void) dladm_overlay_walk_varpd_prop(handle, attr->oa_linkid,
+		    id, dladm_overlay_activate_cb, errs);
 		(void) libvarpd_c_instance_destroy(vch, id);
 		libvarpd_c_destroy(vch);
-		(void) dladm_overlay_delete(handle, linkid);
 		return (dladm_errno2status(ret));
 
 	}
 
 	bzero(&oia, sizeof (oia));
-	oia.oia_linkid = linkid;
+	oia.oia_linkid = attr->oa_linkid;
 	status = DLADM_STATUS_OK;
 	ret = ioctl(dladm_dld_fd(handle), OVERLAY_IOC_ACTIVATE, &oia);
 	if (ret != 0) {
@@ -597,20 +670,57 @@ dladm_overlay_create(dladm_handle_t handle, const char *name,
 		(void) dladm_errlist_append(errs, "failed to activate "
 		    "device: %s", strerror(ret));
 		(void) libvarpd_c_instance_destroy(vch, id);
-		(void) dladm_overlay_walk_prop(handle, linkid,
+		(void) dladm_overlay_walk_prop(handle, attr->oa_linkid,
 		    dladm_overlay_activate_cb, errs, errs);
 		status = dladm_errno2status(ret);
-		(void) libvarpd_c_instance_destroy(vch, id);
 	}
 
 	libvarpd_c_destroy(vch);
-	if (status != DLADM_STATUS_OK)
-		(void) dladm_overlay_delete(handle, linkid);
 
 	return (status);
 }
 
+dladm_status_t
+dladm_overlay_create(dladm_handle_t handle, const char *name,
+    const char *encap, const char *search, uint64_t vid,
+    dladm_arg_list_t *props, dladm_errlist_t *errs, uint32_t flags)
+{
+	dladm_status_t status;
+	datalink_id_t linkid;
+	dladm_overlay_attr_t attr;
 
+	status = dladm_create_datalink_id(handle, name, DATALINK_CLASS_OVERLAY,
+	    DL_ETHER, flags, &linkid);
+	if (status != DLADM_STATUS_OK)
+		return (status);
+
+	attr.oa_linkid = linkid;
+	attr.oa_name = name;
+	attr.oa_encap = encap;
+	attr.oa_search = search;
+	attr.oa_vid = vid;
+	attr.oa_flags = flags;
+
+	status = i_dladm_overlay_create_sys(handle, &attr);
+
+	if (status != DLADM_STATUS_OK) {
+		(void) dladm_destroy_datalink_id(handle, linkid, flags);
+		return (status);
+	}
+
+	if ((flags & DLADM_OPT_PERSIST) != 0)
+		status = dladm_overlay_persist_conf(handle, &attr);
+
+	if (status == DLADM_STATUS_OK)
+		status = i_dladm_overlay_commit_sys(handle, &attr, props, errs);
+
+	if (status != DLADM_STATUS_OK) {
+		(void) dladm_overlay_delete(handle, linkid, flags);
+		(void) dladm_destroy_datalink_id(handle, linkid, flags);
+	}
+
+	return (status);
+}
 
 typedef struct overlay_walk_cb {
 	dladm_handle_t		owc_handle;
@@ -905,4 +1015,177 @@ dladm_overlay_status(dladm_handle_t handle, datalink_id_t linkid,
 	    sizeof (dos.dos_fmamsg));
 	func(handle, linkid, &dos, arg);
 	return (DLADM_STATUS_OK);
+}
+
+static void
+i_dladm_overlay_attr_free(dladm_handle_t handle, dladm_overlay_attr_t *attr)
+{
+	free((char *)attr->oa_name);
+	free((char *)attr->oa_encap);
+	free((char *)attr->oa_search);
+}
+
+static void
+i_dladm_overlay_props_free(dladm_handle_t handle, dladm_arg_list_t *props)
+{
+	uint_t i, j;
+
+	for (i = 0; props != NULL && i < props->al_count; i++) {
+		dladm_arg_info_t *aip = &props->al_info[i];
+
+		free((char *)aip->ai_name);
+		for (j = 0; j < aip->ai_count; j++)
+			free(aip->ai_val[j]);
+	}
+	free(props);
+}
+
+static dladm_status_t
+i_dladm_overlay_info_persist(dladm_handle_t handle, datalink_id_t linkid,
+    dladm_overlay_attr_t *attrp, dladm_arg_list_t **props)
+{
+	dladm_conf_t conf;
+	dladm_status_t status;
+	char buf[MAXLINELEN];
+	char last_attr[MAXLINKATTRLEN];
+	char attr[MAXLINKATTRLEN];
+	char attrval[MAXLINKATTRVALLEN];
+	size_t attrsz;
+	dladm_arg_list_t *list;
+
+	*props = NULL;
+
+	if ((status = dladm_getsnap_conf(handle, linkid, &conf)) !=
+	    DLADM_STATUS_OK)
+		return (status);
+
+	attrp->oa_linkid = linkid;
+
+	status = dladm_get_conf_field(handle, conf, FVLANID, &attrp->oa_vid,
+	    sizeof (attrp->oa_vid));
+	if (status != DLADM_STATUS_OK)
+		goto done;
+
+	status = dladm_get_conf_field(handle, conf, FENCAP, buf, sizeof (buf));
+	if (status != DLADM_STATUS_OK)
+		goto done;
+	if ((attrp->oa_encap = strdup(buf)) == NULL) {
+		status = dladm_errno2status(errno);
+		goto done;
+	}
+
+	status = dladm_get_conf_field(handle, conf, FSEARCH, buf, sizeof (buf));
+	if (status != DLADM_STATUS_OK)
+		goto done;
+	if ((attrp->oa_search = strdup(buf)) == NULL) {
+		status = dladm_errno2status(errno);
+		goto done;
+	}
+
+	list = calloc(1, sizeof (dladm_arg_list_t));
+
+	*last_attr = '\0';
+	while (dladm_getnext_conf_linkprop(handle, conf, last_attr,
+	    attr, attrval, MAXLINKATTRVALLEN, &attrsz) == DLADM_STATUS_OK) {
+		dladm_arg_info_t *aip;
+
+		(void) strlcpy(last_attr, attr, MAXLINKATTRLEN);
+		if (strchr(attr, '/') == NULL)
+			continue;
+
+		status = dladm_get_conf_field(handle, conf, attr, buf,
+		    sizeof (buf));
+		if (status != DLADM_STATUS_OK)
+			break;
+
+		aip = &list->al_info[list->al_count];
+		bzero(aip, sizeof (dladm_arg_info_t));
+		if ((aip->ai_name = strdup(attr)) == NULL) {
+			status = dladm_errno2status(errno);
+			break;
+		}
+		if ((aip->ai_val[0] = strdup(buf)) == NULL) {
+			status = dladm_errno2status(errno);
+			break;
+		}
+		aip->ai_count = 1;
+		list->al_count++;
+		if (list->al_count >= DLADM_MAX_ARG_CNT) {
+			status = DLADM_STATUS_TOOMANYELEMENTS;
+			break;
+		}
+	}
+
+done:
+
+	if (status == DLADM_STATUS_OK)
+		*props = list;
+	else
+		i_dladm_overlay_props_free(handle, list);
+
+	dladm_destroy_conf(handle, conf);
+
+	return (status);
+}
+
+typedef struct dladm_overlay_up_arg_s {
+	dladm_status_t	status;
+	dladm_errlist_t	*errlist;
+} dladm_overlay_up_arg_t;
+
+static int
+i_dladm_overlay_up(dladm_handle_t handle, datalink_id_t linkid, void *arg)
+{
+	dladm_overlay_up_arg_t *argp = arg;
+	dladm_status_t *statusp = &argp->status;
+	dladm_status_t status;
+	dladm_overlay_attr_t attr;
+	dladm_arg_list_t *props;
+
+	bzero(&attr, sizeof (attr));
+
+	status = i_dladm_overlay_info_persist(handle, linkid, &attr, &props);
+	if (status != DLADM_STATUS_OK) {
+		*statusp = status;
+		return (DLADM_WALK_CONTINUE);
+	}
+
+	status = i_dladm_overlay_create_sys(handle, &attr);
+	if (status != DLADM_STATUS_OK)
+		goto out;
+
+	status = i_dladm_overlay_commit_sys(handle, &attr, props,
+	    argp->errlist);
+	if (status != DLADM_STATUS_OK) {
+		*statusp = status;
+		dladm_overlay_delete(handle, linkid, 0);
+		goto out;
+	}
+
+	status = dladm_up_datalink_id(handle, linkid);
+
+out:
+	i_dladm_overlay_attr_free(handle, &attr);
+	i_dladm_overlay_props_free(handle, props);
+
+	return (DLADM_WALK_CONTINUE);
+}
+
+dladm_status_t
+dladm_overlay_up(dladm_handle_t handle, datalink_id_t linkid,
+    dladm_errlist_t *errs)
+{
+	dladm_overlay_up_arg_t overlay_arg = {
+		.status		= DLADM_STATUS_OK,
+		.errlist	= errs
+	};
+
+	if (linkid == DATALINK_ALL_LINKID) {
+		(void) dladm_walk_datalink_id(i_dladm_overlay_up, handle,
+		    &overlay_arg, DATALINK_CLASS_OVERLAY,
+		    DATALINK_ANY_MEDIATYPE, DLADM_OPT_PERSIST);
+	} else {
+		(void) i_dladm_overlay_up(handle, linkid, &overlay_arg);
+	}
+	return (overlay_arg.status);
 }
