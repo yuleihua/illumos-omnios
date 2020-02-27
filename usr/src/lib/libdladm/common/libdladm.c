@@ -440,6 +440,9 @@ dladm_status2str(dladm_status_t status, char *buf)
 	case DLADM_STATUS_BAD_ENCAP:
 		s = "invalid encapsulation protocol";
 		break;
+	case DLADM_STATUS_ADDRNOTAVAIL:
+		s = "can't assign requested address";
+		break;
 	default:
 		s = "<unknown error>";
 		break;
@@ -490,6 +493,8 @@ dladm_errno2status(int err)
 		return (DLADM_STATUS_FLOW_IDENTICAL);
 	case EADDRINUSE:
 		return (DLADM_STATUS_ADDRINUSE);
+	case EADDRNOTAVAIL:
+		return (DLADM_STATUS_ADDRNOTAVAIL);
 	default:
 		return (DLADM_STATUS_FAILED);
 	}
