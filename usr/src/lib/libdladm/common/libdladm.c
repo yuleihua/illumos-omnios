@@ -443,6 +443,9 @@ dladm_status2str(dladm_status_t status, char *buf)
 	case DLADM_STATUS_ADDRNOTAVAIL:
 		s = "can't assign requested address";
 		break;
+	case DLADM_STATUS_PERSIST_ON_TEMP:
+		s = "can't create persistent object on top of temporary one";
+		break;
 	default:
 		s = "<unknown error>";
 		break;
