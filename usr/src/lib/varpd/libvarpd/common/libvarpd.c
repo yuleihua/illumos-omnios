@@ -11,6 +11,7 @@
 
 /*
  * Copyright 2015 Joyent, Inc.
+ * Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
  */
 
 /*
@@ -105,6 +106,9 @@ libvarpd_create(varpd_handle_t **vphp)
 		umem_free(vip, sizeof (varpd_impl_t));
 		return (ret);
 	}
+
+	(void) bunyan_stream_add(vip->vdi_bunyan, "stderr", BUNYAN_L_INFO,
+	    bunyan_stream_fd, (void *)STDERR_FILENO);
 
 	libvarpd_persist_init(vip);
 
