@@ -161,7 +161,6 @@ static const 	char	*msgtab[] =
 
 extern  char	*optarg;	/* Value of argument */
 extern  int	optind;		/* Indicator of argument */
-extern	int __xpg4;	/* defined in xpg4.c; 0 if not xpg4-compiled program */
 
 struct  Fspec   {
 	char    Ftabs[22];
