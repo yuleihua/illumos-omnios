@@ -2312,6 +2312,7 @@ usr/src/cmd/valtools/cktime
 usr/src/cmd/valtools/ckuid
 usr/src/cmd/valtools/ckyorn
 usr/src/cmd/valtools/puttext
+usr/src/cmd/varpd/varpd
 usr/src/cmd/vgrind/vfontedpr
 usr/src/cmd/vgrind/vgrind
 usr/src/cmd/vgrind/vgrindefs
@@ -3009,6 +3010,8 @@ usr/src/lib/libast/tmpastinclude/
 usr/src/lib/libbsm/audit_uevents.h
 usr/src/lib/libbsm/common/adt_event.h
 usr/src/lib/libbsm/common/adt_xlate.c
+usr/src/lib/libbunyan/amd64/bunyan_provider_impl.h
+usr/src/lib/libbunyan/i386/bunyan_provider_impl.h
 usr/src/lib/libc/THIRDPARTYLICENSE
 usr/src/lib/libc/amd64/assym.h
 usr/src/lib/libc/amd64/cp_offsets.h
@@ -3943,6 +3946,7 @@ usr/src/man/man4/ipnat.conf.4
 usr/src/man/man4/ippool.conf.4
 usr/src/man/man5/endian.5
 usr/src/man/man7p/NDP.7p
+usr/src/man/man7p/VXLAN.7p
 usr/src/man/man9/iportmap.9
 usr/src/man/man9/phymap.9
 usr/src/man/man9/tgtmap.9
@@ -4291,6 +4295,7 @@ usr/src/test/smbclient-tests/cmd/mkfile_mmap/mkfile_mmap
 usr/src/test/smbclient-tests/cmd/no_close/no_close
 usr/src/test/smbclient-tests/cmd/prot_mmap/prot_mmap
 usr/src/test/smbclient-tests/cmd/rw_mmap/rw_mmap
+usr/src/test/util-tests/tests/bunyan/btest
 usr/src/test/util-tests/tests/ctf/check-array
 usr/src/test/util-tests/tests/ctf/check-enum
 usr/src/test/util-tests/tests/ctf/check-float-32

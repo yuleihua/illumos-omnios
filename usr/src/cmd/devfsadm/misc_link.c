@@ -216,6 +216,9 @@ static devfsadm_create_t misc_cbt[] = {
 	{ "pseudo", "ddi_pseudo", "hv_kvp",
 	    TYPE_EXACT | DRV_EXACT, ILEVEL_0, minor_name
 	},
+	{ "pseudo", "ddi_pseudo", "overlay",
+	    TYPE_EXACT | DRV_EXACT, ILEVEL_0, minor_name
+	}
 };
 
 DEVFSADM_CREATE_INIT_V0(misc_cbt);

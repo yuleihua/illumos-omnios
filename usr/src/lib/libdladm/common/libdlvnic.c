@@ -20,6 +20,7 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2015, Joyent Inc.
  */
 
 #include <stdio.h>
@@ -399,12 +400,13 @@ dladm_vnic_create(dladm_handle_t handle, const char *vnic, datalink_id_t linkid,
     vnic_mac_addr_type_t mac_addr_type, uchar_t *mac_addr, uint_t mac_len,
     int *mac_slot, uint_t mac_prefix_len, uint16_t vid, vrid_t vrid,
     int af, datalink_id_t *vnic_id_out, dladm_arg_list_t *proplist,
-    uint32_t flags)
+    dladm_errlist_t *errs, uint32_t flags)
 {
 	dladm_vnic_attr_t attr;
 	datalink_id_t vnic_id;
 	datalink_class_t class;
 	uint32_t media = DL_ETHER;
+	uint32_t link_flags;
 	char name[MAXLINKNAMELEN];
 	uchar_t tmp_addr[MAXMACADDRLEN];
 	dladm_status_t status;
@@ -429,15 +431,23 @@ dladm_vnic_create(dladm_handle_t handle, const char *vnic, datalink_id_t linkid,
 	if (!dladm_vnic_macaddrtype2str(mac_addr_type))
 		return (DLADM_STATUS_INVALIDMACADDRTYPE);
 
-	if ((flags & DLADM_OPT_ANCHOR) == 0) {
-		if ((status = dladm_datalink_id2info(handle, linkid, NULL,
-		    &class, &media, NULL, 0)) != DLADM_STATUS_OK)
+	if (linkid != DATALINK_INVALID_LINKID) {
+		if ((status = dladm_datalink_id2info(handle, linkid,
+		    &link_flags, &class, &media, NULL, 0)) != DLADM_STATUS_OK)
 			return (status);
 
+		/* Disallow persistent objects on top of temporary ones */
+		if ((flags & DLADM_OPT_PERSIST) != 0 &&
+		    (link_flags & DLMGMT_PERSIST) == 0)
+			return (DLADM_STATUS_PERSIST_ON_TEMP);
+
+		/* Links cannot be created on top of these object types */
 		if (class == DATALINK_CLASS_VNIC ||
 		    class == DATALINK_CLASS_VLAN)
 			return (DLADM_STATUS_BADARG);
-	} else {
+	}
+
+	if ((flags & DLADM_OPT_ANCHOR) != 0) {
 		/* it's an anchor VNIC */
 		if (linkid != DATALINK_INVALID_LINKID || vid != 0)
 			return (DLADM_STATUS_BADARG);
@@ -554,8 +564,14 @@ dladm_vnic_create(dladm_handle_t handle, const char *vnic, datalink_id_t linkid,
 			status = dladm_set_linkprop(handle, vnic_id,
 			    aip->ai_name, aip->ai_val, aip->ai_count,
 			    DLADM_OPT_PERSIST);
-			if (status != DLADM_STATUS_OK)
+			if (status != DLADM_STATUS_OK) {
+				char	errmsg[DLADM_STRSIZE];
+				(void) dladm_errlist_append(errs,
+				    "failed to set property %s: %s",
+				    aip->ai_name,
+				    dladm_status2str(status, errmsg));
 				break;
+			}
 		}
 	}
 

@@ -1,6 +1,7 @@
 #
 # Copyright 2010 Sun Microsystems, Inc.  All rights reserved.
 # Use is subject to license terms.
+# Copyright 2015 Joyent, Inc.
 #
 # CDDL HEADER START
 #
@@ -227,6 +228,7 @@ eklogin		2105/tcp			# Kerberos encrypted rlogin
 lockd		4045/udp			# NFS lock daemon/manager
 lockd		4045/tcp
 ipsec-nat-t	4500/udp			# IPsec NAT-Traversal
+vxlan		4789/udp			# Virtual eXtensible Local Area Network (VXLAN)
 mdns		5353/udp			# Multicast DNS
 mdns		5353/tcp
 vnc-server	5900/tcp			# VNC Server

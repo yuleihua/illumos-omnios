@@ -37,6 +37,7 @@ dir path=opt/util-tests/tests/awk/examples/out
 dir path=opt/util-tests/tests/awk/gnu
 dir path=opt/util-tests/tests/awk/syn
 dir path=opt/util-tests/tests/awk/tests
+dir path=opt/util-tests/tests/bunyan
 dir path=opt/util-tests/tests/ctf
 dir path=opt/util-tests/tests/ctf/test-merge-dedup
 dir path=opt/util-tests/tests/ctf/test-merge-forward
@@ -61,6 +62,7 @@ dir path=opt/util-tests/tests/libsff
 dir path=opt/util-tests/tests/mergeq
 dir path=opt/util-tests/tests/sleep
 file path=opt/util-tests/README mode=0444
+file path=opt/util-tests/bin/btest mode=0555
 file path=opt/util-tests/bin/print_json mode=0555
 file path=opt/util-tests/bin/utiltest mode=0555
 file path=opt/util-tests/runfiles/default.run mode=0444
@@ -1084,6 +1086,7 @@ file path=opt/util-tests/tests/awk/tests/penicil.ok mode=0444
 file path=opt/util-tests/tests/awk/tests/penicil.p mode=0444
 file path=opt/util-tests/tests/awk/tests/res.ok mode=0444
 file path=opt/util-tests/tests/awk/tests/res.p mode=0444
+file path=opt/util-tests/tests/bunyan/bunyan mode=0555
 file path=opt/util-tests/tests/chown_test mode=0555
 file path=opt/util-tests/tests/ctf/Makefile.ctftest.com mode=0555
 file path=opt/util-tests/tests/ctf/check-array mode=0555
@@ -1470,6 +1473,7 @@ file path=opt/util-tests/tests/mergeq/mqt mode=0555
 file path=opt/util-tests/tests/mergeq/wqt mode=0555
 file path=opt/util-tests/tests/printf_test mode=0555
 file path=opt/util-tests/tests/set-linkprop mode=0555
+file path=opt/util-tests/tests/show-overlay-exit mode=0555
 file path=opt/util-tests/tests/sleep/sleep.awk mode=0444
 file path=opt/util-tests/tests/sleep/sleep.d mode=0444
 file path=opt/util-tests/tests/sleep/sleeptest mode=0555

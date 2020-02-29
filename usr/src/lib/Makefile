@@ -97,6 +97,7 @@ SUBDIRS +=				\
 	libbrand	\
 	libbsdmalloc	\
 	libbsm		\
+	libbunyan	\
 	libc_db		\
 	libcfgadm	\
 	libcmd		\
@@ -142,6 +143,7 @@ SUBDIRS +=				\
 	libgss		\
 	libhotplug	\
 	libidmap	\
+	libidspace	\
 	libilb		\
 	libima		\
 	libinetsvc	\
@@ -191,6 +193,7 @@ SUBDIRS +=				\
 	libpthread	\
 	libraidcfg	\
 	librcm		\
+	librename	\
 	libreparse	\
 	libresolv	\
 	libresolv2	\
@@ -274,6 +277,7 @@ SUBDIRS +=				\
 	sun_fc		\
 	sun_sas		\
 	udapl		\
+	varpd		\
 	watchmalloc	\
 	$($(MACH)_SUBDIRS)
 
@@ -380,6 +384,7 @@ HDRSUBDIRS=				\
 	libast		\
 	libbrand	\
 	libbsm		\
+	libbunyan	\
 	libc		\
 	libcmd		\
 	libcmdutils	\
@@ -413,6 +418,7 @@ HDRSUBDIRS=				\
 	libgen		\
 	libgrubmgmt	\
 	libidmap	\
+	libidspace	\
 	libilb		\
 	libima		\
 	libinetsvc	\
@@ -449,6 +455,7 @@ HDRSUBDIRS=				\
 	libproc		\
 	libraidcfg	\
 	librcm		\
+	librename	\
 	libreparse	\
 	librestart	\
 	librpcsvc	\
@@ -500,6 +507,7 @@ HDRSUBDIRS=				\
 	smbsrv		\
 	smhba		\
 	udapl		\
+	varpd		\
 	$($(MACH)_HDRSUBDIRS)
 
 i386_HDRSUBDIRS=	\
@@ -599,6 +607,7 @@ libadt_jni:	libbsm
 libadutils:	libldap5 libresolv2
 libbe:		libzfs libinstzones libuuid libgen libdevinfo libefi libficl
 libbsm:		libinetutil libscf libsecdb libtsol
+libbunyan:	libnvpair libumem
 libcfgadm:	libdevinfo
 libcontract:	libnvpair
 libcmd:		libsum libast
@@ -615,7 +624,7 @@ libdhcputil:	libgen libinetutil libdlpi
 libdiskmgt:	libdevid libdevinfo libadm libefi libkstat libsysevent
 $(INTEL_BLD)libdiskmgt: libfdisk
 libdladm:	libdevinfo libinetutil libscf librcm libexacct libkstat \
-		libpool
+		libpool varpd
 libdll:		libast
 libdlpi:	libinetutil libdladm
 libds:		libsysevent
@@ -634,6 +643,7 @@ libfsmgt:	libkstat
 libgrubmgmt:	libdevinfo libzfs libfstyp libefi
 $(INTEL_BLD)libgrubmgmt: libfdisk
 libidmap:	libavl libuutil
+libidspace:	libumem
 libinetsvc:	libscf
 libinetutil:	libsocket
 libinstzones:	libzonecfg libcontract
@@ -728,6 +738,8 @@ storage:	libdevice libdevinfo libdevid
 sun_fc:		libdevinfo libsysevent
 sun_sas:	libdevinfo libsysevent libkstat libdevid
 udapl:		libdevinfo libdladm
+varpd:		libavl libidspace libumem libnsl libnvpair libmd5 librename \
+		libbunyan libcustr
 
 #
 # The reason this rule checks for the existence of the

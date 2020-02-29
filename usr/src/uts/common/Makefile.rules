@@ -103,6 +103,10 @@ $(OBJS_DIR)/%.o:		$(COMMONBASE)/avl/%.c
 	$(COMPILE.c) -o $@ $<
 	$(CTFCONVERT_O)
 
+$(OBJS_DIR)/%.o:		$(COMMONBASE)/inet/%.c
+	$(COMPILE.c) -o $@ $<
+	$(CTFCONVERT_O)
+
 $(OBJS_DIR)/%.o:		$(COMMONBASE)/ucode/%.c
 	$(COMPILE.c) -o $@ $<
 	$(CTFCONVERT_O)
@@ -983,6 +987,14 @@ $(OBJS_DIR)/%.o:		$(UTSBASE)/common/io/nxge/npi/%.c
 $(OBJS_DIR)/%.o:		$(UTSBASE)/common/io/nxge/%.s
 	$(COMPILE.s) -o $@ $<
 
+$(OBJS_DIR)/%.o:		$(UTSBASE)/common/io/overlay/%.c
+	$(COMPILE.c) -o $@ $<
+	$(CTFCONVERT_O)
+
+$(OBJS_DIR)/%.o:		$(UTSBASE)/common/io/overlay/plugins/%.c
+	$(COMPILE.c) -o $@ $<
+	$(CTFCONVERT_O)
+
 $(OBJS_DIR)/%.o:		$(UTSBASE)/common/io/pci-ide/%.c
 	$(COMPILE.c) -o $@ $<
 	$(CTFCONVERT_O)
@@ -1486,6 +1498,11 @@ $(OBJS_DIR)/%.o:		$(UTSBASE)/common/io/vioblk/%.c
 $(OBJS_DIR)/%.o:		$(UTSBASE)/common/io/vioif/%.c
 	$(COMPILE.c) -o $@ $<
 	$(CTFCONVERT_O)
+
+$(OBJS_DIR)/%.o:		$(COMMONBASE)/idspace/%.c
+	$(COMPILE.c) -o $@ $<
+	$(CTFCONVERT_O)
+
 #
 # krtld must refer to its own bzero/bcopy until the kernel is fully linked
 #
@@ -1547,6 +1564,10 @@ $(OBJS_DIR)/%.o:		$(UTSBASE)/common/pcmcia/nexus/%.c
 	$(CTFCONVERT_O)
 
 $(OBJS_DIR)/%.o:		$(UTSBASE)/common/pcmcia/pcs/%.c
+	$(COMPILE.c) -o $@ $<
+	$(CTFCONVERT_O)
+
+$(OBJS_DIR)/%.o:		$(UTSBASE)/common/refhash/%.c
 	$(COMPILE.c) -o $@ $<
 	$(CTFCONVERT_O)
 
@@ -1675,6 +1696,9 @@ $(LINTS_DIR)/%.ln:		$(COMMONBASE)/acl/%.c
 	@($(LHEAD) $(LINT.c) $< $(LTAIL))
 
 $(LINTS_DIR)/%.ln:		$(COMMONBASE)/avl/%.c
+	@($(LHEAD) $(LINT.c) $< $(LTAIL))
+
+$(LINTS_DIR)/%.ln:		$(COMMONBASE)/inet/%.c
 	@($(LHEAD) $(LINT.c) $< $(LTAIL))
 
 $(LINTS_DIR)/%.ln:		$(COMMONBASE)/ucode/%.c
@@ -2307,6 +2331,12 @@ $(LINTS_DIR)/%.ln:		$(UTSBASE)/common/io/nxge/%.s
 $(LINTS_DIR)/%.ln:		$(UTSBASE)/common/io/nxge/npi/%.c
 	@($(LHEAD) $(LINT.c) $< $(LTAIL))
 
+$(LINTS_DIR)/%.ln:		$(UTSBASE)/common/io/overlay/%.c
+	@($(LHEAD) $(LINT.c) $< $(LTAIL))
+
+$(LINTS_DIR)/%.ln:		$(UTSBASE)/common/io/overlay/plugins/%.c
+	@($(LHEAD) $(LINT.c) $< $(LTAIL))
+
 $(LINTS_DIR)/%.ln:		$(UTSBASE)/common/io/pci-ide/%.c
 	@($(LHEAD) $(LINT.c) $< $(LTAIL))
 
@@ -2685,6 +2715,9 @@ $(LINTS_DIR)/%.ln:		$(UTSBASE)/common/pcmcia/nexus/%.c
 $(LINTS_DIR)/%.ln:		$(UTSBASE)/common/pcmcia/pcs/%.c
 	@($(LHEAD) $(LINT.c) $< $(LTAIL))
 
+$(LINTS_DIR)/%.ln:		$(UTSBASE)/common/refhash/%.c
+	@($(LHEAD) $(LINT.c) $< $(LTAIL))
+
 $(LINTS_DIR)/%.ln:		$(UTSBASE)/common/rpc/%.c
 	@($(LHEAD) $(LINT.c) $< $(LTAIL))
 
@@ -2777,4 +2810,7 @@ $(LINTS_DIR)/%.ln:		$(UTSBASE)/common/io/skd/%.c
 	@($(LHEAD) $(LINT.c) $< $(LTAIL))
 
 $(LINTS_DIR)/%.ln:		$(COMMONBASE)/fsreparse/%.c
+	@($(LHEAD) $(LINT.c) $< $(LTAIL))
+
+$(LINTS_DIR)/%.ln:		$(COMMONBASE)/idspace/%.c
 	@($(LHEAD) $(LINT.c) $< $(LTAIL))

@@ -198,7 +198,7 @@ vnic_unicast_add(vnic_t *vnic, vnic_mac_addr_type_t vnic_addr_type,
     uint8_t *mac_addr_arg, uint16_t flags, vnic_ioc_diag_t *diag,
     uint16_t vid, boolean_t req_hwgrp_flag)
 {
-	mac_diag_t mac_diag;
+	mac_diag_t mac_diag = MAC_DIAG_NONE;
 	uint16_t mac_flags = 0;
 	int err;
 	uint_t addr_len;
