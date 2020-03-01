@@ -1256,6 +1256,7 @@ $(PORTI18N_COND:%=pics/%) := \
 pics/arc4random.o :=	CPPFLAGS += -I$(SRC)/common/crypto/chacha
 
 pics/__clock_gettime.o := CPPFLAGS += $(COMMPAGE_CPPFLAGS)
+pics/gettimeofday.o := CPPFLAGS += $(COMMPAGE_CPPFLAGS)
 
 .KEEP_STATE:
 

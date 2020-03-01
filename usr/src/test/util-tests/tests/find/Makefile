@@ -9,15 +9,33 @@
 # http://www.illumos.org/license/CDDL.
 #
 
-# Copyright 2015, Richard Lowe.
+#
 # Copyright 2020 Joyent, Inc.
+#
 
-MAKE_INCLUDE= $(SRC)/cmd/make/include
+include $(SRC)/cmd/Makefile.cmd
+include $(SRC)/test/Makefile.com
 
-CC = $(NATIVECC)
-CCC = $(NATIVECCC)
-CFLAGS = $(NATIVE_CFLAGS)
-CFLAGS += $(CCVERBOSE)
-CCFLAGS = $(NATIVE_CCFLAGS) -_gcc4=-std=gnu++0x
-CPPFLAGS = -I$(MAKE_INCLUDE) $(MAKE_DEFS)
-CCNEEDED = $(NATIVECCNEEDED)
+ROOTOPTPKG = $(ROOT)/opt/util-tests/tests/find
+PROG = findtest
+
+ROOTPROG = $(PROG:%=$(ROOTOPTPKG)/%)
+
+all:
+
+install: $(ROOTPROG)
+
+clobber: clean
+
+clean:
+
+$(CMDS): $(TESTDIR)
+
+$(ROOTOPTPKG):
+	$(INS.dir)
+
+$(ROOTOPTPKG)/%: %.ksh $(ROOTOPTPKG)
+	$(INS.rename)
+
+$(ROOTOPTPKG)/%: % $(ROOTOPTPKG)
+	$(INS.file)
