@@ -14,7 +14,10 @@ are included in the footer.
 =======================================================================
 
 
-## None pending
+## 12336 Boot hang caused by x2apic probe using incorrect local apic id
+
+    Packages:
+        system/kernel/platform
 
 
 =======================================================================
