@@ -19,6 +19,12 @@ are included in the footer.
     Package: system/library
     Archive: https://hf.omnios.org/r151032/11825.p5p
 
+
+## 12336 Boot hang caused by x2apic probe using incorrect local apic id
+
+    Packages: system/kernel/platform
+
+
 =======================================================================
 
 =============================
