@@ -80,17 +80,6 @@ aggr_recv_path_cb(void *arg, mac_resource_handle_t mrh, mblk_t *mp,
 	aggr_port_t *port = (aggr_port_t *)arg;
 	aggr_grp_t *grp = port->lp_grp;
 
-	/* In the case where lp_promisc_on has been turned on to
-	 * compensate for insufficient hardware MAC matching and
-	 * hardware rings are not in use we will fall back to
-	 * using flows for delivery which can result in duplicates
-	 * pushed up the stack. Only respect the chosen path.
-	 */
-	if (port->lp_promisc_on != promisc_path) {
-		freemsgchain(mp);
-		return;
-	}
-
 	if (grp->lg_lacp_mode == AGGR_LACP_OFF) {
 		aggr_mac_rx(grp->lg_mh, mrh, mp);
 	} else {
