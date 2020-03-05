@@ -22,6 +22,7 @@
  * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
  * Copyright 2019 Joyent, Inc.
+ * Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
  */
 
 /*	Copyright (c) 1984, 1986, 1987, 1988, 1989 AT&T	*/
@@ -136,6 +137,7 @@ static	void	getarg(void);
 static	void	prtime(timestruc_t st);
 static	void	przom(psinfo_t *psinfo);
 static	int	num(char *);
+static	int	preadargs(int, psinfo_t *, char *, size_t);
 static	int	preadenvs(int, psinfo_t *, char *, size_t);
 static	int	prcom(int, psinfo_t *, char *);
 static	int	namencnt(char *, int, int);
@@ -146,7 +148,7 @@ extern int	scrwidth(wchar_t);	/* header file? */
 
 /* from ps.c */
 void get_psargs(bool, bool, psinfo_t *, char *, size_t);
-void print_psargs(char *, int);
+void print_psargs(char *, int, int);
 
 int
 ucbmain(int argc, char **argv)
@@ -155,7 +157,7 @@ ucbmain(int argc, char **argv)
 	/*
 	 * This can also store env vars, so we bump up the size.
 	 */
-	char psargs[PRMAXARGVLEN * 2] = "";
+	char shortpsargs[PRMAXARGVLEN * 2] = "";
 	struct psent *psent;
 	int entsize;
 	int nent;
@@ -402,6 +404,8 @@ ucbmain(int argc, char **argv)
 	while ((dentp = readdir(dirp)) != NULL) {
 		int	psfd;	/* file descriptor for /proc/nnnnn/psinfo */
 		int	asfd;	/* file descriptor for /proc/nnnnn/as */
+		char	*psargs, *longpsargs = NULL;
+		size_t	psargslen;
 
 		if (dentp->d_name[0] == '.')		/* skip . and .. */
 			continue;
@@ -413,7 +417,7 @@ retry:
 		if ((psfd = open(psname, O_RDONLY)) == -1)
 			continue;
 		asfd = -1;
-		if (eflg) {
+		if (eflg || wflag > 1) {
 
 			/* now we need the proc_owner privilege */
 			(void) __priv_bracket(PRIV_ON);
@@ -473,10 +477,33 @@ retry:
 		if (!found && !tflg && !aflg && info.pr_euid != my_uid)
 			goto closeit;
 
-		get_psargs(false, wflag, &info, psargs, sizeof (psargs));
+		if (wflag > 1 && asfd > 0 &&
+		    (longpsargs = malloc(NCARGS)) != NULL) {
+			psargs = longpsargs;
+			psargslen = NCARGS;
+
+			if (preadargs(asfd, &info, psargs,
+			    psargslen) == -1) {
+				int saverr = errno;
+
+				(void) close(asfd);
+				if (saverr == EAGAIN)
+					goto retry;
+				if (saverr != ENOENT) {
+					(void) fprintf(stderr,
+					    "ps: read() on %s: %s\n",
+					    asname, err_string(saverr));
+				}
+				continue;
+			}
+		} else {
+			psargs = shortpsargs;
+			psargslen = sizeof (shortpsargs);
+			get_psargs(false, wflag, &info, psargs, psargslen);
+		}
 
 		if (eflg && asfd > 0 &&
-		    preadenvs(asfd, &info, psargs, sizeof (psargs)) == -1) {
+		    preadenvs(asfd, &info, psargs, psargslen) == -1) {
 			int saverr = errno;
 
 			(void) close(asfd);
@@ -505,13 +532,15 @@ retry:
 		}
 		*psent[nent].psinfo = info;
 
-		if ((psent[nent].psargs = strndup(psargs, twidth)) == NULL) {
+		if ((psent[nent].psargs = strndup(psargs, psargslen)) == NULL) {
 			(void) fprintf(stderr, "ps: no memory\n");
 			exit(1);
 		}
 
 		psent[nent].found = found;
 		nent++;
+
+		free(longpsargs);
 closeit:
 		if (asfd > 0)
 			(void) close(asfd);
@@ -545,10 +574,93 @@ usage()		/* print usage message and quit */
 }
 
 /*
+ * Read the process arguments from the process.
+ * This allows >PRARGSZ characters of arguments to be displayed but,
+ * unlike pr_psargs[], the process may have changed them.
+ */
+#define	NARG	100
+static int
+preadargs(int pfd, psinfo_t *psinfo, char *psargs, size_t bufsize)
+{
+	off_t argvoff = (off_t)psinfo->pr_argv;
+	size_t len;
+	char *psa = psargs;
+	int remaining = bufsize;
+	int narg = NARG;
+	off_t argv[NARG];
+	off_t argoff;
+	off_t nextargoff;
+	int i;
+#ifdef _LP64
+	caddr32_t argv32[NARG];
+	int is32 = (psinfo->pr_dmodel != PR_MODEL_LP64);
+#endif
+
+	if (psinfo->pr_nlwp == 0 ||
+	    strcmp(psinfo->pr_lwp.pr_clname, "SYS") == 0) {
+		goto out;
+	}
+
+	(void) memset(psa, '\0', remaining--);
+	nextargoff = 0;
+	errno = EIO;
+	while (remaining > 0) {
+		if (narg == NARG) {
+			(void) memset(argv, '\0', sizeof (argv));
+#ifdef _LP64
+			if (is32) {
+				if ((i = pread(pfd, argv32, sizeof (argv32),
+				    argvoff)) <= 0) {
+					if (i == 0 || errno == EIO)
+						break;
+					return (-1);
+				}
+				for (i = 0; i < NARG; i++)
+					argv[i] = argv32[i];
+			} else
+#endif
+				if ((i = pread(pfd, argv, sizeof (argv),
+				    argvoff)) <= 0) {
+					if (i == 0 || errno == EIO)
+						break;
+					return (-1);
+				}
+			narg = 0;
+		}
+		if ((argoff = argv[narg++]) == 0)
+			break;
+		if (argoff != nextargoff &&
+		    (i = pread(pfd, psa, remaining, argoff)) <= 0) {
+			if (i == 0 || errno == EIO)
+				break;
+			return (-1);
+		}
+		len = strlen(psa);
+		psa += len;
+		*psa++ = ' ';
+		remaining -= len + 1;
+		nextargoff = argoff + len + 1;
+#ifdef _LP64
+		argvoff += is32 ? sizeof (caddr32_t) : sizeof (caddr_t);
+#else
+		argvoff += sizeof (caddr_t);
+#endif
+	}
+	while (psa > psargs && isspace(*(psa - 1)))
+		psa--;
+
+out:
+	*psa = '\0';
+	if (strlen(psinfo->pr_psargs) > strlen(psargs))
+		(void) strcpy(psargs, psinfo->pr_psargs);
+
+	return (0);
+}
+
+/*
  * Read environment variables from the process.
  * Append them to psargs if there is room.
  */
-#define	NARG	100
 static int
 preadenvs(int pfd, psinfo_t *psinfo, char *psargs, size_t bufsize)
 {
@@ -906,7 +1018,7 @@ prcom(int found, psinfo_t *psinfo, char *psargs)
 	}
 
 	printf(" ");
-	print_psargs(psargs, wflag < 2 ? maxlen : 0);
+	print_psargs(psargs, wflag < 2 ? maxlen : 0, NCARGS);
 	return (1);
 }
 
