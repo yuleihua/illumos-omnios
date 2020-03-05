@@ -138,8 +138,7 @@ unlockpt(int fd)
 /*
  * XPG4v2 requires that open of a slave pseudo terminal device
  * provides the process with an interface that is identical to
- * the terminal interface. For a more detailed discussion,
- * see bugid 4025044.
+ * the terminal interface.
  *
  * To satisfy this, in strict XPG4v2 mode, this routine also sends
  * a message down the stream that sets a flag in the kernel module
@@ -153,7 +152,7 @@ unlockpt(int fd)
  *
  * Most applications do not expect this behaviour so it is only
  * enabled for programs compiled in strict XPG4v2 mode (see
- * stdlib.h)
+ * stdlib.h).
  */
 int
 __unlockpt_xpg4(int fd)
