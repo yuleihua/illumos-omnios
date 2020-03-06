@@ -45,9 +45,9 @@
 .\" Copyright (c) 2009, Sun Microsystems, Inc. All Rights Reserved
 .\" Copyright (c) 2013 Gary Mills
 .\" Copyright 2019 Joyent, Inc.
-.\" Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+.\" Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 .\"
-.TH PS 1 "August 28, 2019"
+.TH PS 1 "March 5, 2020"
 .SH NAME
 ps \- report process status
 .SH SYNOPSIS
@@ -142,9 +142,9 @@ full listing.)
 \fB-F\fR
 .ad
 .RS 15n
-Generates a \fBf\fRull listing but shows the complete current command
-arguments for a process (which may have been changed since the process was
-launched).
+Generates a \fBf\fRull listing but shows up to 4096 characters of the current
+command arguments for a process (which may have been changed since the process
+was launched).
 .RE
 
 .sp
@@ -385,7 +385,8 @@ Under the \fB-f\fR and \fB-F\fR options, \fBps\fR tries to determine the
 command name and arguments for the process. For \fB-f\fR these are the
 arguments given when the process was created and they are truncated.
 For \fB-F\fR the arguments are read from the fB/proc/\fInnnnn\fR\fB/cmdline\fR
-file. The process may have changed these since it was started.
+file which provides up to 4096 characters.
+The process may have changed these since it was started.
 Failing this, the command name is printed, as it would have appeared without
 the \fB-f\fR or \fB-F\fR options, in square brackets.
 .sp
@@ -617,8 +618,8 @@ The execution time for the lwp being reported.
 .ad
 .RS 14n
 The command name (or, with the \fB-f\fR option, the full command name and its
-arguments up to a limited of 80 characters or, with the \fB-F\fR option, the
-full current process arguments).
+arguments up to a limited of 80 characters or, with the \fB-F\fR option, up to
+4096 characters of the current process arguments).
 .RE
 
 .sp
@@ -893,9 +894,9 @@ is a version of the argument list as it was passed to the command when it
 started, or is a version of the arguments as they might have been modified by
 the application. Applications cannot depend on being able to modify their
 argument list and having that modification be reflected in the output of
-\fBps\fR. However, the current implementation will display the full modified
-process arguments when given the \fB-F\fR argument; otherwise this is the
-initial process arguments, but limited to 80 bytes.
+\fBps\fR. However, the current implementation will display up to 4096
+characters of the modified process arguments when given the \fB-F\fR argument;
+otherwise this is the initial process arguments, but limited to 80 bytes.
 .RE
 
 .sp

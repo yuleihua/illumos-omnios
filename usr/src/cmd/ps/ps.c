@@ -21,6 +21,7 @@
 
 /*
  * Copyright (c) 2013 Gary Mills
+ * Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
  *
  * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
@@ -342,7 +343,7 @@ static	int	stdmain(int, char **);
 
 /* also used by ucbps.c */
 void get_psargs(bool, bool, psinfo_t *, char *, size_t);
-void print_psargs(char *, int);
+void print_psargs(char *, int, int);
 
 int
 main(int argc, char **argv)
@@ -1588,7 +1589,7 @@ prcom(psinfo_t *psinfo, char *ttyp)
 	}
 
 	get_psargs(false, Fflg, psinfo, psargs, sizeof (psargs));
-	print_psargs(psargs, 0);
+	print_psargs(psargs, 0, PRMAXARGVLEN);
 	printf("\n");
 }
 
@@ -1684,7 +1685,7 @@ get_psargs(bool comm, bool full, psinfo_t *psinfo, char *buf, size_t bufsize)
 }
 
 void
-print_psargs(char *psargs, int width)
+print_psargs(char *psargs, int width, int buflen)
 {
 	int bytesleft;
 	int length;
@@ -1716,7 +1717,7 @@ print_psargs(char *psargs, int width)
 		bytesleft -= length;
 	}
 
-	wcnt = namencnt(psargs, PRMAXARGVLEN, width);
+	wcnt = namencnt(psargs, buflen, width);
 
 	if (width != 0) {
 		(void) printf("%.*s", width, psargs);
@@ -1989,7 +1990,8 @@ print_field(psinfo_t *psinfo, struct field *f, const char *ttyp)
 		}
 
 		get_psargs(true, false, psinfo, psargs, sizeof (psargs));
-		print_psargs(psargs, f->next != NULL ? width : 0);
+		print_psargs(psargs, f->next != NULL ? width : 0,
+		    PRMAXARGVLEN);
 		break;
 
 	case F_ARGS:
@@ -2002,7 +2004,8 @@ print_field(psinfo_t *psinfo, struct field *f, const char *ttyp)
 		}
 
 		get_psargs(false, Fflg, psinfo, psargs, sizeof (psargs));
-		print_psargs(psargs, f->next != NULL ? width : 0);
+		print_psargs(psargs, f->next != NULL ? width : 0,
+		    PRMAXARGVLEN);
 		break;
 
 	case F_TASKID:
