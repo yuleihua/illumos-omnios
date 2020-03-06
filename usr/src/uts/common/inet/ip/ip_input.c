@@ -148,11 +148,9 @@ static void	ip_input_multicast_v4(ire_t *, mblk_t *, ipha_t *,
  * The ill will always be valid if this function is called directly from
  * the driver.
  *
- * If ip_input() is called from GLDv3:
- *
- *   - This must be a non-VLAN IP stream.
- *   - 'mp' is either an untagged or a special priority-tagged packet.
- *   - Any VLAN tag that was in the MAC header has been stripped.
+ * If this chain is part of a VLAN stream, then the VLAN tag is
+ * stripped from the MAC header before being delivered to this
+ * function.
  *
  * If the IP header in packet is not 32-bit aligned, every message in the
  * chain will be aligned before further operations. This is required on SPARC
