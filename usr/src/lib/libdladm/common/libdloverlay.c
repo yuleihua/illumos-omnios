@@ -26,11 +26,83 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <limits.h>
+#include <libscf.h>
 #include <libvarpd_client.h>
 
 #define	VARPD_PROPERTY_NAME	"varpd/id"
+#define	VARPD_SERVICE		"network/varpd:default"
 
 static const char *dladm_overlay_doorpath = "/var/run/varpd/varpd.door";
+
+static boolean_t
+varpd_svc_isonline(void)
+{
+	boolean_t isonline = B_FALSE;
+	char *s;
+
+	if ((s = smf_get_state(VARPD_SERVICE)) != NULL) {
+		if (strcmp(s, SCF_STATE_STRING_ONLINE) == 0)
+			isonline = B_TRUE;
+		free(s);
+	}
+
+	return (isonline);
+}
+
+#define	MAX_WAIT_TIME	15
+
+static dladm_status_t
+varpd_enable_service()
+{
+	uint_t i;
+
+	if (varpd_svc_isonline())
+		return (DLADM_STATUS_OK);
+
+	if (smf_enable_instance(VARPD_SERVICE, 0) == -1) {
+		if (scf_error() == SCF_ERROR_PERMISSION_DENIED)
+			return (DLADM_STATUS_DENIED);
+		return (DLADM_STATUS_NOTFOUND);
+	}
+
+	/*
+	 * Wait up to MAX_WAIT_TIME seconds for the service
+	 */
+	for (i = 0; i < MAX_WAIT_TIME; i++) {
+		if (varpd_svc_isonline())
+			return (DLADM_STATUS_OK);
+		(void) sleep(1);
+	}
+	return (DLADM_STATUS_FAILED);
+}
+
+static int
+dladm_overlay_count_cb(dladm_handle_t handle, datalink_id_t linkid, void *arg)
+{
+	(*(uint32_t *)arg)++;
+	return (DLADM_WALK_CONTINUE);
+}
+
+/*
+ * Disable the varpd service if there are no overlays left.
+ */
+static void
+varpd_disable_service_when_no_overlays(dladm_handle_t handle)
+{
+	uint32_t cnt = 0;
+
+	/*
+	 * Get the number of the existing overlays. If there are no overlays
+	 * left, disable the service.
+	 */
+
+	(void) dladm_walk_datalink_id(dladm_overlay_count_cb, handle,
+	    &cnt, DATALINK_CLASS_OVERLAY, DATALINK_ANY_MEDIATYPE,
+	    DLADM_OPT_ACTIVE);
+
+	if (cnt == 0)
+		(void) smf_disable_instance(VARPD_SERVICE, 0);
+}
 
 typedef struct dladm_overlay_propinfo {
 	boolean_t dop_isvarpd;
@@ -345,6 +417,8 @@ finish:
 		(void) dladm_remove_conf(handle, linkid);
 		(void) dladm_destroy_datalink_id(handle, linkid, flags);
 	}
+
+	(void) varpd_disable_service_when_no_overlays(handle);
 
 	return (dladm_errno2status(ret));
 }
@@ -691,6 +765,10 @@ dladm_overlay_create(dladm_handle_t handle, const char *name,
 
 	status = dladm_create_datalink_id(handle, name, DATALINK_CLASS_OVERLAY,
 	    DL_ETHER, flags, &linkid);
+	if (status != DLADM_STATUS_OK)
+		return (status);
+
+	status = varpd_enable_service();
 	if (status != DLADM_STATUS_OK)
 		return (status);
 
@@ -1141,6 +1219,10 @@ i_dladm_overlay_up(dladm_handle_t handle, datalink_id_t linkid, void *arg)
 	dladm_status_t status;
 	dladm_overlay_attr_t attr;
 	dladm_arg_list_t *props;
+
+	status = varpd_enable_service();
+	if (status != DLADM_STATUS_OK)
+		return (DLADM_WALK_TERMINATE);
 
 	bzero(&attr, sizeof (attr));
 
