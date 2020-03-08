@@ -18,7 +18,7 @@ Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 
 	<service name="network/varpd" type="service" version="1" >
 
-		<create_default_instance enabled="true" />
+		<create_default_instance enabled="false" />
 
 		<single_instance/>
 
