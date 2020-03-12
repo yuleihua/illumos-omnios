@@ -21,6 +21,7 @@
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2015, Joyent Inc.
+ * Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
  */
 
 #include <stdio.h>
@@ -422,6 +423,15 @@ dladm_vnic_create(dladm_handle_t handle, const char *vnic, datalink_id_t linkid,
 	if ((flags & DLADM_OPT_ACTIVE) == 0)
 		return (DLADM_STATUS_NOTSUP);
 
+	/*
+	 * It's an anchor VNIC - linkid must be set to DATALINK_INVALID_LINKID
+	 * and the VLAN id must be 0
+	 */
+	if ((flags & DLADM_OPT_ANCHOR) != 0 &&
+	    (linkid != DATALINK_INVALID_LINKID || vid != 0)) {
+		return (DLADM_STATUS_BADARG);
+	}
+
 	is_vlan = ((flags & DLADM_OPT_VLAN) != 0);
 	if (is_vlan && ((vid < 1 || vid > 4094)))
 		return (DLADM_STATUS_VIDINVAL);
@@ -431,7 +441,7 @@ dladm_vnic_create(dladm_handle_t handle, const char *vnic, datalink_id_t linkid,
 	if (!dladm_vnic_macaddrtype2str(mac_addr_type))
 		return (DLADM_STATUS_INVALIDMACADDRTYPE);
 
-	if (linkid != DATALINK_INVALID_LINKID) {
+	if (!is_etherstub) {
 		if ((status = dladm_datalink_id2info(handle, linkid,
 		    &link_flags, &class, &media, NULL, 0)) != DLADM_STATUS_OK)
 			return (status);
@@ -444,12 +454,6 @@ dladm_vnic_create(dladm_handle_t handle, const char *vnic, datalink_id_t linkid,
 		/* Links cannot be created on top of these object types */
 		if (class == DATALINK_CLASS_VNIC ||
 		    class == DATALINK_CLASS_VLAN)
-			return (DLADM_STATUS_BADARG);
-	}
-
-	if ((flags & DLADM_OPT_ANCHOR) != 0) {
-		/* it's an anchor VNIC */
-		if (linkid != DATALINK_INVALID_LINKID || vid != 0)
 			return (DLADM_STATUS_BADARG);
 	}
 

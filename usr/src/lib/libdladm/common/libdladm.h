@@ -23,8 +23,8 @@
  */
 
 /*
- * Copyright 2019 OmniOS Community Edition (OmniOSce) Association
  * Copyright 2015, Joyent, Inc.
+ * Copyright 2020 OmniOS Community Edition (OmniOSce) Association
  */
 
 #ifndef _LIBDLADM_H
