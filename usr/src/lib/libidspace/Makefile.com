@@ -10,7 +10,7 @@
 #
 
 #
-# Copyright (c) 2014 Joyent, Inc.  All rights reserved.
+# Copyright 2020 Joyent, Inc.
 #
 
 LIBRARY =	libidspace.a
@@ -25,7 +25,7 @@ SRCDIR =	../common
 SRCS =		../../../common/idspace/id_space.c
 LIBS =		$(DYNLIB)
 
-LDLIBS += 	-lc -lumem
+LDLIBS += 	-lumem
 
 .KEEP_STATE:
 
