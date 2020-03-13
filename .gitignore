@@ -693,6 +693,7 @@ usr/src/cmd/fm/dicts/FMD.mo
 usr/src/cmd/fm/dicts/FMNOTIFY.mo
 usr/src/cmd/fm/dicts/GMCA.mo
 usr/src/cmd/fm/dicts/INTEL.mo
+usr/src/cmd/fm/dicts/NIC.mo
 usr/src/cmd/fm/dicts/NXGE.mo
 usr/src/cmd/fm/dicts/PCI.mo
 usr/src/cmd/fm/dicts/PCIEX.mo
@@ -719,6 +720,7 @@ usr/src/cmd/fm/eversholt/files/i386/i86pc/gcpu_amd.eft
 usr/src/cmd/fm/eversholt/files/i386/i86pc/intel.eft
 usr/src/cmd/fm/eversholt/files/i386/neptune_xaui.eft
 usr/src/cmd/fm/eversholt/files/i386/neptune_xfp.eft
+usr/src/cmd/fm/eversholt/files/i386/nic.eft
 usr/src/cmd/fm/eversholt/files/i386/pci.eft
 usr/src/cmd/fm/eversholt/files/i386/pciex.eft
 usr/src/cmd/fm/eversholt/files/i386/pciexrc.eft
