@@ -75,6 +75,9 @@ struct pci_devemu {
 				struct pci_devinst *pi, int baridx,
 				uint64_t offset, int size);
 
+	void	(*pe_baraddr)(struct vmctx *ctx, struct pci_devinst *pi,
+			      int baridx, int enabled, uint64_t address);
+
 #ifndef __FreeBSD__
 	void	(*pe_lintrupdate)(struct pci_devinst *pi);
 #endif /* __FreeBSD__ */

@@ -309,6 +309,19 @@ vm_mmap_memseg(struct vmctx *ctx, vm_paddr_t gpa, int segid, vm_ooffset_t off,
 }
 
 int
+vm_munmap_memseg(struct vmctx *ctx, vm_paddr_t gpa, size_t len)
+{
+	struct vm_munmap munmap;
+	int error;
+
+	munmap.gpa = gpa;
+	munmap.len = len;
+
+	error = ioctl(ctx->fd, VM_MUNMAP_MEMSEG, &munmap);
+	return (error);
+}
+
+int
 vm_mmap_getnext(struct vmctx *ctx, vm_paddr_t *gpa, int *segid,
     vm_ooffset_t *segoff, size_t *len, int *prot, int *flags)
 {
@@ -1805,7 +1818,7 @@ vm_get_ioctls(size_t *len)
 	/* keep in sync with machine/vmm_dev.h */
 	static const cap_ioctl_t vm_ioctl_cmds[] = { VM_RUN, VM_SUSPEND, VM_REINIT,
 	    VM_ALLOC_MEMSEG, VM_GET_MEMSEG, VM_MMAP_MEMSEG, VM_MMAP_MEMSEG,
-	    VM_MMAP_GETNEXT, VM_SET_REGISTER, VM_GET_REGISTER,
+	    VM_MMAP_GETNEXT, VM_MUNMAP_MEMSEG, VM_SET_REGISTER, VM_GET_REGISTER,
 	    VM_SET_SEGMENT_DESCRIPTOR, VM_GET_SEGMENT_DESCRIPTOR,
 	    VM_SET_REGISTER_SET, VM_GET_REGISTER_SET,
 	    VM_INJECT_EXCEPTION, VM_LAPIC_IRQ, VM_LAPIC_LOCAL_IRQ,
