@@ -29,6 +29,7 @@
 # Copyright 2018 Nexenta Systems, Inc.
 # Copyright 2018 Gary Mills
 # Copyright 2019 Peter Tribble
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 #
 
 include ../Makefile.master
@@ -488,7 +489,6 @@ i386_SUBDIRS=		\
 	acpihpd		\
 	addbadsec	\
 	ahciem		\
-	bhhwcompat	\
 	bhyve		\
 	bhyvectl	\
 	biosdev		\
