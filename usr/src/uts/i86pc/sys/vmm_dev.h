@@ -57,6 +57,11 @@ struct vm_memmap {
 #define	VM_MEMMAP_F_WIRED	0x01
 #define	VM_MEMMAP_F_IOMMU	0x02
 
+struct vm_munmap {
+	vm_paddr_t	gpa;
+	size_t		len;
+};
+
 #define	VM_MEMSEG_NAME(m)	((m)->name[0] != '\0' ? (m)->name : NULL)
 struct vm_memseg {
 	int		segid;
@@ -322,6 +327,7 @@ enum {
 	IOCNUM_MMAP_MEMSEG = 16,
 	IOCNUM_MMAP_GETNEXT = 17,
 	IOCNUM_GLA2GPA_NOFAULT = 18,
+	IOCNUM_MUNMAP_MEMSEG = 19,
 
 	/* register/state accessors */
 	IOCNUM_SET_REGISTER = 20,
@@ -405,6 +411,8 @@ enum {
 	_IOW('v', IOCNUM_MMAP_MEMSEG, struct vm_memmap)
 #define	VM_MMAP_GETNEXT	\
 	_IOWR('v', IOCNUM_MMAP_GETNEXT, struct vm_memmap)
+#define	VM_MUNMAP_MEMSEG	\
+	_IOW('v', IOCNUM_MUNMAP_MEMSEG, struct vm_munmap)
 #define	VM_SET_REGISTER \
 	_IOW('v', IOCNUM_SET_REGISTER, struct vm_register)
 #define	VM_GET_REGISTER \
