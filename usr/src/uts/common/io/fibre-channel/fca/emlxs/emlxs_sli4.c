@@ -7820,6 +7820,10 @@ emlxs_sli4_resource_alloc(emlxs_hba_t *hba)
 		xrip++;
 	}
 
+	/* GPIO lock */
+	if (hba->model_info.flags & EMLXS_GPIO_LEDS)
+		mutex_init(&hba->gpio_lock, NULL, MUTEX_DRIVER, NULL);
+
 #ifdef FMA_SUPPORT
 	if (hba->sli.sli4.slim2.dma_handle) {
 		if (emlxs_fm_check_dma_handle(hba,
