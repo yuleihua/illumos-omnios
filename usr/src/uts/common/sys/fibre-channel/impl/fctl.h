@@ -21,6 +21,7 @@
 /*
  * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
+ * Copyright 2020 RackTop Systems, Inc.
  */
 
 #ifndef	_FCTL_H
@@ -231,6 +232,7 @@ typedef struct fca_hba_fru_details {
 #define	FC_HBA_PORTSPEED_4GBIT		8    /* 4 GBit/sec */
 #define	FC_HBA_PORTSPEED_8GBIT		16   /* 8 GBit/sec */
 #define	FC_HBA_PORTSPEED_16GBIT		32   /* 16 GBit/sec */
+#define	FC_HBA_PORTSPEED_32GBIT		64   /* 32 GBit/sec */
 #define	FC_HBA_PORTSPEED_NOT_NEGOTIATED	(1<<15)	  /* Speed not established */
 
 #define	FCHBA_MANUFACTURER_LEN		64

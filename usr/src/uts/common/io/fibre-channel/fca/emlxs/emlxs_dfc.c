@@ -22,6 +22,7 @@
 /*
  * Copyright (c) 2004-2012 Emulex. All rights reserved.
  * Use is subject to license terms.
+ * Copyright 2020 RackTop Systems, Inc.
  */
 
 #include <emlxs.h>
@@ -1284,8 +1285,8 @@ emlxs_fcio_get_adapter_attrs(emlxs_port_t *port, fcio_t *fcio, int32_t mode)
 		(void) strncpy(hba_attrs->DriverName, DRIVER_NAME,
 		    (sizeof (hba_attrs->DriverName)-1));
 		hba_attrs->VendorSpecificID =
-		    ((hba->model_info.device_id << 16) |
-		    PCI_VENDOR_ID_EMULEX);
+		    (hba->model_info.device_id << 16) |
+		    hba->model_info.vendor_id;
 		hba_attrs->NumberOfPorts = hba->num_of_ports;
 	} else {
 		fc_hba_adapter_attributes_t	*hba_attrs;
@@ -1331,8 +1332,8 @@ emlxs_fcio_get_adapter_attrs(emlxs_port_t *port, fcio_t *fcio, int32_t mode)
 		(void) strncpy(hba_attrs->DriverName, DRIVER_NAME,
 		    (sizeof (hba_attrs->DriverName)-1));
 		hba_attrs->VendorSpecificID =
-		    ((hba->model_info.device_id << 16) |
-		    PCI_VENDOR_ID_EMULEX);
+		    (hba->model_info.device_id << 16) |
+		    hba->model_info.vendor_id;
 		hba_attrs->NumberOfPorts = hba->num_of_ports;
 	}
 
@@ -1469,6 +1470,10 @@ emlxs_fcio_get_adapter_port_attrs(emlxs_port_t *port, fcio_t *fcio,
 		    (sizeof (port_attrs->PortSymbolicName)-1));
 
 		/* Set the hba speed limit */
+		if (vpd->link_speed & LMT_32GB_CAPABLE) {
+			port_attrs->PortSupportedSpeed |=
+			    FC_HBA_PORTSPEED_32GBIT;
+		}
 		if (vpd->link_speed & LMT_16GB_CAPABLE) {
 			port_attrs->PortSupportedSpeed |=
 			    FC_HBA_PORTSPEED_16GBIT;
@@ -1619,6 +1624,10 @@ emlxs_fcio_get_adapter_port_attrs(emlxs_port_t *port, fcio_t *fcio,
 		    (sizeof (port_attrs->PortSymbolicName)-1));
 
 		/* Set the hba speed limit */
+		if (vpd->link_speed & LMT_32GB_CAPABLE) {
+			port_attrs->PortSupportedSpeed |=
+			    FC_HBA_PORTSPEED_32GBIT;
+		}
 		if (vpd->link_speed & LMT_16GB_CAPABLE) {
 			port_attrs->PortSupportedSpeed |=
 			    FC_HBA_PORTSPEED_16GBIT;
@@ -3837,9 +3846,7 @@ emlxs_dfc_get_hbainfo(emlxs_hba_t *hba, dfc_t *dfc, int32_t mode)
 	    (sizeof (hbainfo->vpd_id)-1));
 
 	hbainfo->device_id = hba->model_info.device_id;
-	hbainfo->vendor_id =
-	    ddi_get32(hba->pci_acc_handle,
-	    (uint32_t *)(hba->pci_addr + PCI_VENDOR_ID_REGISTER)) & 0xffff;
+	hbainfo->vendor_id = hba->model_info.vendor_id;
 
 	hbainfo->ports = hba->num_of_ports;
 	hbainfo->port_index = vpd->port_index;
@@ -4023,6 +4030,9 @@ emlxs_dfc_get_hbainfo(emlxs_hba_t *hba, dfc_t *dfc, int32_t mode)
 		hbainfo->active_types[0] &= ~(LE_SWAP32(0x00000020));
 	}
 
+	if (vpd->link_speed & LMT_32GB_CAPABLE) {
+		hbainfo->supported_speeds |= FC_HBA_PORTSPEED_32GBIT;
+	}
 	if (vpd->link_speed & LMT_16GB_CAPABLE) {
 		hbainfo->supported_speeds |= FC_HBA_PORTSPEED_16GBIT;
 	}
@@ -4562,7 +4572,7 @@ emlxs_set_hba_mode(emlxs_hba_t *hba, uint32_t mode)
 			break;
 
 		case DDI_DIAGDI:
-			if (!(hba->model_info.chip & EMLXS_LANCER_CHIP)) {
+			if (!(hba->model_info.chip & EMLXS_LANCER_CHIPS)) {
 				EMLXS_MSGF(EMLXS_CONTEXT, &emlxs_dfc_error_msg,
 				    "set_hba_mode: Invalid mode. mode=%x",
 				    mode);
@@ -5915,11 +5925,12 @@ emlxs_dfc_send_menlo(emlxs_hba_t *hba, dfc_t *dfc, int32_t mode)
 	    "%s: csize=%d rsize=%d", emlxs_dfc_xlate(dfc->cmd), dfc->buf1_size,
 	    dfc->buf2_size);
 
-	if (hba->model_info.device_id != PCI_DEVICE_ID_HORNET) {
+	if (hba->model_info.vendor_id != PCI_VENDOR_ID_EMULEX ||
+	    hba->model_info.device_id != PCI_DEVICE_ID_HORNET) {
 		EMLXS_MSGF(EMLXS_CONTEXT, &emlxs_dfc_error_msg,
-		    "%s: Menlo device not present. device=%x,%x",
-		    emlxs_dfc_xlate(dfc->cmd), hba->model_info.device_id,
-		    hba->model_info.ssdid);
+		    "%s: Menlo device not present. device=%x,%x,%x",
+		    emlxs_dfc_xlate(dfc->cmd), hba->model_info.vendor_id,
+		    hba->model_info.device_id, hba->model_info.ssdid);
 
 		rval = DFC_INVALID_ADAPTER;
 		goto done;
@@ -8633,7 +8644,8 @@ emlxs_dfc_loopback_mode(emlxs_hba_t *hba, dfc_t *dfc, int32_t mode)
 	}
 
 #ifdef MENLO_SUPPORT
-	if (hba->model_info.device_id == PCI_DEVICE_ID_HORNET) {
+	if (hba->model_info.vendor_id == PCI_VENDOR_ID_EMULEX &&
+	    hba->model_info.device_id == PCI_DEVICE_ID_HORNET) {
 		EMLXS_MSGF(EMLXS_CONTEXT, &emlxs_dfc_error_msg,
 		    "%s: Menlo support detected: mode:x%x",
 		    emlxs_dfc_xlate(dfc->cmd), new_mode);
@@ -8777,7 +8789,8 @@ emlxs_dfc_loopback_mode(emlxs_hba_t *hba, dfc_t *dfc, int32_t mode)
 	    "%s: Node created. node=%p", emlxs_dfc_xlate(dfc->cmd), ndlp);
 
 #ifdef MENLO_SUPPORT
-	if (hba->model_info.device_id == PCI_DEVICE_ID_HORNET) {
+	if (hba->model_info.vendor_id == PCI_VENDOR_ID_EMULEX &&
+	    hba->model_info.device_id == PCI_DEVICE_ID_HORNET) {
 		EMLXS_MSGF(EMLXS_CONTEXT, &emlxs_dfc_error_msg,
 		    "%s: Menlo support detected: mode:x%x",
 		    emlxs_dfc_xlate(dfc->cmd), new_mode);
@@ -8845,7 +8858,8 @@ done:
 resetdone:
 		/* Reset the adapter */
 #ifdef MENLO_SUPPORT
-		if (hba->model_info.device_id == PCI_DEVICE_ID_HORNET) {
+		if (hba->model_info.vendor_id == PCI_VENDOR_ID_EMULEX &&
+		    hba->model_info.device_id == PCI_DEVICE_ID_HORNET) {
 
 			rval = emlxs_dfc_reset_menlo(hba);
 

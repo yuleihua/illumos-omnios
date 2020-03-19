@@ -21,6 +21,7 @@
 /*
  * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2016 Nexenta Systems, Inc. All rights reserved.
+ * Copyright 2020 RackTop Systems, Inc.
  */
 #ifndef	_FCT_H
 #define	_FCT_H
