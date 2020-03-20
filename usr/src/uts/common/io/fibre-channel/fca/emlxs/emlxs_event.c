@@ -22,6 +22,7 @@
 /*
  * Copyright (c) 2004-2012 Emulex. All rights reserved.
  * Use is subject to license terms.
+ * Copyright 2020 RackTop Systems, Inc.
  */
 
 #define	DEF_EVENT_STRUCT  /* Needed for emlxs_events.h in emlxs_event.h */

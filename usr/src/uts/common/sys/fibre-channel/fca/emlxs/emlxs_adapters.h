@@ -23,6 +23,7 @@
  * Copyright (c) 2004-2012 Emulex. All rights reserved.
  * Use is subject to license terms.
  * Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
+ * Copyright 2020 RackTop Systems, Inc.
  */
 
 #ifndef _EMLXS_ADAPTERS_H
@@ -134,13 +135,13 @@ typedef enum emlxs_adapter
 	LPe16002_FE_SP2, /* Oracle excluded - Spare */
 
 	/* BE4 (57) */
-	OCe12104	/* 4-Port 2xNIC +2xFCoE */
-
+	OCe12104,	/* 4-Port 2xNIC +2xFCoE */
 } emlxs_adapter_t;
 
 
 #define	PCI_VENDOR_ID_EMULEX		0x10df
 #define	PCI_VENDOR_ID_ATTO		0x117c
+#define	PCI_VENDOR_ID_OCE		0x19a2
 
 /* Subsystem Vendor IDs */
 #define	PCI_SSVID_EMULEX		0x10df
@@ -303,17 +304,16 @@ typedef enum emlxs_adapter
 #define	PCI_DEVICE_ID_CLRTY_FC_161E	0x0063
 #define	PCI_DEVICE_ID_CLRTY_FC_162E	0x0064
 #define	PCI_DEVICE_ID_CLRTY_FC_164E	0x0065
-#define	PCI_SSDID_CLRTY_FC_161E	0x0063
-#define	PCI_SSDID_CLRTY_FC_162E	0x0064
-#define	PCI_SSDID_CLRTY_FC_164E	0x0065
+#define	PCI_SSDID_CLRTY_FC_161E		0x0063
+#define	PCI_SSDID_CLRTY_FC_162E		0x0064
+#define	PCI_SSDID_CLRTY_FC_164E		0x0065
 
 /* 0094 ATTO Celerity 16 FC Gen6 */
 #define	PCI_DEVICE_ID_CLRTY_FC_G6	0x0094
-#define	PCI_SSDID_CLRTY_FC_162P	0x0094
-#define	PCI_SSDID_CLRTY_FC_164P	0x00A1
-#define	PCI_SSDID_CLRTY_FC_321E	0x00A2
-#define	PCI_SSDID_CLRTY_FC_322E	0x00A3
-
+#define	PCI_SSDID_CLRTY_FC_162P		0x0094
+#define	PCI_SSDID_CLRTY_FC_164P		0x00A1
+#define	PCI_SSDID_CLRTY_FC_321E		0x00A2
+#define	PCI_SSDID_CLRTY_FC_322E		0x00A3
 
 /* JEDEC codes */
 #define	FIREFLY_JEDEC_ID	0x1ACC
@@ -335,6 +335,7 @@ typedef enum emlxs_adapter
 typedef struct emlxs_model
 {
 	emlxs_adapter_t id;
+	uint16_t	vendor_id;
 	uint16_t	device_id;
 	uint16_t	ssdid;
 
@@ -372,6 +373,8 @@ typedef struct emlxs_model
 #define	EMLXS_BE4_CHIP		0x00000800
 #define	EMLXS_BE_CHIPS		(EMLXS_BE2_CHIP|EMLXS_BE3_CHIP|EMLXS_BE4_CHIP)
 #define	EMLXS_LANCER_CHIP	0x00001000
+#define	EMLXS_LANCERG6_CHIP	0x00002000
+#define	EMLXS_LANCER_CHIPS	(EMLXS_LANCER_CHIP | EMLXS_LANCERG6_CHIP)
 
 	emlxs_fwid_t	fwid;
 	uint32_t	intr_limit;
@@ -419,6 +422,7 @@ emlxs_model_t   emlxs_sbus_model[] =
 		UNKNOWN_ADAPTER,
 		0,
 		0,
+		0,
 		"unknown",
 		"Unknown Emulex LightPulse FC HBA",
 		"Emulex",
@@ -434,6 +438,7 @@ emlxs_model_t   emlxs_sbus_model[] =
 	/* Dragonfly midrange (QFLY) */
 	{
 		LP8000S,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_DRAGONFLY_SBUS,
 		PCI_SSDID_LP8000S,
 		"LP8000S",
@@ -459,6 +464,7 @@ emlxs_model_t   emlxs_sbus_model[] =
 	/* Centaur mid-range (RFLY, Rtaur) */
 	{
 		LP9002S,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_CENTAUR_SBUS,
 		PCI_SSDID_LP9002S,
 		"LP9002S",
@@ -495,6 +501,7 @@ emlxs_model_t   emlxs_pci_model[] =
 		UNKNOWN_ADAPTER,
 		0,
 		0,
+		0,
 		"unknown",
 		"Unknown Emulex LightPulse FC HBA",
 		"Emulex",
@@ -510,6 +517,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Dragonfly */
 	{
 		LP8000,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_DRAGONFLY,
 		PCI_SSDID_LP8000,
 		"LP8000",
@@ -536,6 +544,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LP8000DC,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_DRAGONFLY,
 		PCI_SSDID_LP8000DC,
 		"LP8000DC",
@@ -561,6 +570,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Centaur PCI */
 	{
 		LP9002L,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_CENTAUR,
 		PCI_SSDID_LP9002L,
 		"LP9002L",
@@ -586,6 +596,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Centaur cPCI */
 	{
 		LP9002C,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_CENTAUR,
 		PCI_SSDID_LP9002C,
 		"LP9002C",
@@ -612,6 +623,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LP9002DC,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_CENTAUR,
 		PCI_SSDID_LP9002DC,
 		"LP9002DC",
@@ -638,6 +650,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LP9402DC,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_CENTAUR,
 		PCI_SSDID_LP9402DC,
 		"LP9402DC",
@@ -663,6 +676,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Pegasus */
 	{
 		LP9802,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_PEGASUS,
 		PCI_SSDID_LP9802,
 		"LP9802",
@@ -689,6 +703,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LP9802DC,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_PEGASUS,
 		PCI_SSDID_LP9802DC,
 		"LP9802DC",
@@ -714,6 +729,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Thor */
 	{
 		LP10000,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_THOR,
 		PCI_SSDID_LP10000,
 		"LP10000",
@@ -740,6 +756,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LP10000DC,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_THOR,
 		PCI_SSDID_LP10000DC,
 		"LP10000DC",
@@ -766,6 +783,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LP10000ExDC,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_THOR,
 		PCI_SSDID_LP10000ExDC,
 		"LP10000ExDC",
@@ -791,6 +809,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Thor (Oracle Rainbow-E1) */
 	{
 		LP10000_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_THOR_O,
 		PCI_SSDID_LP10000_O,
 		"LP10000-S",
@@ -818,6 +837,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LP10000DC_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_THOR_O,
 		PCI_SSDID_LP10000DC_O,
 		"LP10000DC-S",
@@ -844,6 +864,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Thor mid-range (MiniThor) */
 	{
 		BLADE_2G,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_THOR_BLADE,
 		PCI_SSDID_BLADE_2G,
 		"2G Blade Adapter",
@@ -869,6 +890,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Helios */
 	{
 		LP11000,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_HELIOS,
 		PCI_SSDID_LP11000,
 		"LP11000",
@@ -895,6 +917,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LP11002,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_HELIOS,
 		PCI_SSDID_LP11002,
 		"LP11002",
@@ -920,6 +943,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Helios (Oracle Pyramid-E1) */
 	{
 		LP11000_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_HELIOS_O,
 		PCI_SSDID_LP11000_O,
 		"LP11000-S",
@@ -946,6 +970,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Helios DC (Oracle Pyramid-E2) */
 	{
 		LP11002_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_HELIOS_O,
 		PCI_SSDID_LP11002_O,
 		"LP11002-S",
@@ -972,6 +997,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Helios Enterprise (Spare) */
 	{
 		LP11000_SP,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LP11000_SP,
 		PCI_SSDID_LP11000_SP,
 		"LP11000",
@@ -997,6 +1023,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Helios DC Enterprise (Spare) */
 	{
 		LP11002_SP,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LP11002_SP,
 		PCI_SSDID_LP11002_SP,
 		"LP11002",
@@ -1022,6 +1049,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Zephyr */
 	{
 		LPe11000,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_ZEPHYR,
 		PCI_SSDID_LPe11000,
 		"LPe11000",
@@ -1048,6 +1076,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LPe1100X,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_ZEPHYR,
 		PCI_SSDID_LPe1100X,
 		"LPe11000",
@@ -1073,6 +1102,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Zephyr Hornet */
 	{
 		LP21000,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_HORNET,
 		PCI_SSDID_LP21000,
 		"LP21000",
@@ -1099,6 +1129,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LP21002,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_HORNET,
 		PCI_SSDID_LP21002,
 		"LP21002",
@@ -1124,6 +1155,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Zephyr (Oracle Summit-E1) */
 	{
 		LPe11000_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_ZEPHYR_O,
 		PCI_SSDID_LPe11000_O,
 		"LPe11000-S",
@@ -1151,6 +1183,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LPe11002_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_ZEPHYR_O,
 		PCI_SSDID_LPe11002_O,
 		"LPe11002-S",
@@ -1178,6 +1211,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LPe11020_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_ZEPHYR_O,
 		PCI_SSDID_LPe11020_O,
 		"LPe11020-S",
@@ -1205,6 +1239,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LPem11002_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_ZEPHYR_O,
 		PCI_SSDID_LPem11002_O,
 		"LPem11002-S",
@@ -1232,6 +1267,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LPem11002E_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_ZEPHYR_O,
 		PCI_SSDID_LPem11002E_O,
 		"LPem11002E-S",
@@ -1259,6 +1295,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LPeA11002_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_ZEPHYR_O,
 		PCI_SSDID_LPeA11002_O,
 		"LPeA11002-S",
@@ -1285,6 +1322,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Saturn */
 	{
 		LPe12000,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_SATURN,
 		PCI_SSDID_LPe12000,
 		"LPe12000",
@@ -1312,6 +1350,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LPe12002,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_SATURN,
 		PCI_SSDID_LPe12002,
 		"LPe12002",
@@ -1338,6 +1377,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Saturn (Oracle) */
 	{
 		LPe12000_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_SATURN_O,
 		PCI_SSDID_LPe12000_O,
 		"LPe12000-S",
@@ -1365,6 +1405,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Saturn DC (Oracle) */
 	{
 		LPe12002_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_SATURN_O,
 		PCI_SSDID_LPe12002_O,
 		"LPe12002-S",
@@ -1392,6 +1433,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Saturn Express Module (Oracle) */
 	{
 		LPem12002_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_SATURN_O,
 		PCI_SSDID_LPem12002_O,
 		"LPem12002-S",
@@ -1419,6 +1461,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Saturn Express Module (Oracle Metis) */
 	{
 		LPem12002E_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_SATURN_O,
 		PCI_SSDID_LPem12002E_O,
 		"LPem12002E-S",
@@ -1446,6 +1489,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Saturn */
 	{
 		LPe12000_SP,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LPe12000_SP,
 		PCI_SSDID_LPe12000_SP,
 		"LPe12000",
@@ -1472,6 +1516,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Saturn DC */
 	{
 		LPe12002_SP,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LPe12002_SP,
 		PCI_SSDID_LPe12002_SP,
 		"LPe12002",
@@ -1498,6 +1543,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* BE2 (Tigershark) */
 	{
 		OCe10101,
+		PCI_VENDOR_ID_OCE,
 		PCI_DEVICE_ID_BE2,
 		PCI_SSDID_OCe10101,
 		"OCe10101",
@@ -1517,6 +1563,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		OCe10102,
+		PCI_VENDOR_ID_OCE,
 		PCI_DEVICE_ID_BE2,
 		PCI_SSDID_OCe10102,
 		"OCe10102",
@@ -1535,6 +1582,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* BE3 (TomCat) */
 	{
 		OCe11101,
+		PCI_VENDOR_ID_OCE,
 		PCI_DEVICE_ID_BE3,
 		PCI_SSDID_OCe11101,
 		"OCe11101",
@@ -1554,6 +1602,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		OCe11102,
+		PCI_VENDOR_ID_OCE,
 		PCI_DEVICE_ID_BE3,
 		PCI_SSDID_OCe11102,
 		"OCe11102",
@@ -1572,6 +1621,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Lancer FC (Generic) */
 	{
 		LPe16000,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LANCER_FC,
 		PCI_SSDID_LPe16000,
 		"LPe16000",
@@ -1591,6 +1641,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LPe1600X,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LANCER_FC,
 		PCI_SSDID_LPe1600X,
 		"LPe16000",
@@ -1609,6 +1660,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Lancer FC DC Express Module (Oracle Ganymede) */
 	{
 		LPem16002_FC_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LANCER_FC,
 		PCI_SSDID_LPem16002_FC_O,
 		"LPem16002-M6-O",
@@ -1628,6 +1680,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Lancer FC DC (Oracle Ganymede) */
 	{
 		LPe16002_FC_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LANCER_FC,
 		PCI_SSDID_LPe16002_FC_O,
 		"LPe16002-M6-O",
@@ -1647,6 +1700,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Lancer FC DC (Oracle Excluded - Spare 1) */
 	{
 		LPe16002_FC_SP1,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LANCER_FC,
 		PCI_SSDID_LPe16002_FC_SP1,
 		"LPe16002",
@@ -1666,6 +1720,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Lancer FC DC (Oracle Excluded - Spare 2) */
 	{
 		LPe16002_FC_SP2,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LANCER_FC,
 		PCI_SSDID_LPe16002_FC_SP2,
 		"LPe16002",
@@ -1685,6 +1740,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Lancer Gen6 16Gb FC Single-port, Lenovo-branded */
 	{
 		LPe31000_M6_L,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LANCER_G6_FC,
 		PCI_SSDID_LPe31000_M6_L,
 		"LPe31000",
@@ -1692,8 +1748,8 @@ emlxs_model_t   emlxs_pci_model[] =
 		"Emulex",
 		EMLXS_INTX_SUPPORTED |
 			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
-			EMLXS_E2E_SUPPORTED | EMLXS_FC_GEN6,
-		EMLXS_LANCER_CHIP,
+			EMLXS_E2E_SUPPORTED,
+		EMLXS_LANCERG6_CHIP,
 		FW_NOT_PROVIDED,
 		EMLXS_INTR_NO_LIMIT,
 		EMLXS_SLI4_MASK,
@@ -1704,6 +1760,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Lancer Gen6 FC (Generic) */
 	{
 		LPe32000,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LANCER_G6_FC,
 		PCI_SSDID_LPe32000,
 		"LPe32000",
@@ -1711,8 +1768,8 @@ emlxs_model_t   emlxs_pci_model[] =
 		"Emulex",
 		EMLXS_INTX_SUPPORTED |
 			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
-			EMLXS_E2E_SUPPORTED | EMLXS_FC_GEN6,
-		EMLXS_LANCER_CHIP,
+			EMLXS_E2E_SUPPORTED,
+		EMLXS_LANCERG6_CHIP,
 		FW_NOT_PROVIDED,
 		EMLXS_INTR_NO_LIMIT,
 		EMLXS_SLI4_MASK,
@@ -1724,6 +1781,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		LPe3200X,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LANCER_G6_FC,
 		PCI_SSDID_LPe3200X,
 		"LPe32000",
@@ -1731,8 +1789,8 @@ emlxs_model_t   emlxs_pci_model[] =
 		"Emulex",
 		EMLXS_INTX_SUPPORTED |
 			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
-			EMLXS_E2E_SUPPORTED | EMLXS_FC_GEN6,
-		EMLXS_LANCER_CHIP,
+			EMLXS_E2E_SUPPORTED,
+		EMLXS_LANCERG6_CHIP,
 		FW_NOT_PROVIDED,
 		EMLXS_INTR_NO_LIMIT,
 		EMLXS_SLI4_MASK,
@@ -1743,6 +1801,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* ATTO Celerity 161E */
 	{
 		CelerityFC161E,
+		PCI_VENDOR_ID_ATTO,
 		PCI_DEVICE_ID_CLRTY_FC_161E,
 		PCI_SSDID_CLRTY_FC_161E,
 		"Celerity FC 161E",
@@ -1762,6 +1821,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* ATTO Celerity 162E */
 	{
 		CelerityFC162E,
+		PCI_VENDOR_ID_ATTO,
 		PCI_DEVICE_ID_CLRTY_FC_162E,
 		PCI_SSDID_CLRTY_FC_162E,
 		"Celerity FC 162E",
@@ -1781,6 +1841,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* ATTO Celerity 164E */
 	{
 		CelerityFC164E,
+		PCI_VENDOR_ID_ATTO,
 		PCI_DEVICE_ID_CLRTY_FC_164E,
 		PCI_SSDID_CLRTY_FC_164E,
 		"Celerity FC 164E",
@@ -1800,6 +1861,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* ATTO Celerity 162P */
 	{
 		CelerityFC162P,
+		PCI_VENDOR_ID_ATTO,
 		PCI_DEVICE_ID_CLRTY_FC_G6,
 		PCI_SSDID_CLRTY_FC_162P,
 		"Celerity FC 162P",
@@ -1807,8 +1869,8 @@ emlxs_model_t   emlxs_pci_model[] =
 		"ATTO Technology",
 		EMLXS_INTX_SUPPORTED |
 			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
-			EMLXS_E2E_SUPPORTED | EMLXS_FC_GEN6,
-		EMLXS_LANCER_CHIP,
+			EMLXS_E2E_SUPPORTED,
+		EMLXS_LANCERG6_CHIP,
 		FW_NOT_PROVIDED,
 		EMLXS_INTR_NO_LIMIT,
 		EMLXS_SLI4_MASK,
@@ -1819,6 +1881,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* ATTO Celerity 164P */
 	{
 		CelerityFC164P,
+		PCI_VENDOR_ID_ATTO,
 		PCI_DEVICE_ID_CLRTY_FC_G6,
 		PCI_SSDID_CLRTY_FC_164P,
 		"Celerity FC 164P",
@@ -1826,8 +1889,8 @@ emlxs_model_t   emlxs_pci_model[] =
 		"ATTO Technology",
 		EMLXS_INTX_SUPPORTED |
 			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
-			EMLXS_E2E_SUPPORTED | EMLXS_FC_GEN6,
-		EMLXS_LANCER_CHIP,
+			EMLXS_E2E_SUPPORTED,
+		EMLXS_LANCERG6_CHIP,
 		FW_NOT_PROVIDED,
 		EMLXS_INTR_NO_LIMIT,
 		EMLXS_SLI4_MASK,
@@ -1838,6 +1901,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* ATTO Celerity 321E */
 	{
 		CelerityFC321E,
+		PCI_VENDOR_ID_ATTO,
 		PCI_DEVICE_ID_CLRTY_FC_G6,
 		PCI_SSDID_CLRTY_FC_321E,
 		"Celerity FC 321E",
@@ -1845,8 +1909,8 @@ emlxs_model_t   emlxs_pci_model[] =
 		"ATTO Technology",
 		EMLXS_INTX_SUPPORTED |
 			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
-			EMLXS_E2E_SUPPORTED | EMLXS_FC_GEN6,
-		EMLXS_LANCER_CHIP,
+			EMLXS_E2E_SUPPORTED,
+		EMLXS_LANCERG6_CHIP,
 		FW_NOT_PROVIDED,
 		EMLXS_INTR_NO_LIMIT,
 		EMLXS_SLI4_MASK,
@@ -1857,6 +1921,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* ATTO Celerity 322E */
 	{
 		CelerityFC322E,
+		PCI_VENDOR_ID_ATTO,
 		PCI_DEVICE_ID_CLRTY_FC_G6,
 		PCI_SSDID_CLRTY_FC_322E,
 		"Celerity FC 322E",
@@ -1864,8 +1929,8 @@ emlxs_model_t   emlxs_pci_model[] =
 		"ATTO Technology",
 		EMLXS_INTX_SUPPORTED |
 			EMLXS_MSI_SUPPORTED | EMLXS_MSIX_SUPPORTED |
-			EMLXS_E2E_SUPPORTED | EMLXS_FC_GEN6,
-		EMLXS_LANCER_CHIP,
+			EMLXS_E2E_SUPPORTED,
+		EMLXS_LANCERG6_CHIP,
 		FW_NOT_PROVIDED,
 		EMLXS_INTR_NO_LIMIT,
 		EMLXS_SLI4_MASK,
@@ -1876,6 +1941,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Lancer FCOE (Generic) */
 	{
 		OCe15100,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LANCER_FE,
 		PCI_SSDID_OCe15100,
 		"OCe15100",
@@ -1895,6 +1961,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* !! Must always follow the single channel entry in list */
 	{
 		OCe1510X,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LANCER_FE,
 		PCI_SSDID_OCe1510X,
 		"OCe15100",
@@ -1913,6 +1980,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Lancer FCOE DC Express Module (Oracle Ganymede) */
 	{
 		LPem16002_FE_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LANCER_FE,
 		PCI_SSDID_LPem16002_FE_O,
 		"LPem16002-M6-O",
@@ -1932,6 +2000,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Lancer FCOE DC (Oracle Ganymede) */
 	{
 		LPe16002_FE_O,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LANCER_FE,
 		PCI_SSDID_LPe16002_FE_O,
 		"LPe16002-M6-O",
@@ -1951,6 +2020,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Lancer FCOE DC (Oracle Excluded - Spare 1) */
 	{
 		LPe16002_FE_SP1,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LANCER_FE,
 		PCI_SSDID_LPe16002_FE_SP1,
 		"LPe16002",
@@ -1970,6 +2040,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* Lancer FCOE DC (Oracle Excluded - Spare 2) */
 	{
 		LPe16002_FE_SP2,
+		PCI_VENDOR_ID_EMULEX,
 		PCI_DEVICE_ID_LANCER_FE,
 		PCI_SSDID_LPe16002_FE_SP2,
 		"LPe16002",
@@ -1989,6 +2060,7 @@ emlxs_model_t   emlxs_pci_model[] =
 	/* BE4 (Skyhawk) */
 	{
 		OCe12104,
+		PCI_VENDOR_ID_OCE,
 		PCI_DEVICE_ID_BE4,
 		PCI_SSDID_OCe12104,
 		"OCe12104",
@@ -2002,8 +2074,7 @@ emlxs_model_t   emlxs_pci_model[] =
 		EMLXS_SLI4_MASK,
 		EMLXS_MULTI_CHANNEL,
 		NULL_PROG_TYPES,
-	},
-
+	}
 };	/* emlxs_pci_model[] */
 
 int emlxs_pci_model_count =

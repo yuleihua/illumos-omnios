@@ -23,6 +23,7 @@
  * Copyright (c) 2004-2011 Emulex. All rights reserved.
  * Use is subject to license terms.
  * Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
+ * Copyright 2020 RackTop Systems, Inc.
  */
 
 #include <emlxs.h>
@@ -1075,7 +1076,7 @@ emlxs_mem_buf_alloc(emlxs_hba_t *hba, uint32_t size)
 
 	bzero(buf_info, sizeof (MBUF_INFO));
 	buf_info->size = size;
-	buf_info->flags = FC_MBUF_DMA | FC_MBUF_SNGLSG | FC_MBUF_DMA32;
+	buf_info->flags = FC_MBUF_DMA | FC_MBUF_SNGLSG;
 	buf_info->align = 32;
 
 	(void) emlxs_mem_alloc(hba, buf_info);

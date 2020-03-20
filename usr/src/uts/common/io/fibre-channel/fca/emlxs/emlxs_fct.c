@@ -23,6 +23,7 @@
  * Copyright (c) 2004-2012 Emulex. All rights reserved.
  * Use is subject to license terms.
  * Copyright 2016 Nexenta Systems, Inc. All rights reserved.
+ * Copyright 2020 RackTop Systems, Inc.
  */
 
 #include <emlxs.h>
@@ -1397,12 +1398,15 @@ emlxs_fct_populate_hba_details(fct_local_port_t *fct_port,
 	    vpd->fw_label);
 	(void) strncpy(port_attrs->driver_name, DRIVER_NAME,
 	    (sizeof (port_attrs->driver_name)-1));
-	port_attrs->vendor_specific_id =
-	    ((hba->model_info.device_id << 16) | PCI_VENDOR_ID_EMULEX);
+	port_attrs->vendor_specific_id = (hba->model_info.device_id << 16) |
+	    hba->model_info.vendor_id;
 	port_attrs->supported_cos = LE_SWAP32(FC_NS_CLASS3);
 
 	port_attrs->max_frame_size = FF_FRAME_SIZE;
 
+	if (vpd->link_speed & LMT_32GB_CAPABLE) {
+		port_attrs->supported_speed |= PORT_SPEED_32G;
+	}
 	if (vpd->link_speed & LMT_16GB_CAPABLE) {
 		port_attrs->supported_speed |= PORT_SPEED_16G;
 	}

@@ -23,6 +23,7 @@
  * Copyright (c) 2004-2012 Emulex. All rights reserved.
  * Use is subject to license terms.
  * Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
+ * Copyright 2020 RackTop Systems, Inc.
  */
 
 #ifndef _EMLXS_FC_H
@@ -288,7 +289,6 @@ typedef struct emlxs_buf_info
 #define	FC_MBUF_UNLOCK		0x08	/* called with driver unlocked */
 #define	FC_MBUF_SNGLSG		0x10	/* allocate a single contiguous */
 					/* physical memory */
-#define	FC_MBUF_DMA32		0x20
 
 	uint64_t	phys;		/* specifies physical buffer pointer */
 	void		*virt;		/* specifies virtual buffer pointer */

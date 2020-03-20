@@ -36,6 +36,10 @@
  *******************************************************************************
  */
 
+/*
+ * Copyright 2020 RackTop Systems, Inc.
+ */
+
 #ifndef _EMLXS_HBAAPI_H
 #define _EMLXS_HBAAPI_H
 
