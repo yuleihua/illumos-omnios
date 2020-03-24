@@ -19,6 +19,10 @@ are included in the footer.
     Packages:
         system/kernel/platform
 
+## OS-8141 lx futex called with NULL timeout.. causes panic
+
+    Packages:
+	system/zones/brand/lx
 
 =======================================================================
 
