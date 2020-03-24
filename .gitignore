@@ -264,7 +264,6 @@ usr/src/cmd/bc/bc.xpg6
 usr/src/cmd/bc/lib.b
 usr/src/cmd/bdiff/bdiff
 usr/src/cmd/beadm/beadm
-usr/src/cmd/bhhwcompat/bhhwcompat
 usr/src/cmd/bhyve/bhyve
 usr/src/cmd/bhyve/mevent_test
 usr/src/cmd/bhyvectl/bhyvectl
@@ -898,6 +897,7 @@ usr/src/cmd/getopt/getopt
 usr/src/cmd/getopt/getoptcvt
 usr/src/cmd/gettext/gettext
 usr/src/cmd/gettxt/gettxt
+usr/src/cmd/grep/file
 usr/src/cmd/grep/grep
 usr/src/cmd/groups/groups
 usr/src/cmd/growfs/growfs
@@ -4289,6 +4289,8 @@ usr/src/test/os-tests/tests/sockfs/sockpair
 usr/src/test/os-tests/tests/spoof-ras/spoof-ras
 usr/src/test/os-tests/tests/stress/dladm-kstat
 usr/src/test/os-tests/tests/timer/timer_limit
+usr/src/test/os-tests/tests/writev.32
+usr/src/test/os-tests/tests/writev.64
 usr/src/test/smbclient-tests/cmd/abort_conn/abort_conn
 usr/src/test/smbclient-tests/cmd/close_wr/close_wr
 usr/src/test/smbclient-tests/cmd/cp_mmap/cp_mmap
