@@ -43,6 +43,7 @@ _MANFILES=	aac.7d		\
 		devinfo.7d	\
 		dmfe.7d		\
 		dtrace.7d	\
+		e1000g.7d	\
 		ehci.7d		\
 		fasttrap.7d	\
 		fbt.7d		\
@@ -205,6 +206,8 @@ i386_MANFILES=	ahci.7d		\
 		ecpp.7d		\
 		elxl.7d		\
 		i40e.7d		\
+		imc.7d		\
+		imcstub.7d	\
 		ipmi.7d		\
 		iprb.7d		\
 		ipw.7d		\
