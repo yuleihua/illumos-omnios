@@ -744,6 +744,7 @@ usr/src/cmd/fm/fminject/i386/inj_lex.c
 usr/src/cmd/fm/fmstat/i386/fmstat
 usr/src/cmd/fm/fmtopo/i386/fmtopo
 usr/src/cmd/fm/ipmitopo/i386/ipmitopo
+usr/src/cmd/fm/mcdecode/mcdecode
 usr/src/cmd/fm/modules/common/eversholt/y.tab.c
 usr/src/cmd/fm/modules/common/eversholt/y.tab.h
 usr/src/cmd/fm/notify/smtp-notify/i386/process_msg_template.sh
@@ -897,7 +898,6 @@ usr/src/cmd/getopt/getopt
 usr/src/cmd/getopt/getoptcvt
 usr/src/cmd/gettext/gettext
 usr/src/cmd/gettxt/gettxt
-usr/src/cmd/grep/file
 usr/src/cmd/grep/grep
 usr/src/cmd/groups/groups
 usr/src/cmd/growfs/growfs
@@ -4255,6 +4255,7 @@ usr/src/test/os-tests/tests/file-locking/runtests.64
 usr/src/test/os-tests/tests/i386/badseg
 usr/src/test/os-tests/tests/i386/badseg_exec
 usr/src/test/os-tests/tests/i386/ldt
+usr/src/test/os-tests/tests/imc/imc_test
 usr/src/test/os-tests/tests/odirectory.32
 usr/src/test/os-tests/tests/odirectory.64
 usr/src/test/os-tests/tests/pf_key/acquire-compare
