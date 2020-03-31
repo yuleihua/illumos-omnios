@@ -24,6 +24,11 @@ are included in the footer.
     Packages:
 	system/zones/brand/lx
 
+## 12260 Fix zpool history unbounded memory usage
+
+    Packages:
+        system/file-system/zfs
+
 =======================================================================
 
 =============================
