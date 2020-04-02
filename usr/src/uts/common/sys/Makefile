@@ -1034,6 +1034,10 @@ USBWCMHDRS=		\
 UGENHDRS=           \
 	usb_ugen.h
 
+USBCCIDHDRS = \
+	ccid.h \
+	uccid.h
+
 HOTPLUGHDRS=	\
 	hpcsvc.h	\
 	hpctrl.h
@@ -1180,6 +1184,7 @@ CHECKHDRS=						\
 	$(SYSEVENTHDRS:%.h=sysevent/%.check)            \
 	$(CONTRACTHDRS:%.h=contract/%.check)            \
 	$(USBAUDHDRS:%.h=usb/clients/audio/%.check)   \
+	$(USBCCIDHDRS:%.h=usb/clients/ccid/%.check)	\
 	$(USBHUBDHDRS:%.h=usb/hubd/%.check)		\
 	$(USBHIDHDRS:%.h=usb/clients/hid/%.check)	\
 	$(USBMSHDRS:%.h=usb/clients/mass_storage/%.check)	\
@@ -1254,6 +1259,7 @@ CHECKHDRS=						\
 	$(ROOTUSBCDCHDRS)       \
 	$(ROOTUSBVIDHDRS)       \
 	$(ROOTUSBWCMHDRS)	\
+	$(ROOTUSBCCIDHDRS)	\
 	$(ROOTUGENHDRS)		\
 	$(ROOT1394HDRS)         \
 	$(ROOTHOTPLUGHDRS)	\
@@ -1312,6 +1318,7 @@ install_h:			\
 	$(ROOTUWBHDRS)		\
 	$(ROOTUWBAHDRS)		\
 	$(ROOTUSBHDRS)		\
+	$(ROOTUSBCCIDHDRS)	\
 	$(ROOTUSBAUDHDRS)	\
 	$(ROOTUSBHUBDHDRS)	\
 	$(ROOTUSBHIDHDRS)	\

@@ -181,6 +181,7 @@ SUBDIRS +=				\
 	libofmt		\
 	libpam		\
 	libpcidb	\
+	libpcsc		\
 	libpctx		\
 	libpicl		\
 	libpicltree	\
@@ -446,6 +447,7 @@ HDRSUBDIRS=				\
 	libofmt		\
 	libpam		\
 	libpcidb	\
+	libpcsc		\
 	libpctx		\
 	libpicl		\
 	libpicltree	\

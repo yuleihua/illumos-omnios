@@ -42,9 +42,7 @@
 #
 # Need a way to distinguish between the ia32 and amd64 subdirs.
 #
-SUBARCH_DIR_32 = ia32
-SUBARCH_DIR_64 = amd64
-SUBARCH_DIR	= $(SUBARCH_DIR_$(CLASS))
+SUBARCH_DIR = amd64
 
 #
 #	Section 1a: C object build rules
@@ -56,9 +54,6 @@ $(OBJS_DIR)/%.o:		$(SRC)/common/fs/%.c
 $(OBJS_DIR)/%.o:		$(UTSBASE)/common/io/power/%.c
 	$(COMPILE.c) -o $@ $<
 	$(CTFCONVERT_O)
-
-$(OBJS_DIR)/%.o:		$(SRC)/common/util/i386/%.s
-	$(COMPILE.s) -o $@ $<
 
 $(OBJS_DIR)/%.o:		$(UTSBASE)/intel/brand/sn1/%.s
 	$(COMPILE.s) -o $@ $<
@@ -325,4 +320,3 @@ $(OBJS_DIR)/%.o:	$(UTSBASE)/intel/$(SUBARCH_DIR)/krtld/%.s
 $(OBJS_DIR)/%.o:	$(SRC)/common/util/$(SUBARCH_DIR)/%.c
 	$(COMPILE.c) $(KRTLD_INC_PATH) $(KRTLD_CPPFLAGS) -o $@ $<
 	$(CTFCONVERT_O)
-
