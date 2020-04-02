@@ -42,6 +42,7 @@ lint.out
 /usr/src/tools/clobber-*.out
 /usr/src/tools/install-*.out
 # BEGIN AUTO-GENERATED
+l
 usr/src/boot/sys/boot/efi/libefi/amd64/machine
 usr/src/boot/sys/boot/efi/libefi/amd64/x86
 usr/src/boot/sys/boot/efi/libefi/i386/machine
@@ -318,6 +319,7 @@ usr/src/cmd/cal/cal
 usr/src/cmd/cal/cal.dc
 usr/src/cmd/captoinfo/captoinfo
 usr/src/cmd/cat/cat
+usr/src/cmd/ccidadm/ccidadm
 usr/src/cmd/cdpadm/cdpadm
 usr/src/cmd/cdrw/cdrw
 usr/src/cmd/cfgadm/cfgadm
@@ -481,6 +483,7 @@ usr/src/cmd/date/date.xpg4
 usr/src/cmd/dc/dc
 usr/src/cmd/dc/dc.xpg6
 usr/src/cmd/dd/dd
+usr/src/cmd/demangle/demangle
 usr/src/cmd/deroff/deroff
 usr/src/cmd/devctl/devctl
 usr/src/cmd/devfsadm/i386/devfsadm
@@ -4307,6 +4310,22 @@ usr/src/test/os-tests/tests/sockfs/sockpair
 usr/src/test/os-tests/tests/spoof-ras/spoof-ras
 usr/src/test/os-tests/tests/stress/dladm-kstat
 usr/src/test/os-tests/tests/timer/timer_limit
+usr/src/test/os-tests/tests/uccid/atrparse
+usr/src/test/os-tests/tests/uccid/excl-badread
+usr/src/test/os-tests/tests/uccid/excl-basic
+usr/src/test/os-tests/tests/uccid/excl-close
+usr/src/test/os-tests/tests/uccid/excl-loop
+usr/src/test/os-tests/tests/uccid/excl-nonblock
+usr/src/test/os-tests/tests/uccid/excl-reset
+usr/src/test/os-tests/tests/uccid/modify
+usr/src/test/os-tests/tests/uccid/notxn-poll
+usr/src/test/os-tests/tests/uccid/pollin
+usr/src/test/os-tests/tests/uccid/pollout
+usr/src/test/os-tests/tests/uccid/status
+usr/src/test/os-tests/tests/uccid/txn-pollerr
+usr/src/test/os-tests/tests/uccid/yk
+usr/src/test/os-tests/tests/uccid/yk-poll
+usr/src/test/os-tests/tests/uccid/yk-readonly
 usr/src/test/os-tests/tests/writev.32
 usr/src/test/os-tests/tests/writev.64
 usr/src/test/smbclient-tests/cmd/abort_conn/abort_conn
