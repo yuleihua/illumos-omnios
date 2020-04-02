@@ -29,8 +29,8 @@
 #include <sys/regset.h>
 #include <sys/privregs.h>
 #include <sys/psw.h>
-
 #include <sys/machbrand.h>
+
 #include <sys/segments.h>
 #include <sys/pcb.h>
 #include <sys/trap.h>
@@ -1298,6 +1298,12 @@ _full_syscall_postsys32:
 	SET_SIZE(sys_sysenter)
 	SET_SIZE(_sys_sysenter_post_swapgs)
 	SET_SIZE(brand_sys_sysenter)
+
+/*
+ * System call via an int80.  This entry point is only used by the Linux
+ * application environment.  Unlike the other entry points, there is no
+ * default action to take if no callback is registered for this process.
+ */
 
 	ENTRY_NP(brand_sys_int80)
 	SWAPGS				/* kernel gsbase */
