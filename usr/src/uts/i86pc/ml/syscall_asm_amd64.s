@@ -1302,6 +1302,7 @@ _full_syscall_postsys32:
 	ENTRY_NP(brand_sys_int80)
 	SWAPGS				/* kernel gsbase */
 	XPV_TRAP_POP
+	call	smap_enable
 
 	/*
 	 * We first attempt to call the "b_int80" handler from the "struct
@@ -1340,6 +1341,7 @@ _full_syscall_postsys32:
 	 * because gptrap will pop them again with its own XPV_TRAP_POP.
 	 */
 	XPV_TRAP_POP
+	call	smap_enable
 nopop_int80:
 	subq	$2, (%rsp)	/* int insn 2-bytes */
 	pushq	$_CONST(_MUL(T_INT80, GATE_DESC_SIZE) + 2)
