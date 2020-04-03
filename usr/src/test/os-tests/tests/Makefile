@@ -28,6 +28,7 @@ SUBDIRS =       \
 		spoof-ras \
 		stress \
 		timer \
+		uccid \
 		$(SUBDIRS_$(MACH))
 
 PROGS = \
