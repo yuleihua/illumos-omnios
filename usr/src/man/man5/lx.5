@@ -10,9 +10,9 @@
 .\"
 .\" Copyright 2016, Joyent, Inc.
 .\" Copyright 2016, OmniTI Computer Consulting, Inc. All Rights Reserved.
-.\" Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+.\" Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 .\"
-.Dd March 25, 2019
+.Dd April 4, 2020
 .Dt LX 5
 .Os
 .Sh NAME
@@ -80,17 +80,36 @@ However, not every native tool will work properly within an
 .Em lx
 zone.
 .Sh CONFIGURATION
-The
-.Em kernel-version
-attribute can be included in the zone's
-.Xr zonecfg 1m
-settings as a way to specify the Linux version that the zone is emulating.
-For example, the value could be
-.Em 3.13.0 .
-.Pp
-Persistent network configuration (including DNS resolver information) can be
-configured using
-.Xr zonecfg 1m .
+In addition to the standard configuration options provided by the
+.Xr zones 5
+framework, the following additional attributes are available for
+.Em lx
+zones.
+These are defined as string attributes at the top level of the zone
+configuration (see the example below).
+.Bl -tag -width 15
+.It Cm dns-domain
+The DNS domain name for the zone, used to configure name resolution within the
+linux environment.
+.It Cm ipv6
+Enable IPV6 within the zone,
+.Ar true
+or
+.Ar false
+(defaults to
+.Ar true ) .
+.It Cm kernel-version
+Specify the Linux version that the zone is emulating.
+This is a string value that is used in various places, including the output of
+the
+.Nm uname
+command and the contents of
+.Pa /proc/version .
+.It Cm resolvers
+A comma-delimited list of DNS resolver IP addresses, used to configure name
+resolution within the linux environment.
+.El
+.Sh EXAMPLES
 An example
 .Em lx
 zone configured with VNIC "lx1" using a static IP address is below:
