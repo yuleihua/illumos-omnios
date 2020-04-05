@@ -50,6 +50,12 @@ Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 			<service_fmri value="svc:/system/filesystem/minimal:default" />
 		</dependency>
 
+		<dependent name='varpd-network-physical-default'
+			grouping='optional_all'
+			restart_on='none'>
+			<service_fmri value='svc:/network/physical:default' />
+		</dependent>
+
 		<exec_method
 			type="method"
 			name="start"
