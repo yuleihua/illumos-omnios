@@ -21,7 +21,7 @@
 
 /*
  * Copyright 2018 Joyent, Inc.
- * Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
+ * Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
  */
 
 /*
@@ -84,6 +84,7 @@ static void lxi_err(char *msg, ...);
 		(3 * sizeof (struct sockaddr_in)))
 
 ipadm_handle_t iph;
+boolean_t ipv6_enable = B_TRUE;
 
 static void
 lxi_err(char *msg, ...)
@@ -186,7 +187,29 @@ lxi_config_open()
 	}
 
 	return (handle);
+}
 
+static void
+lxi_init(zone_dochandle_t handle)
+{
+	struct zone_attrtab a;
+	char val[6];	/* Big enough for true/false */
+
+	bzero(&a, sizeof (a));
+	(void) strlcpy(a.zone_attr_name, "ipv6", sizeof (a.zone_attr_name));
+
+	if (zonecfg_lookup_attr(handle, &a) == Z_OK &&
+	    zonecfg_get_attr_string(&a, val, sizeof (val)) == Z_OK) {
+		if (strcmp(val, "true") == 0)
+			ipv6_enable = B_TRUE;
+		else if (strcmp(val, "false") == 0)
+			ipv6_enable = B_FALSE;
+		else
+			lxi_err("invalid value for 'ipv6' attribute");
+
+		lxi_warn("IPv6 is %sabled by zone configuration",
+		    ipv6_enable ? "en" : "dis");
+	}
 }
 
 static int
@@ -308,7 +331,8 @@ lxi_net_plumb(const char *iface)
 		    status, iface, ipadm_status2str(status));
 	}
 
-	if ((status = ipadm_create_if(iph, ifbuf, AF_INET6, IPADM_OPT_ACTIVE))
+	if (ipv6_enable &&
+	    (status = ipadm_create_if(iph, ifbuf, AF_INET6, IPADM_OPT_ACTIVE))
 	    != IPADM_SUCCESS) {
 		lxi_err("ipadm_create_if error %d: %s/v6: %s",
 		    status, iface, ipadm_status2str(status));
@@ -572,7 +596,8 @@ lxi_net_loopback()
 
 	lxi_net_plumb(iface);
 	(void) lxi_iface_ip(iface, "127.0.0.1/8", &first_ipv4_configured);
-	(void) lxi_iface_ipv6_link_local(iface);
+	if (ipv6_enable)
+		(void) lxi_iface_ipv6_link_local(iface);
 }
 
 static void
@@ -586,12 +611,12 @@ lxi_net_setup(zone_dochandle_t handle)
 	while (zonecfg_getnwifent(handle, &lookup) == Z_OK) {
 		const char *iface = lookup.zone_nwif_physical;
 		struct zone_res_attrtab *attrs = lookup.zone_nwif_attrp;
-		const char *ipaddrs, *primary, *gateway;
+		const char *ipaddrs, *primary, *gateway, *ipv6attr;
 		char ipaddrs_copy[MAXNAMELEN], /* cidraddr[BUFSIZ], */
 		    *ipaddr, *tmp, *lasts;
 		boolean_t first_ipv4_configured = B_FALSE;
 		boolean_t *ficp = &first_ipv4_configured;
-		boolean_t no_zonecfg;
+		boolean_t no_zonecfg, ipv6 = ipv6_enable;
 
 		/*
 		 * Regardless of whether we're configured in zonecfg(1M), or
@@ -622,7 +647,21 @@ lxi_net_setup(zone_dochandle_t handle)
 			no_zonecfg = B_FALSE;
 		}
 
-		if (lxi_iface_ipv6_link_local(iface) != 0) {
+		if (zone_find_attr(attrs, "ipv6", &ipv6attr) == 0) {
+			if (strcmp(ipv6attr, "true") == 0) {
+				if (!ipv6) {
+					lxi_err("Cannot enable ipv6 for an "
+					    "interface when it is disabled for "
+					    "the zone.");
+				}
+			} else if (strcmp(ipv6attr, "false") == 0) {
+				ipv6 = B_FALSE;
+			} else {
+				lxi_err("invalid value for 'ipv6' attribute");
+			}
+		}
+
+		if (ipv6 && lxi_iface_ipv6_link_local(iface) != 0) {
 			lxi_warn("unable to bring up link-local address on "
 			    "interface %s", iface);
 		}
@@ -912,6 +951,7 @@ main(int argc, char *argv[])
 	lxi_net_ipadm_open();
 
 	handle = lxi_config_open();
+	lxi_init(handle);
 	lxi_net_loopback();
 	lxi_net_setup(handle);
 	lxi_config_close(handle);
