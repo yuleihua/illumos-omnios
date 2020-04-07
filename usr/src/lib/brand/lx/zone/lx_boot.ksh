@@ -21,9 +21,9 @@
 #
 #
 # Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
-# Copyright 2015, Joyent, Inc.
 # Copyright 2017 ASS-Einrichtungssysteme GmbH, Inc.
 # Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+# Copyright 2020 Joyent, Inc.
 #
 # lx boot script.
 #
@@ -84,6 +84,8 @@ elif [[ -f $ZONEROOT/etc/alpine-release ]]; then
 	distro="busybox"
 elif [[ -f $ZONEROOT/etc/SuSE-release ]]; then
 	distro="suse"
+elif [[ -f $ZONEROOT/etc/void-release ]]; then
+	distro="void"
 fi
 
 [[ -z $distro ]] && fatal "Unsupported distribution!"

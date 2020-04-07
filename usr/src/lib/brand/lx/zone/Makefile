@@ -21,14 +21,14 @@
 
 #
 # Copyright 2006 Sun Microsystems, Inc.  All rights reserved.
-# Copyright 2015 Joyent, Inc.  All rights reserved.
 # Copyright 2016 OmniTI Computer Consulting, Inc. All rights reserved.
+# Copyright 2020 Joyent, Inc.
 # Copyright 2017 ASS-Einrichtungssysteme GmbH, Inc.  All rights reserved.
 #
 
 PROGS =	lx_install lx_boot
 PROGS += lx_boot_zone_redhat lx_boot_zone_ubuntu lx_boot_zone_debian
-PROGS += lx_boot_zone_busybox lx_boot_zone_suse
+PROGS += lx_boot_zone_busybox lx_boot_zone_suse lx_boot_zone_void
 XMLDOCS =	config.xml platform.xml
 TEMPLATES =	OMNIlx.xml OMNIlx26.xml
 
