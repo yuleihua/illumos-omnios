@@ -48,14 +48,6 @@
 		<service_fmri value='svc:/network/loopback' />
 	</dependency>
 
-	<dependency
-		name='network-physical-varpd'
-		grouping='optional_all'
-		restart_on='none'
-		type='service'>
-		<service_fmri value='svc:/network/varpd' />
-	</dependency>
-
 	<instance name='default' enabled='true'>
 
 	<!--
