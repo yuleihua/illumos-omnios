@@ -1738,7 +1738,7 @@ lxpr_read_pid_limits(lxpr_node_t *lxpnp, lxpr_uiobuf_t *uiobuf)
 		 */
 		if (strcmp(lxpr_rlimtab[i].rlim_name, RLIM_MAXFD) == 0 &&
 		    cur[i] == RLIM_INFINITY)
-		    cur[i] = max[i];
+			cur[i] = max[i];
 
 	}
 	lxpr_unlock(p);
