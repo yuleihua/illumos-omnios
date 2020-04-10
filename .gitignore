@@ -42,7 +42,6 @@ lint.out
 /usr/src/tools/clobber-*.out
 /usr/src/tools/install-*.out
 # BEGIN AUTO-GENERATED
-l
 usr/src/boot/sys/boot/efi/libefi/amd64/machine
 usr/src/boot/sys/boot/efi/libefi/amd64/x86
 usr/src/boot/sys/boot/efi/libefi/i386/machine
@@ -2511,6 +2510,7 @@ usr/src/lib/brand/lx/zone/lx_boot_zone_debian
 usr/src/lib/brand/lx/zone/lx_boot_zone_redhat
 usr/src/lib/brand/lx/zone/lx_boot_zone_suse
 usr/src/lib/brand/lx/zone/lx_boot_zone_ubuntu
+usr/src/lib/brand/lx/zone/lx_boot_zone_void
 usr/src/lib/brand/lx/zone/lx_install
 usr/src/lib/brand/shared/brand/amd64/assym.h
 usr/src/lib/brand/shared/brand/i386/assym.h
@@ -4276,6 +4276,7 @@ usr/src/test/os-tests/tests/i386/badseg
 usr/src/test/os-tests/tests/i386/badseg_exec
 usr/src/test/os-tests/tests/i386/ldt
 usr/src/test/os-tests/tests/imc/imc_test
+usr/src/test/os-tests/tests/libtopo/digraph-test
 usr/src/test/os-tests/tests/odirectory.32
 usr/src/test/os-tests/tests/odirectory.64
 usr/src/test/os-tests/tests/pf_key/acquire-compare
@@ -4668,7 +4669,8 @@ usr/src/uts/intel/md5/md5_amd64.s
 usr/src/uts/intel/mwlfw/mw88W8363fw
 usr/src/uts/intel/mwlfw/mwlboot
 usr/src/uts/intel/opteron_pcbe/opteron_pcbe_cpcgen.h
-usr/src/uts/intel/opteron_pcbe/opteron_pcbe_f17h.c
+usr/src/uts/intel/opteron_pcbe/opteron_pcbe_f17h_zen1.c
+usr/src/uts/intel/opteron_pcbe/opteron_pcbe_f17h_zen2.c
 usr/src/uts/intel/os/priv_names
 usr/src/uts/intel/sha1/sha1-x86_64.s
 usr/src/uts/intel/sha2/sha256-x86_64.s
