@@ -156,6 +156,45 @@ is_iptun ()
 	return 1
 }
 
+bringup_ipif()
+{
+	for showif_output in `\
+	    /sbin/ipadm show-if -p -o ifname,state,current`; do
+		intf=`echo $showif_output | /usr/bin/cut -f1 -d:`
+		state=`echo $showif_output | /usr/bin/cut -f2 -d:`
+		current=`echo $showif_output | /usr/bin/cut -f3 -d:`
+		if  [[ "$state" != "disabled" && $current != *Z* ]]; then
+			#
+			# skip if not a persistent interface, or if it should
+			# get IP configuration from the global zone ('Z' flag
+			# is set)
+			#
+			continue;
+		elif is_iptun $intf; then
+			# skip IP tunnel interfaces plumbed by net-iptun
+			continue;
+		elif [ -f /etc/hostname.$intf ] || \
+		    [ -f /etc/hostname6.$intf ]; then
+			if [[ $current != *Z* ]]; then
+				echo "found /etc/hostname.$intf "\
+				    "or /etc/hostname6.$intf, "\
+				    "ignoring ipadm configuration" > /dev/msglog
+				continue;
+			else
+				echo "Ignoring /etc/hostname*.$intf" \
+				    > /dev/msglog
+				(
+					/sbin/ifconfig $intf unplumb
+					/sbin/ifconfig $intf inet6 unplumb
+				) > /dev/null 2>&1
+			fi
+		fi
+
+		# Enable the interface managed by ipadm
+		/sbin/ipadm enable-if -t $intf
+	done
+}
+
 #
 # All the IPv4 and IPv6 interfaces are plumbed before doing any
 # interface configuration.  This prevents errors from plumb failures
@@ -243,7 +282,7 @@ if [ -n "$ipmp_list" ]; then
 			ipmp_created="$ipmp_created $1"
 		else
 			ipmp_failed="$ipmp_failed $1"
-		fi	
+		fi
 		shift
 	done
 	[ -n "$ipmp_failed" ] && warn_failed_ifs "create IPv4 IPMP" \
@@ -322,35 +361,7 @@ fi
 # we are in a non-global zone and Layer-3 protection of IP addresses is
 # enforced on the interface by the global zone.
 #
-for showif_output in `/sbin/ipadm show-if -p -o ifname,state,current`; do
-	intf=`echo $showif_output | /usr/bin/cut -f1 -d:`
-	state=`echo $showif_output | /usr/bin/cut -f2 -d:`
-	current=`echo $showif_output | /usr/bin/cut -f3 -d:`
-	if  [[ "$state" != "disabled" && $current != *Z* ]]; then
-		#
-		# skip if not a persistent interface, or if it should get IP
-		# configuration from the global zone ('Z' flag is set)
-		#
-		continue;
-	elif is_iptun $intf; then
-		# skip IP tunnel interfaces plumbed by net-iptun
-		continue;
-	elif [ -f /etc/hostname.$intf ] || [ -f /etc/hostname6.$intf ]; then
-		if [[ $current != *Z* ]]; then
-			echo "found /etc/hostname.$intf "\
-			    "or /etc/hostname6.$intf, "\
-			    "ignoring ipadm configuration" > /dev/msglog
-			continue;
-		else
-			echo "Ignoring /etc/hostname*.$intf" > /dev/msglog
-			/sbin/ifconfig $intf unplumb > /dev/null 2>&1
-			/sbin/ifconfig $intf inet6 unplumb > /dev/null 2>&1
-		fi
-	fi
-
-	# Enable the interface managed by ipadm
-	/sbin/ipadm enable-if -t $intf
-done
+bringup_ipif
 
 #
 # Process the /etc/hostname[6].* files for IPMP interfaces.  Processing these
@@ -433,11 +444,17 @@ if [ "$interface_names" != '/etc/dhcp.*[0-9]' ]; then
 	[ -n "$i4d_fail" ] && warn_failed_ifs "configure IPv4 DHCP" "$i4d_fail"
 fi
 
-# If this system has any overlay devices, bring VNICs up again now that
-# IP interfaces are active.
+# There is a chicken-and-egg problem with bringing up overlay VNICs at boot
+# time. When the first VNIC is added to an overlay, it creates a kernel socket
+# to listen for incoming encapsulated frames. Therefore, VNICs cannot be added
+# until after IP interfaces have been brought up. Of course, overlay VNICs may
+# themselves have IP interfaces over them and so it is necessary to attempt to
+# bring up any remaining IP interfaces once the overlay VNICs are in place.
 if smf_is_globalzone && dladm show-link -p -o class | egrep -s 'overlay'; then
 	echo "Bringing up any remaining VNICs on overlays"
 	/sbin/dladm up-vnic
+	echo "Bringing up any remaining IP interfaces on overlay VNICs"
+	bringup_ipif
 fi
 
 # In order to avoid bringing up the interfaces that have
