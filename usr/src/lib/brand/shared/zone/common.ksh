@@ -20,11 +20,11 @@
 #
 # Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
 # Copyright 2014, Joyent, Inc. All rights reserved.
-# Copyright 2017 OmniOS Community Edition (OmniOSce) Association.
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 #
 
 #
-# Send the error message to the screen and to the logfile.
+# Send the error message to the screen, to the logfile, and to syslog.
 #
 error()
 {
@@ -32,6 +32,8 @@ error()
         shift
 
         printf "${MSG_PREFIX}ERROR: ${fmt}\n" "$@"
+        logger -p daemon.err \
+            "zone $ZONENAME:`printf "${MSG_PREFIX}${fmt}\n" "$@"`"
         [[ -n $LOGFILE ]] && printf "[$(date)] ERROR: ${fmt}\n" "$@" >&2
 }
 
@@ -61,6 +63,8 @@ log()
         shift
 
         printf "${MSG_PREFIX}${fmt}\n" "$@"
+        logger -p daemon.info \
+            "zone $ZONENAME:`printf "${MSG_PREFIX}${fmt}\n" "$@"`"
         [[ -n $LOGFILE ]] && printf "[$(date)] ${MSG_PREFIX}${fmt}\n" "$@" >&2
 }
 
@@ -74,6 +78,8 @@ vlog()
         shift
 
         [[ -n $OPT_V ]] && printf "${MSG_PREFIX}${fmt}\n" "$@"
+        logger -p daemon.debug \
+            "zone $ZONENAME:`printf "${MSG_PREFIX}${fmt}\n" "$@"`"
         [[ -n $LOGFILE ]] && printf "[$(date)] ${MSG_PREFIX}${fmt}\n" "$@" >&2
 }
 
