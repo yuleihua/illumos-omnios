@@ -50,8 +50,9 @@ file path=kernel/drv/$(ARCH64)/overlay group=sys
 file path=kernel/drv/overlay.conf group=sys
 file path=kernel/overlay/$(ARCH64)/vxlan group=sys mode=0755
 file path=lib/svc/manifest/network/varpd.xml mode=0444
-file path=usr/lib/$(ARCH64)/libvarpd.so.1 mode=0755
-file path=usr/lib/libvarpd.so.1 mode=0755
+file path=usr/lib/$(ARCH64)/libvarpd.so.1 mode=0755 \
+    variant.opensolaris.zone=__NODEFAULT
+file path=usr/lib/libvarpd.so.1 mode=0755 variant.opensolaris.zone=__NODEFAULT
 file path=usr/lib/varpd/$(ARCH64)/libvarpd_direct.so.1
 file path=usr/lib/varpd/$(ARCH64)/libvarpd_files.so.1
 file path=usr/lib/varpd/libvarpd_direct.so.1
