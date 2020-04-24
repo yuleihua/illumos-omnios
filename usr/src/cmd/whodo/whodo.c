@@ -369,7 +369,7 @@ main(int argc, char *argv[])
 		    dp->d_name) > sizeof (pname))
 			continue;
 
-		dirfd = priv_proc_open(pname, O_RDONLY | O_DIRECTORY);
+		dirfd = priv_proc_open(pname, O_RDONLY);
 
 		if (dirfd < 0) {
 			if (errno == ENOENT)
