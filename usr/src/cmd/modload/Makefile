@@ -21,9 +21,7 @@
 # Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
 # Use is subject to license terms.
 #
-# cmd/modload/Makefile
-#
-# makefile for loadable module utilities
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 
 DRVPROG = add_drv rem_drv update_drv
 MODPROG = modinfo modunload modload
@@ -42,13 +40,12 @@ all	:=	TARGET = all
 install	:=	TARGET = install
 clean	:=	TARGET = clean
 clobber	:=	TARGET = clobber
-lint	:=	TARGET = lint
 
 .KEEP_STATE:
 
 all:	$(SUBDIRS)
 
-clean clobber lint:	$(SUBDIRS)
+clean clobber:	$(SUBDIRS)
 
 install:	$(SUBDIRS) $(XPRIV)
 
