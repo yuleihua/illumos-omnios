@@ -1491,6 +1491,13 @@ dld_capab_lso(dld_str_t *dsp, void *data, uint_t flags)
 
 	ASSERT(MAC_PERIM_HELD(dsp->ds_mh));
 
+	/*
+	 * Temporarily disable LSO for IPv6, since more work is needed there
+	 * following: 12520 Enable IPv6 tso in igb, ixgbe, and i40e
+	 */
+	if (dsp->ds_sap == ETHERTYPE_IPV6)
+		return (ENOTSUP);
+
 	switch (flags) {
 	case DLD_ENABLE: {
 		mac_capab_lso_t		mac_lso;
