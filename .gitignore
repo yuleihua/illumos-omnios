@@ -3343,6 +3343,7 @@ usr/src/man/man1/dmake.1
 usr/src/man/man1/egrep.1
 usr/src/man/man1/fgrep.1
 usr/src/man/man1/mailq.1
+usr/src/man/man1/nawk.1
 usr/src/man/man1/pauxv.1
 usr/src/man/man1/penv.1
 usr/src/man/man1/whatis.1
