@@ -13,21 +13,10 @@ are included in the footer.
 
 =======================================================================
 
-
-## 12336 Boot hang caused by x2apic probe using incorrect local apic id
-
-    Packages:
-        system/kernel/platform
-
-## OS-8141 lx futex called with NULL timeout.. causes panic
+## LX: OS-8165 dockerinit should be able to start lx_lockd
 
     Packages:
-	system/zones/brand/lx
-
-## 12260 Fix zpool history unbounded memory usage
-
-    Packages:
-        system/file-system/zfs
+        system/zones/brand/lx
 
 =======================================================================
 
