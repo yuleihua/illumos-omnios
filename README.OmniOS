@@ -13,7 +13,10 @@ are included at the end of this file.
 
 =======================================================================
 
-No pending updates.
+## ONU to illumos-gate should work with installed zones
+
+    Packages:
+	developer/build/onbld
 
 =======================================================================
 
