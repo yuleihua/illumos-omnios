@@ -812,7 +812,7 @@ if [ -z "$RELEASE_DATE" ]; then
 	RELEASE_DATE=$(LC_ALL=C date +"%B %Y")
 fi
 now=$(LC_ALL=C date +%Y-%b-%d)
-DEV_CM_TAIL="development build: $LOGNAME $now [$basews]"
+DEV_CM_TAIL="development build: $now [$basews]"
 
 #
 # We export POUND_SIGN, RELEASE_DATE and DEV_CM_TAIL to speed up the build

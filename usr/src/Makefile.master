@@ -1123,7 +1123,7 @@ PATCHID=	$(VERSION)
 RELEASE_DATE=	release date not set
 PATCH_DATE=	$(RELEASE_DATE)
 RELEASE_CM=	"@($(POUND_SIGN))illumos $(PATCHID) $(PATCH_DATE)"
-DEV_CM_TAIL=	development build: $(LOGNAME)
+DEV_CM_TAIL=	development build
 DEV_CM=		"@($(POUND_SIGN))illumos $(DEV_CM_TAIL)"
 UTS_LABEL=	$(RELEASE)
 
@@ -1134,9 +1134,9 @@ UTS_LABEL=	$(RELEASE)
 # bootbanner_expand_template() for more details about the template string
 # format.
 #
-BOOTBANNER1=	^o Version ^v ^w-bit
-BOOTBANNER2=
-BOOTBANNER3=
+BOOTBANNER1=	OmniOS r$(ONNV_BUILDNUM) Version ^v ^w-bit
+BOOTBANNER2=	Copyright (c) 2012-2017 OmniTI Computer Consulting, Inc.
+BOOTBANNER3=	Copyright (c) 2017-2020 OmniOS Community Edition (OmniOSce) Association.
 BOOTBANNER4=
 BOOTBANNER5=
 
