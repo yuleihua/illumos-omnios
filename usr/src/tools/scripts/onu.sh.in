@@ -23,7 +23,7 @@
 #
 # Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
 # Copyright 2010, Richard Lowe
-# Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 #
 
 PATH=/usr/bin:/usr/sbin
@@ -33,8 +33,6 @@ DEFAULTONURI="https://pkg.omniosce.org/bloody/core"
 DEFAULTONPUB="omnios"
 DEFAULTCONS="osnet"
 NATIVE_BRAND="ipkg"
-# Keep the leading and trailing spaces in this definition
-LINKED_BRANDS=" lipkg sparse pkgsrc "
 
 banner()
 {
@@ -108,29 +106,29 @@ configure_publishers()
 		    --set-property signature-policy=verify \
 		    --non-sticky $on_publisher
         fi
-	do_cmd pkg -R $root set-publisher -e --no-refresh -P \
-	    --set-property signature-policy=verify -O $uri $redistpub
 
-	# Also set new publisher property on any linked-image zones
-	for zone in `do_cmd zoneadm -R $root list -cip`; do
-		OIFS="$IFS"
-		IFS=:
-		set -- $zone
-		zone=$2; state=$3; path=$4; brand=$6
-		IFS="$OIFS"
-		[ "$zone" = "global" ] && continue
-		[ "$state" = "incomplete" ] && continue
-		[ "$state" = "configured" ] && continue
-		if [[ $LINKED_BRANDS = *" $brand "* ]]; then
-			banner "... linked zone $zone ($brand)"
-			do_cmd pkg -R $path/root \
-			    set-publisher -e --no-refresh -P \
-			    --set-property signature-policy=verify \
-			    -O $uri $redistpub
-		fi
+	do_cmd pkg -R $root set-publisher -r -e --no-refresh -P \
+	    --set-property signature-policy=verify -g $uri $redistpub
 
-	done
 	do_cmd pkg -R $root refresh --full
+}
+
+fixup_image()
+{
+	# If the new image does not support the same zone schema
+	# then remove the omnios-specific attributes. This can happen when
+	# ONUing to illumos-gate from OmniOS.
+
+	if ! grep -qw debugid $root/usr/share/lib/xml/dtd/zonecfg.dtd.1; then
+		banner "Adjusting image zones"
+		sed -i '
+			s/ debugid="[0-9]*"//
+			s/ global-nic="[^"]*"//
+			s/ mac-addr="[^"]*"//
+		' $root/etc/zones/*.xml
+		cp /usr/lib/brand/shared/common.ksh \
+		    $root/usr/lib/brand/shared/common.ksh
+	fi
 }
 
 update()
@@ -148,6 +146,8 @@ update()
 
 	banner "Running image-update"
 	do_cmd pkg -R $root update -fr -C0
+
+	fixup_image
 }
 
 update_zone()
@@ -239,12 +239,12 @@ if [ -n "$repodir" ]; then
 	[[ ! -e $cfgfile ]] && cfgfile=$redistdir/pkg5.repository
 	# need an absolute path
 	[[ $redistdir == /* ]] || redistdir=$PWD/$redistdir
-	redistpub=$(python@PYTHON_VERSION@ <<# EOF
-		import ConfigParser
-		p = ConfigParser.SafeConfigParser()
+	redistpub=$(python@PYTHON3_VERSION@ <<# EOF
+		import configparser
+		p = configparser.ConfigParser()
 		p.read("$cfgfile")
 		pp = p.get("publisher", "prefix")
-		print "%s" % pp
+		print("{}".format(pp))
 		EOF) || exit_error "Cannot determine publisher prefix"
 	[[ -n "$redistpub" ]] || exit_error "Repository has no publisher prefix"
 	uri="file://$redistdir"
@@ -275,5 +275,7 @@ fi
 
 do_cmd beadm unmount $targetbe
 rmdir $tmpdir
+
+echo "ONU BE has been created as $targetbe"
 
 exit 0
