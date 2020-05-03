@@ -18,6 +18,16 @@ are included in the footer.
     Packages:
         system/zones/brand/lx
 
+## 12683 w(1) and whodo(1) should silently skip dirs it cannot open
+
+    Packages:
+        SUNWcs
+
+## ONU to illumos-gate should work with installed zones
+
+    Packages:
+	developer/build/onbld
+
 =======================================================================
 
 =============================
