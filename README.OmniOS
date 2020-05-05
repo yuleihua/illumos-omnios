@@ -28,6 +28,11 @@ are included in the footer.
     Packages:
 	developer/build/onbld
 
+## OS-8167 lx_upcall_statd() may hang-or-panic when trying to upcall
+
+    Packages:
+	system/zones/brand/lx
+
 =======================================================================
 
 =============================
