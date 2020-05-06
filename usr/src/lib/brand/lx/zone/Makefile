@@ -29,8 +29,6 @@
 PROGS =	lx_install lx_boot
 PROGS += lx_boot_zone_redhat lx_boot_zone_ubuntu lx_boot_zone_debian
 PROGS += lx_boot_zone_busybox lx_boot_zone_suse lx_boot_zone_void
-XMLDOCS =	config.xml platform.xml
-TEMPLATES =	OMNIlx.xml OMNIlx26.xml
 
 all:	$(PROGS)
 
@@ -50,7 +48,7 @@ $(POFILE): $(POFILES)
 
 _msg: $(MSGDOMAINPOFILE)
 
-install: $(PROGS) $(ROOTXMLDOCS) $(ROOTTEMPLATES) $(ROOTPROGS)
+install: $(PROGS) $(ROOTPROGS)
 	mkdir -p $(ROOT)/usr/lib/brand/lx/ld/64
 	crle -c $(ROOT)/usr/lib/brand/lx/ld/ld.config \
 		-l /native/lib:/native/usr/lib \
@@ -65,8 +63,7 @@ clean:
 	-$(RM) $(PROGS)
 
 clobber: clean
-	-$(RM) $(ROOTXMLDOCS) $(ROOTPROGS) $(ROOTTEMPLATES) \
-	    $(POFILES) $(POFILE)
+	-$(RM) $(ROOTPROGS) $(POFILES) $(POFILE)
 
 FRC:
 

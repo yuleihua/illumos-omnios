@@ -24,7 +24,7 @@
 # Use is subject to license terms.
 # Copyright 2017 Joyent, Inc.
 # Copyright 2017 ASS-Einrichtungssysteme GmbH
-# Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 #
 
 #
@@ -75,8 +75,6 @@ dir path=usr/share/man/man7fs
 driver name=lx_ptm perms="lx_ptmajor 0666 root sys"
 driver name=lx_systrace perms="* 0644 root sys"
 driver name=lxautofs perms="lxautofs 0600 root sys"
-file path=etc/zones/OMNIlx.xml mode=0444
-file path=etc/zones/OMNIlx26.xml mode=0444
 file path=kernel/socketmod/$(ARCH64)/lx_netlink mode=0755
 file path=usr/kernel/brand/$(ARCH64)/lx_brand group=sys mode=0755
 file path=usr/kernel/drv/$(ARCH64)/lx_ptm group=sys mode=0755
@@ -92,7 +90,6 @@ file path=usr/kernel/fs/$(ARCH64)/lx_sysfs group=sys mode=0755
 file path=usr/lib/$(ARCH64)/lx_brand.so.1
 file path=usr/lib/brand/lx/$(ARCH64)/lx_librtld_db.so.1
 file path=usr/lib/brand/lx/$(ARCH64)/lx_vdso.so.1 mode=0755
-file path=usr/lib/brand/lx/config.xml mode=0444
 file path=usr/lib/brand/lx/etc_default_nfs group=sys mode=0444
 file path=usr/lib/brand/lx/ld/64/ld.config group=sys
 file path=usr/lib/brand/lx/ld/ld.config group=sys
@@ -111,7 +108,6 @@ file path=usr/lib/brand/lx/lx_lockd mode=0555
 file path=usr/lib/brand/lx/lx_support mode=0755
 file path=usr/lib/brand/lx/lx_vdso.so.1 mode=0755
 file path=usr/lib/brand/lx/lxinit mode=0555
-file path=usr/lib/brand/lx/platform.xml mode=0444
 file path=usr/lib/brand/lx/pts_ignorelist mode=0444
 file path=usr/lib/devfsadm/linkmod/SUNW_lx_link_$(ARCH).so group=sys
 file path=usr/lib/lx_brand.so.1
@@ -135,3 +131,4 @@ license lic_CDDL license=lic_CDDL
 link path=usr/lib/brand/lx/64 target=$(ARCH64)
 depend fmri=archiver/gnu-tar type=require
 depend fmri=driver/inotify type=require
+depend fmri=system/zones/brand/lx/platform type=require
