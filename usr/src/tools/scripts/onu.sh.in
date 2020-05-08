@@ -102,7 +102,7 @@ configure_publishers()
 	# If an IPS-based distro ever goes whole-image signature policy, this
 	# will need to change even more.
         if [[ "$on_publisher" != "$redistpub" ]]; then
-	        do_cmd pkg -R $root set-publisher --no-refresh \
+	        do_cmd pkg -R $root set-publisher -r --no-refresh \
 		    --set-property signature-policy=verify \
 		    --non-sticky $on_publisher
         fi
