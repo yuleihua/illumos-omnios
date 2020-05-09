@@ -13,25 +13,7 @@ are included in the footer.
 
 =======================================================================
 
-## LX: OS-8165 dockerinit should be able to start lx_lockd
-
-    Packages:
-        system/zones/brand/lx
-
-## 12683 w(1) and whodo(1) should silently skip dirs it cannot open
-
-    Packages:
-        SUNWcs
-
-## ONU to illumos-gate should work with installed zones
-
-    Packages:
-	developer/build/onbld
-
-## OS-8167 lx_upcall_statd() may hang-or-panic when trying to upcall
-
-    Packages:
-	system/zones/brand/lx
+## No pending updates
 
 =======================================================================
 
