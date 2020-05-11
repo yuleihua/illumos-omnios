@@ -113,18 +113,30 @@ configure_publishers()
 	do_cmd pkg -R $root refresh --full
 }
 
-fixup_image()
+prepare_image()
 {
-	# If the new image does not support the same zone schema
-	# then remove the omnios-specific attributes. This can happen when
-	# ONUing to illumos-gate from OmniOS.
+	if [ $remove_entire -eq 1 ] && pkg -R $root list -q entire; then
+		banner "Removing 'entire'..."
+		do_cmd pkg -R $root uninstall -r -C0 entire
+	fi
 
-	if ! grep -qw debugid $root/usr/share/lib/xml/dtd/zonecfg.dtd.1; then
+	if [ $gateonu -eq 1 ]; then
+		banner "Preparing for ONU to illumos-gate"
+		# This removes files from the image that cause conflicts
+		# with stock illumos-gate
+		do_cmd pkg -R $root change-facet onu.ooceonly=false
+	fi
+}
+
+finalise_image()
+{
+	if [ $gateonu -eq 1 ]; then
 		banner "Adjusting image zones"
 		sed -i '
 			s/ debugid="[0-9]*"//
 			s/ global-nic="[^"]*"//
 			s/ mac-addr="[^"]*"//
+			s/ vlan-id="[^"]*"//
 		' $root/etc/zones/*.xml
 		cp /usr/lib/brand/shared/common.ksh \
 		    $root/usr/lib/brand/shared/common.ksh
@@ -139,15 +151,12 @@ update()
 
 	configure_publishers $root
 
-	if [ $remove_entire -eq 1 ] && pkg -R $root list -q entire; then
-		banner "Removing 'entire'..."
-		do_cmd pkg -R $root uninstall -r -C0 entire
-	fi
+	prepare_image
 
 	banner "Running image-update"
 	do_cmd pkg -R $root update -fr -C0
 
-	fixup_image
+	finalise_image
 }
 
 update_zone()
@@ -177,6 +186,7 @@ no_zones=0
 zone_warned=0
 reposonly=0
 remove_entire=0
+gateonu=0
 
 while getopts :c:d:eOrs:t:U:u:vZ i ; do
 	case $i in
@@ -248,6 +258,11 @@ if [ -n "$repodir" ]; then
 		EOF) || exit_error "Cannot determine publisher prefix"
 	[[ -n "$redistpub" ]] || exit_error "Repository has no publisher prefix"
 	uri="file://$redistdir"
+
+	# Determine whether the repo provides the sunpro-consolidation.
+	# If it does, then it is a stock illumos-gate repository.
+	pkgrepo -s "$redistdir" list sunpro-incorporation >/dev/null 2>&1 \
+	    && gateonu=1 && banner "Detected ONU to illumos-gate"
 fi
 
 if [ "$reposonly" -eq 1 ]; then
