@@ -2303,9 +2303,7 @@ startup_kernel(void)
 	/*
 	 * Need correct target_kernel_text value
 	 */
-#if defined(_BOOT_TARGET_amd64)
 	target_kernel_text = KERNEL_TEXT;
-#endif
 	DBG(target_kernel_text);
 
 #if defined(__xpv)
