@@ -23,6 +23,21 @@ are included at the end of this file.
     Packages:
 	system/zones/brand/lx
 
+## 12465 vioif needs length for tso checksum
+
+    Packages:
+	All ctf
+
+## OS-8076 Panic in vlapic_callout_handler
+
+    Packages:
+	system/bhyve
+
+## 12715 Update tzdata to 2020a
+
+    Packages:
+	system/data/zoneinfo
+
 =======================================================================
 
 =============================
