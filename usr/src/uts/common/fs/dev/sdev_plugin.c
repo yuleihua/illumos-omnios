@@ -185,7 +185,7 @@ sdev_plugin_name_isvalid(const char *c, int buflen)
 		if (*c == '\0')
 			return (1);
 
-		if (!ISALNUM(*c) && *c != '-' && *c != '_' && *c != '.')
+		if (!isalnum(*c) && *c != '-' && *c != '_' && *c != '.')
 			return (0);
 	}
 	/* Never found a null terminator */
