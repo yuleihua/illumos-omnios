@@ -27,6 +27,8 @@
 set name=pkg.fmri value=pkg:/system/network/overlay@$(PKGVERS)
 set name=pkg.description value="Device driver implementing network overlays"
 set name=pkg.summary value="ilumos overlay driver"
+set name=info.classification \
+    value=org.opensolaris.category.2008:Drivers/Networking
 set name=variant.arch value=$(ARCH)
 dir path=kernel group=sys
 dir path=kernel/drv group=sys

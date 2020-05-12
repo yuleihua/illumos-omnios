@@ -707,10 +707,15 @@ pmodes: makesilent
 		-e $(CODEMGR_WS)/exception_lists/pmodes
 
 pkglint: makesilent
-	@print "Running pkglint"
 	$(PKGDEBUG)$(CP) etc/pkglintrc $(PDIR)/pkglintrc
 	$(PKGDEBUG)$(GREP) pkg:/ $(CODEMGR_WS)/exception_lists/packaging.deps \
 	    | sed 's/.*/    & \\/' >> $(PDIR)/pkglintrc
+	$(PKGDEBUG)echo "    pkg:/runtime/python$(PYTHON_PKGVERS) \\" \
+	     >> $(PDIR)/pkglintrc
+	$(PKGDEBUG)echo "    pkg:/runtime/python$(PYTHON3_PKGVERS) \\" \
+	     >> $(PDIR)/pkglintrc
+	$(PKGDEBUG) echo "    pkg:/runtime/perl$(PERL_PKGVERS) \\" \
+	     >> $(PDIR)/pkglintrc
 	$(PKGDEBUG)echo >> $(PDIR)/pkglintrc
 	$(PKGDEBUG)$(RM) -rf $(PKGDEST)/lint.image
 	$(PKGDEBUG)for r in $(REPOS); do \
@@ -718,7 +723,7 @@ pkglint: makesilent
 		    -f $(PDIR)/pkglintrc \
 		    -c $(PKGDEST)/lint.image \
 		    -r $(PKGDEST)/repo.$$r \
-		    `$(FIND) $(PDIR) -name \*.res \! -size 0c -print`; \
+		    `$(FIND) $(PDIR) -name \*.fin \! -size 0c -print`; \
 	done
 
 check: protocmp pmodes pkglint

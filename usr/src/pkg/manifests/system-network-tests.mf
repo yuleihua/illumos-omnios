@@ -14,14 +14,14 @@
 #
 
 #
-# Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 #
 
 set name=pkg.fmri value=pkg:/system/network/tests@$(PKGVERS)
 set name=pkg.description value="Networking tests"
 set name=pkg.summary value="Networking tests"
 set name=info.classification \
-    value=org.opensolaris.category.2008:System/Network
+    value=org.opensolaris.category.2008:Development/System
 set name=variant.arch value=$(ARCH)
 dir path=opt/net-tests
 dir path=opt/net-tests/bin
