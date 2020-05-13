@@ -21,6 +21,8 @@
 set name=pkg.fmri value=pkg:/driver/inotify@$(PKGVERS)
 set name=pkg.description value="Support for inotify"
 set name=pkg.summary value="inotify driver"
+set name=info.classification \
+    value=org.opensolaris.category.2008:System/Services
 set name=variant.arch value=i386
 dir path=usr group=sys
 dir path=usr/include group=bin

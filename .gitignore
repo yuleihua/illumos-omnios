@@ -3944,6 +3944,11 @@ usr/src/man/man3socket/sockaddr_ll.3socket
 usr/src/man/man3socket/sockaddr_storage.3socket
 usr/src/man/man3socket/sockaddr_un.3socket
 usr/src/man/man3tsol/fgetlabel.3tsol
+usr/src/man/man3utempter/addToUtmp.3utempter
+usr/src/man/man3utempter/removeFromUtmp.3utempter
+usr/src/man/man3utempter/removeLineFromUtmp.3utempter
+usr/src/man/man3utempter/utempter_remove_added_record.3utempter
+usr/src/man/man3utempter/utempter_remove_record.3utempter
 usr/src/man/man3uuid/uuid_unparse_lower.3uuid
 usr/src/man/man3uuid/uuid_unparse_upper.3uuid
 usr/src/man/man4/ipf.conf.4
