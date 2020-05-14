@@ -14,9 +14,10 @@
 #
 
 #
-# Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 #
 
+<include omnios_only>
 set name=pkg.fmri value=pkg:/system/bhyve/tests@$(PKGVERS)
 set name=pkg.description value="BSD hypervisor tests"
 set name=pkg.summary value="BSD hypervisor tests"

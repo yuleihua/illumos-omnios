@@ -24,6 +24,7 @@
 #
 
 <include global_zone_only_component>
+<include omnios_only>
 set name=pkg.fmri value=pkg:/system/network/overlay@$(PKGVERS)
 set name=pkg.description value="Device driver implementing network overlays"
 set name=pkg.summary value="ilumos overlay driver"
