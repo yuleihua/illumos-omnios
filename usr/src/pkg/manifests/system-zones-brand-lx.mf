@@ -33,6 +33,7 @@
 # will only be installed into the global zone.
 #
 <include global_zone_only_component>
+<include omnios_only>
 set name=pkg.fmri value=pkg:/system/zones/brand/lx@$(PKGVERS)
 set name=pkg.description value="Support for the 'lx' Brand"
 set name=pkg.summary value="lx Brand"

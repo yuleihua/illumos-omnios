@@ -1,0 +1,20 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source. A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
+
+
+# These transforms mark all path-delivering payloads and drivers in the
+# including package with the OmniOS-only facet. This is used to deactivate
+# them when performing an ONU to stock illumos-gate.
+
+<transform path=. -> default facet.onu.ooceonly true>
+<transform driver -> default facet.onu.ooceonly true>
+

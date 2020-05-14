@@ -124,7 +124,7 @@ prepare_image()
 		banner "Preparing for ONU to illumos-gate"
 		# This removes files from the image that cause conflicts
 		# with stock illumos-gate
-		do_cmd pkg -R $root change-facet onu.ooceonly=false
+		do_cmd pkg -R $root change-facet -r onu.ooceonly=false
 	fi
 }
 
