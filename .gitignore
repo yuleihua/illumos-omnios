@@ -4423,6 +4423,7 @@ usr/src/test/zfs-tests/tests/functional/cli_root/zfs_diff/socket
 usr/src/test/zfs-tests/tests/functional/ctime/ctime_001_pos
 usr/src/test/zfs-tests/tests/functional/exec/mmap_exec
 usr/src/test/zfs-tests/tests/functional/libzfs/many_fds
+usr/src/test/zfs-tests/tests/functional/resilver/sysevent
 usr/src/test/zfs-tests/tests/functional/threadsappend/threadsappend
 usr/src/tools/aw/aw
 usr/src/tools/btxld/btxld
