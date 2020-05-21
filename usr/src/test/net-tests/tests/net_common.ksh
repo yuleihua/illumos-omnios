@@ -181,7 +181,10 @@ function vnic_exists
 	if dladm show-vnic $name > /dev/null 2>&1; then
 		typeset avid=$(dladm show-vnic -p -o vid $name)
 		typeset aover=$(dladm show-vnic -p -o over $name)
-		if (($avid == $vid)) && [ $aover == $over ]; then
+		typeset azone=$(dladm show-linkprop -cp zone -o value $name)
+		if (($avid == $vid)) && [ $aover == $over ] && \
+			   [ $azone == $zone ]
+		then
 			return 0
 		else
 			return 1

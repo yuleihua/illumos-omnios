@@ -4243,7 +4243,7 @@ mac_promisc_dispatch(mac_impl_t *mip, mblk_t *mp_chain,
 			    mpip->mpi_type == MAC_CLIENT_PROMISC_ALL ||
 			    is_mcast) {
 				mac_promisc_dispatch_one(mpip, mp, is_sender,
-					local);
+				    local);
 			}
 		}
 	}
@@ -4274,7 +4274,7 @@ mac_promisc_client_dispatch(mac_client_impl_t *mcip, mblk_t *mp_chain)
 			if (mpip->mpi_type == MAC_CLIENT_PROMISC_FILTERED &&
 			    !is_mcast) {
 				mac_promisc_dispatch_one(mpip, mp, B_FALSE,
-					B_FALSE);
+				    B_FALSE);
 			}
 		}
 	}

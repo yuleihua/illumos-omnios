@@ -21,7 +21,7 @@
 
 /*
  * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2018 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  * Copyright 2017 OmniTI Computer Consulting, Inc. All rights reserved.
  * Copyright 2019 Joyent, Inc.
  * Copyright 2020 RackTop Systems, Inc.
