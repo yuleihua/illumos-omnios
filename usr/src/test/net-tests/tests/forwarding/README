@@ -1,7 +1,7 @@
 Running
 -------
 
-* Create three native (sparse) zones and start them.
+* Create three native zones and start them.
 
 * Edit config/ip_forwarding.config, entering the names of the zones
   you created.
@@ -101,16 +101,13 @@ to router via mac-loopback.
 Requirements
 ------------
 
-* These tests are currently SmartOS specific as they rely on simnet
-  extensions only found in illumos-joyent.
-
 * The client and server zones must provide `/usr/bin/socat`. It would
   be nice to use netcat but our native version is missing features
   like connection timeout.
 
 * The user must both create and start the three required zones.
 
-* All three zones should be native (sparse) zones.
+* All three zones should be native zones.
 
 * You must edit the ip_forwarding.config file; providing it with the
   names of the zones you have created.
@@ -178,4 +175,3 @@ NAME	Tx IP	Tx ULP		LSO	Rx IP	mac-loopback
 018	on	partial		on	on	yes
 019	on	fullv4		off	on	yes
 020	on	fullv4		on	on	yes
->>>>>>> 0678e39e27... OS-7924 OS-7520 regressed some instances of IP forwarding

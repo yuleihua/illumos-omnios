@@ -26,7 +26,7 @@
 #
 
 #
-#	This makefile drives the production of the gld driver 
+#	This makefile drives the production of the gld driver
 #	kernel module.
 #
 #	intel architecture dependent
@@ -57,7 +57,7 @@ ALL_TARGET	= $(BINARY)
 LINT_TARGET	= $(MODULE).lint
 INSTALL_TARGET	= $(BINARY) $(ROOTMODULE)
 
-LDFLAGS		+= -dy -N misc/mac
+LDFLAGS		+= -dy -Nmisc/mac
 
 #
 # For now, disable these lint checks; maintainers should endeavor
