@@ -38,6 +38,20 @@ are included at the end of this file.
     Packages:
 	system/data/zoneinfo
 
+## 12768 12392 regressed ftello64 behavior
+
+    Packages:
+	system/library
+
+## 12732 Update Intel microcode to 20200508
+## Update Intel microcode to 20200520
+
+    Packages: system/microcode/intel
+
+## 12757 lz4 hash table does not start zeroed
+
+    Packages: SUNWcs, system/ficl, system/boot/loader
+
 =======================================================================
 
 =============================
