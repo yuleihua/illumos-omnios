@@ -31,8 +31,8 @@ CFLAGS +=	$(CCVERBOSE)
 CPPFLAGS =	-I$(COMPAT)/freebsd -I$(CONTRIB)/freebsd \
 		-I$(COMPAT)/freebsd/amd64 -I$(CONTRIB)/freebsd/amd64 \
 		$(CPPFLAGS.master) \
-		-I$(ROOT)/usr/platform/i86pc/include \
-		-I$(SRC)/uts/i86pc/io/vmm
+		-I$(SRC)/uts/i86pc/io/vmm \
+		-I$(SRC)/uts/i86pc
 LDLIBS +=	-lvmmapi
 
 CERRWARN +=	-_gcc=-Wno-uninitialized
