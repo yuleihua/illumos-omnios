@@ -937,6 +937,7 @@ uart_tty_backend(struct uart_softc *sc, const char *opts)
 	fd = open(opts, O_RDWR | O_NONBLOCK);
 	if (fd < 0)
 		return (-1);
+	}
 
 	if (!isatty(fd)) {
 		close(fd);
