@@ -24,7 +24,6 @@
 # information about overriding the defaults.
 #
 <include global_zone_only_component>
-<include omnios_only>
 set name=pkg.fmri value=pkg:/system/bhyve@$(PKGVERS)
 set name=pkg.description value="BSD hypervisor"
 set name=pkg.summary value="BSD hypervisor"

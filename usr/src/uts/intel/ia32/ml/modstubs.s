@@ -1314,7 +1314,6 @@ fcnname/**/_info:							\
 /*
  * this is just a marker for the area of text that contains stubs
  */
-
 	ENTRY_NP(stubs_end)
 	nop
 

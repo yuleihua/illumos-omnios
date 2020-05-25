@@ -114,11 +114,9 @@ CPPFLAGS =	-I$(COMPAT)/freebsd -I$(CONTRIB)/freebsd \
 		-I$(CONTRIB)/freebsd/dev/mii \
 		-I$(SRC)/uts/common/io/e1000api \
 		$(CPPFLAGS.master) \
-		-I$(ROOT)/usr/platform/i86pc/include \
 		-I$(SRC)/uts/i86pc/io/vmm \
 		-I$(SRC)/uts/common \
 		-I$(SRC)/uts/i86pc \
-		-I$(SRC)/lib/libdladm/common \
 		-DWITHOUT_CAPSICUM
 
 pci_nvme.o := CERRWARN += -_gcc=-Wno-pointer-sign
