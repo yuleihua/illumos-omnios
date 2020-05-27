@@ -13,6 +13,9 @@
  * Copyright 2018 Joyent, Inc.
  */
 
+#ifndef _TESTLIB_H_
+#define	_TESTLIB_H_
+
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
@@ -28,7 +31,7 @@
 #define	EXIT_PASS 0
 #define	EXIT_FAIL 1
 
-#define VERBOSE(msg)							\
+#define	VERBOSE(msg)							\
 	if (testlib_verbose) {						\
 		(void) printf("VERBOSE %s: %s:%d %s: ", testlib_prog,	\
 		    __FILE__, __LINE__, __func__);			\
@@ -36,7 +39,7 @@
 		(void) printf("\n");					\
 	}
 
-#define FAIL_PROLOGUE() \
+#define	FAIL_PROLOGUE() \
 	(void) printf("FAIL %s: %s:%d: ", testlib_prog, __FILE__, __LINE__)
 
 #define	FAIL(msg)							\
@@ -47,7 +50,7 @@
 		exit(EXIT_FAIL);					\
 	}
 
-#define FAIL_ERRNO(msg) FAIL((msg ": %s", strerror(errno)))
+#define	FAIL_ERRNO(msg) FAIL((msg ": %s", strerror(errno)))
 
 #define	PASS()								\
 	{								\
@@ -86,3 +89,5 @@ extern boolean_t	testlib_verbose;
 extern void start_test(const char *, uint32_t);
 extern void start_event_thread(void);
 extern void test_mevent_count_lists(int *, int *, int *);
+
+#endif /* _TESTLIB_H_ */
