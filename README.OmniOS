@@ -13,44 +13,7 @@ are included at the end of this file.
 
 =======================================================================
 
-## ONU to illumos-gate should work with installed zones
-
-    Packages:
-	developer/build/onbld
-
-## OS-8167 lx_upcall_statd() may hang-or-panic when trying to upcall
-
-    Packages:
-	system/zones/brand/lx
-
-## 12465 vioif needs length for tso checksum
-
-    Packages:
-	All ctf
-
-## OS-8076 Panic in vlapic_callout_handler
-
-    Packages:
-	system/bhyve
-
-## 12715 Update tzdata to 2020a
-
-    Packages:
-	system/data/zoneinfo
-
-## 12768 12392 regressed ftello64 behavior
-
-    Packages:
-	system/library
-
-## 12732 Update Intel microcode to 20200508
-## Update Intel microcode to 20200520
-
-    Packages: system/microcode/intel
-
-## 12757 lz4 hash table does not start zeroed
-
-    Packages: SUNWcs, system/ficl, system/boot/loader
+## No pending updates
 
 =======================================================================
 
