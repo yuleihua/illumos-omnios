@@ -21,13 +21,13 @@
 /*
  * vm_map_wire and vm_map_unwire option flags
  */
-#define VM_MAP_WIRE_SYSTEM	0	/* wiring in a kernel map */
-#define VM_MAP_WIRE_USER	1	/* wiring in a user map */
+#define	VM_MAP_WIRE_SYSTEM	0	/* wiring in a kernel map */
+#define	VM_MAP_WIRE_USER	1	/* wiring in a user map */
 
-#define VM_MAP_WIRE_NOHOLES	0	/* region must not have holes */
-#define VM_MAP_WIRE_HOLESOK	2	/* region may have holes */
+#define	VM_MAP_WIRE_NOHOLES	0	/* region must not have holes */
+#define	VM_MAP_WIRE_HOLESOK	2	/* region may have holes */
 
-#define VM_MAP_WIRE_WRITE	4	/* Validate writable. */
+#define	VM_MAP_WIRE_WRITE	4	/* Validate writable. */
 
 /*
  * The following "find_space" options are supported by vm_map_find().
