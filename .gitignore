@@ -1576,6 +1576,7 @@ usr/src/cmd/pwck/pwck
 usr/src/cmd/pwconv/pwconv
 usr/src/cmd/pwd/pwd
 usr/src/cmd/raidctl/raidctl
+usr/src/cmd/raidz_test/raidz_test
 usr/src/cmd/ramdiskadm/ramdiskadm
 usr/src/cmd/rcap/rcapadm/rcapadm
 usr/src/cmd/rcap/rcapd/rcapd
@@ -3934,6 +3935,7 @@ usr/src/man/man3proc/proc_str2sys.3proc
 usr/src/man/man3proc/proc_str2sysset.3proc
 usr/src/man/man3proc/proc_sysname.3proc
 usr/src/man/man3proc/proc_sysset2str.3proc
+usr/src/man/man3scf/smf_disable_instance_with_comment.3scf
 usr/src/man/man3socket/ether_aton_r.3socket
 usr/src/man/man3socket/ether_ntoa_r.3socket
 usr/src/man/man3socket/freeifaddrs.3socket
@@ -4239,6 +4241,8 @@ usr/src/test/libc-tests/tests/stdio/fmemopentest.32
 usr/src/test/libc-tests/tests/stdio/fmemopentest.64
 usr/src/test/libc-tests/tests/stdio/ftell_ungetc.32
 usr/src/test/libc-tests/tests/stdio/ftell_ungetc.64
+usr/src/test/libc-tests/tests/stdio/ftello_12768.64
+usr/src/test/libc-tests/tests/stdio/ftello_12768.lfs
 usr/src/test/libc-tests/tests/stdio/memstream.32
 usr/src/test/libc-tests/tests/stdio/memstream.64
 usr/src/test/libc-tests/tests/stdio/memstream_reopen.32
@@ -4464,6 +4468,7 @@ usr/src/tools/onbld/py3/python3.7/
 usr/src/tools/proto/
 usr/src/tools/protocmp/protocmp
 usr/src/tools/protolist/protolist
+usr/src/tools/rpcgen/rpcgen
 usr/src/tools/scripts/Install
 usr/src/tools/scripts/bldenv.1onbld
 usr/src/tools/scripts/bringovercheck
