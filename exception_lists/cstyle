@@ -1347,6 +1347,7 @@ usr/src/cmd/bhyve/hda_reg.h
 usr/src/cmd/bhyve/hdac_reg.h
 usr/src/cmd/bhyve/inout.[ch]
 usr/src/cmd/bhyve/ioapic.[ch]
+usr/src/cmd/bhyve/iov.[ch]
 usr/src/cmd/bhyve/mem.[ch]
 usr/src/cmd/bhyve/mevent.[ch]
 usr/src/cmd/bhyve/mevent_test.c
