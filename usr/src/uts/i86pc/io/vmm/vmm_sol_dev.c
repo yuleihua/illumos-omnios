@@ -1341,6 +1341,8 @@ vmm_lookup(const char *name)
 static boolean_t
 vmm_hma_acquire(void)
 {
+	ASSERT(MUTEX_NOT_HELD(&vmm_mtx));
+
 	mutex_enter(&vmmdev_mtx);
 
 	if (vmmdev_hma_reg == NULL) {
@@ -1367,6 +1369,8 @@ vmm_hma_acquire(void)
 static void
 vmm_hma_release(void)
 {
+	ASSERT(MUTEX_NOT_HELD(&vmm_mtx));
+
 	mutex_enter(&vmmdev_mtx);
 
 	VERIFY3U(vmmdev_hma_ref, !=, 0);
@@ -1757,6 +1761,8 @@ vmm_do_vm_destroy_locked(vmm_softc_t *sc, boolean_t clean_zsd,
 	minor_t		minor;
 
 	ASSERT(MUTEX_HELD(&vmm_mtx));
+
+	*hma_release = B_FALSE;
 
 	if (clean_zsd) {
 		vmm_zsd_rem_vm(sc);
@@ -2161,7 +2167,7 @@ vmm_attach(dev_info_t *dip, ddi_attach_cmd_t cmd)
 	vmm_arena_init();
 
 	/*
-	 * Perform temporary HMA registration to determine if the hardware
+	 * Perform temporary HMA registration to determine if the system
 	 * is capable.
 	 */
 	if ((reg = hma_register(vmmdev_hvm_name)) == NULL) {
