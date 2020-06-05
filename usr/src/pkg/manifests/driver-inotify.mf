@@ -14,10 +14,11 @@
 #
 
 #
-# Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 #
 
 <include global_zone_only_component>
+<include omnios_only>
 set name=pkg.fmri value=pkg:/driver/inotify@$(PKGVERS)
 set name=pkg.description value="Support for inotify"
 set name=pkg.summary value="inotify driver"
