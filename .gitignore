@@ -3382,6 +3382,7 @@ usr/src/man/man3c/betoh16.3c
 usr/src/man/man3c/betoh32.3c
 usr/src/man/man3c/betoh64.3c
 usr/src/man/man3c/btowc_l.3c
+usr/src/man/man3c/c32rtomb.3c
 usr/src/man/man3c/canonicalize_file_name.3c
 usr/src/man/man3c/cnd_broadcast.3c
 usr/src/man/man3c/cnd_destroy.3c
@@ -3475,6 +3476,8 @@ usr/src/man/man3c/letoh32.3c
 usr/src/man/man3c/letoh64.3c
 usr/src/man/man3c/mblen_l.3c
 usr/src/man/man3c/mbrlen_l.3c
+usr/src/man/man3c/mbrtoc32.3c
+usr/src/man/man3c/mbrtowc.3c
 usr/src/man/man3c/mbrtowc_l.3c
 usr/src/man/man3c/mbsinit_l.3c
 usr/src/man/man3c/mbsnrtowcs.3c
@@ -3536,6 +3539,7 @@ usr/src/man/man3c/tss_get.3c
 usr/src/man/man3c/tss_set.3c
 usr/src/man/man3c/ucred_get.3c
 usr/src/man/man3c/wcpncpy.3c
+usr/src/man/man3c/wcrtomb.3c
 usr/src/man/man3c/wcrtomb_l.3c
 usr/src/man/man3c/wcscasecmp_l.3c
 usr/src/man/man3c/wcscoll_l.3c
@@ -4263,6 +4267,8 @@ usr/src/test/libc-tests/tests/threads/pthread_attr_get_np
 usr/src/test/libc-tests/tests/threads/thread_name
 usr/src/test/libc-tests/tests/timespec_get.32
 usr/src/test/libc-tests/tests/timespec_get.64
+usr/src/test/libc-tests/tests/uchar.32
+usr/src/test/libc-tests/tests/uchar.64
 usr/src/test/libc-tests/tests/wcsncasecmp-7344.32
 usr/src/test/libc-tests/tests/wcsncasecmp-7344.64
 usr/src/test/libc-tests/tests/wcsncasecmp-7350.32
@@ -4417,6 +4423,7 @@ usr/src/test/zfs-tests/cmd/randwritecomp/randwritecomp
 usr/src/test/zfs-tests/cmd/readmmap/readmmap
 usr/src/test/zfs-tests/cmd/rename_dir/rename_dir
 usr/src/test/zfs-tests/cmd/rm_lnkcnt_zero_file/rm_lnkcnt_zero_file
+usr/src/test/zfs-tests/cmd/watch_dir/watch_dir
 usr/src/test/zfs-tests/tests/functional/checksum/edonr/amd64/edonr_test
 usr/src/test/zfs-tests/tests/functional/checksum/edonr/i386/edonr_test
 usr/src/test/zfs-tests/tests/functional/checksum/sha2/amd64/sha2_test
