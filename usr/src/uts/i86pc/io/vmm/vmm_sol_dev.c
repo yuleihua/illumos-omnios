@@ -454,7 +454,6 @@ vmmdev_do_ioctl(vmm_softc_t *sc, int cmd, intptr_t arg, int md,
 	case VM_MAP_PPTDEV_MMIO:
 	case VM_ALLOC_MEMSEG:
 	case VM_MMAP_MEMSEG:
-	case VM_MUNMAP_MEMSEG:
 	case VM_WRLOCK_CYCLE:
 		vmm_write_lock(sc);
 		lock_type = LOCK_WRITE_HOLD;
@@ -811,16 +810,6 @@ vmmdev_do_ioctl(vmm_softc_t *sc, int cmd, intptr_t arg, int md,
 		}
 		error = vm_mmap_memseg(sc->vmm_vm, mm.gpa, mm.segid, mm.segoff,
 		    mm.len, mm.prot, mm.flags);
-		break;
-	}
-	case VM_MUNMAP_MEMSEG: {
-		struct vm_munmap mu;
-
-		if (ddi_copyin(datap, &mu, sizeof (mu), md)) {
-			error = EFAULT;
-			break;
-		}
-		error = vm_munmap_memseg(sc->vmm_vm, mu.gpa, mu.len);
 		break;
 	}
 	case VM_ALLOC_MEMSEG: {

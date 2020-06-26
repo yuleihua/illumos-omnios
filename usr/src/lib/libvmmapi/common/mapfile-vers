@@ -94,7 +94,6 @@ SYMBOL_VERSION ILLUMOSprivate {
 		vm_map_pptdev_mmio;
 		vm_mmap_getnext;
 		vm_mmap_memseg;
-		vm_munmap_memseg;
 		vm_open;
 		vm_parse_memsize;
 		vm_reinit;
