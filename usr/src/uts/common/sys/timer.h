@@ -35,6 +35,8 @@
 #include <sys/proc.h>
 #include <sys/thread.h>
 #include <sys/param.h>
+#include <sys/siginfo.h>
+#include <sys/port.h>
 
 #ifdef	__cplusplus
 extern "C" {
