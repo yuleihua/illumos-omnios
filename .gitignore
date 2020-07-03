@@ -2512,7 +2512,6 @@ usr/src/lib/brand/lx/zone/lx_boot_zone_redhat
 usr/src/lib/brand/lx/zone/lx_boot_zone_suse
 usr/src/lib/brand/lx/zone/lx_boot_zone_ubuntu
 usr/src/lib/brand/lx/zone/lx_boot_zone_void
-usr/src/lib/brand/lx/zone/lx_install
 usr/src/lib/brand/shared/brand/amd64/assym.h
 usr/src/lib/brand/shared/brand/i386/assym.h
 usr/src/lib/brand/shared/zadump/zadump
