@@ -22,7 +22,7 @@
 #
 # Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
 # Copyright 2017 ASS-Einrichtungssysteme GmbH, Inc.
-# Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 # Copyright 2020 Joyent, Inc.
 #
 # lx boot script.
@@ -96,6 +96,53 @@ fi
 zone_attr() {
 	zonecfg -z "$ZONENAME" info attr "name=$1" \
 	    | nawk '$1 == "value:" {print $2}'
+}
+
+#
+# Configure common basic network information for an lx zone. This is optionally
+# called from the distribution-specific boot script.
+#
+config_network() {
+
+	################################################################
+	# Hostname configuration files within the zone.
+	#  /etc/hostname
+	[ -s $ZONEROOT/etc/hostname ] || \
+	    echo $ZONENAME > $ZONEROOT/etc/hostname
+
+	################################################################
+	# Hosts file within the zone.
+	#  /etc/hosts
+	[ -s $ZONEROOT/etc/hosts ] || \
+	    cat <<-EOM > $ZONEROOT/etc/hosts
+		# hosts file
+
+		127.0.0.1    localhost $ZONENAME
+
+		# The following lines are desirable for IPv6 capable hosts
+		::1     localhost $ZONENAME ip6-localhost ip6-loopback
+		ff02::1 ip6-allnodes
+		ff02::2 ip6-allrouters
+
+	EOM
+
+	################################################################
+	# DNS configuration files within the zone.
+	#  /etc/resolv.conf
+
+	typeset domain="`zone_attr dns-domain`"
+	typeset resolvers="`zone_attr resolvers`"
+
+	if [ -n "$domain" -o -n "$resolvers" ]; then
+		(
+			echo "# Auto-generated from zone configuration"
+			[ -n "$domain" ] && echo "domain $domain"
+			_IFS=$IFS; IFS=,; for r in $resolvers; do
+				echo "nameserver $r"
+			done
+			IFS=$_IFS
+		) > $ZONEROOT/etc/resolv.conf
+	fi
 }
 
 #
