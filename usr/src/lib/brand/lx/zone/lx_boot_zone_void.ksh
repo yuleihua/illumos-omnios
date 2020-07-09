@@ -12,6 +12,9 @@
 
 #
 # Copyright 2020 Joyent, Inc.
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 #
+
+config_network
 
 # Hand control back to lx_boot
