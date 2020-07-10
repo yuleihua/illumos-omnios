@@ -405,6 +405,7 @@ repoll:
 					 * about the fd reassignment.
 					 */
 					pdp->pd_fp = fp;
+					pdp->pd_gen = gen;
 				}
 			}
 
