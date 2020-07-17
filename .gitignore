@@ -4292,6 +4292,12 @@ usr/src/test/os-tests/tests/i386/badseg
 usr/src/test/os-tests/tests/i386/badseg_exec
 usr/src/test/os-tests/tests/i386/ldt
 usr/src/test/os-tests/tests/imc/imc_test
+usr/src/test/os-tests/tests/ksensor/ksensor_basic.32
+usr/src/test/os-tests/tests/ksensor/ksensor_basic.64
+usr/src/test/os-tests/tests/ksensor/ksensor_err.32
+usr/src/test/os-tests/tests/ksensor/ksensor_err.64
+usr/src/test/os-tests/tests/ksensor/ksensor_sread.32
+usr/src/test/os-tests/tests/ksensor/ksensor_sread.64
 usr/src/test/os-tests/tests/libtopo/digraph-test
 usr/src/test/os-tests/tests/odirectory.32
 usr/src/test/os-tests/tests/odirectory.64
