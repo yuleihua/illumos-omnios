@@ -163,7 +163,6 @@ file path=usr/sbin/dmesg mode=0555
 file path=usr/sbin/projadd group=sys mode=0555
 file path=usr/sbin/projdel group=sys mode=0555
 file path=usr/sbin/projmod group=sys mode=0555
-file path=usr/share/lib/dict/words
 file path=usr/share/man/man1/asa.1
 file path=usr/share/man/man1/awk.1
 file path=usr/share/man/man1/banner.1

@@ -911,6 +911,12 @@ boot/forth/logo-orb.4th
 boot/forth/logo-orbbw.4th
 
 #
+# The illumos 'words' list is not shipped in OmniOS.
+# See the text/words package from omnios-build
+#
+usr/share/lib/dict/words
+
+#
 # libjedec is private
 #
 usr/include/libjedec.h
