@@ -47,7 +47,8 @@ CERRWARN	+= $(CNOWARN_UNINIT)
 
 SMOFF += free
 
-LDLIBS		+= -lcurses -ldtrace -lkstat
+LDLIBS		+= -lncurses -ldtrace -lkstat
+NATIVE_LIBS	+= libncurses.so
 
 FILEMODE	= 0555
 
