@@ -3279,7 +3279,6 @@ usr/src/lib/libsum/i386/libsum.msg
 usr/src/lib/libsum/i386/msgcc.out
 usr/src/lib/libsum/i386/msgs/
 usr/src/lib/libsum/tmpastinclude/
-usr/src/lib/libsys/i386/libsys.c
 usr/src/lib/libtsol/amd64/libtsol.so.2
 usr/src/lib/libtsol/i386/libtsol.so.2
 usr/src/lib/libuutil/native/sys/
