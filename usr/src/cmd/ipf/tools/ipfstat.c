@@ -64,7 +64,7 @@
 #  endif
 #  undef ISASCII
 #  undef ISPRINT
-#  include <curses.h>
+#  include <ncurses/curses.h>
 # else /* SOLARIS */
 #  include <ncurses.h>
 # endif /* SOLARIS */
