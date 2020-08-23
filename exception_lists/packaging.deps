@@ -20,6 +20,7 @@ pkg:/library/expat
 pkg:/library/glib2
 pkg:/library/libxml2
 pkg:/library/libxslt
+pkg:/library/ncurses
 pkg:/library/nspr
 pkg:/library/nspr/header-nspr
 pkg:/library/perl-5/xml-parser
