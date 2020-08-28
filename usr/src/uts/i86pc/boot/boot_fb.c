@@ -355,14 +355,12 @@ boot_get_color(uint32_t *fg, uint32_t *bg)
 	if (fb_info.inverse == B_TRUE ||
 	    fb_info.inverse_screen == B_TRUE) {
 		if (fb_info.fg_color < XLATE_NCOLORS) {
-#ifdef BRIGHT_WHITE_BOOT
 			/*
 			 * white fg -> bright white bg
 			 */
 			if (fb_info.fg_color == pc_white)
 				*bg = brt_xlate[fb_info.fg_color];
 			else
-#endif
 				*bg = dim_xlate[fb_info.fg_color];
 		} else {
 			*bg = fb_info.fg_color;
@@ -391,11 +389,9 @@ boot_get_color(uint32_t *fg, uint32_t *bg)
 		}
 
 		if (fb_info.bg_color < XLATE_NCOLORS) {
-#ifdef BRIGHT_WHITE_BOOT
 			if (fb_info.bg_color == pc_white)
 				*bg = brt_xlate[fb_info.bg_color];
 			else
-#endif
 				*bg = dim_xlate[fb_info.bg_color];
 		} else {
 			*bg = fb_info.bg_color;
