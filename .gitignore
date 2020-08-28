@@ -4206,6 +4206,9 @@ usr/src/test/libc-tests/tests/fnmatch.64
 usr/src/test/libc-tests/tests/fpround/fpround_test
 usr/src/test/libc-tests/tests/fpround/fpround_test.amd64
 usr/src/test/libc-tests/tests/fpround/fpround_test.i386
+usr/src/test/libc-tests/tests/i18n/bindtextdomain_test
+usr/src/test/libc-tests/tests/i18n/bindtextdomain_test.amd64
+usr/src/test/libc-tests/tests/i18n/bindtextdomain_test.i386
 usr/src/test/libc-tests/tests/memset_s.32
 usr/src/test/libc-tests/tests/memset_s.64
 usr/src/test/libc-tests/tests/newlocale/newlocale_test
