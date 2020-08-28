@@ -22,13 +22,15 @@
 # Copyright 2010 Sun Microsystems, Inc.  All rights reserved.
 # Use is subject to license terms.
 #
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
+#
 
 include ../Makefile.cmd
 
 SUBDIR_CMD=	lsvcrun mfstscan servinfo svcadm svccfg svcprop svcs
 SUBDIR_DAEMON=	configd startd
 SUBDIR_REPO=	milestone profile seed
-SUBDIR_MISC=	shell
+SUBDIR_MISC=	shell smfcron
 SUBDIRS=	$(SUBDIR_CMD) $(SUBDIR_DAEMON) $(SUBDIR_REPO) $(SUBDIR_MISC)
 
 all :=		TARGET = all

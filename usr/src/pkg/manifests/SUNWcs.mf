@@ -29,7 +29,7 @@
 # Copyright 2019 Peter Tribble.
 # Copyright 2019 Joyent, Inc.
 # Copyright (c) 2011, 2015 by Delphix. All rights reserved.
-# Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 #
 
 <include SUNWcs.man1.inc>
@@ -484,6 +484,7 @@ file path=lib/inet/nwamd mode=0555
 file path=lib/svc/bin/lsvcrun group=sys mode=0555
 file path=lib/svc/bin/mfstscan group=sys mode=0555
 file path=lib/svc/bin/restore_repository group=sys mode=0555
+file path=lib/svc/bin/smfcron group=sys mode=0555
 file path=lib/svc/bin/sqlite group=sys mode=0555
 file path=lib/svc/bin/svc.configd group=sys mode=0555
 file path=lib/svc/bin/svc.ipfd group=sys mode=0555
