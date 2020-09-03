@@ -2090,6 +2090,7 @@ usr/src/cmd/svc/seed/global.db
 usr/src/cmd/svc/seed/miniroot.db
 usr/src/cmd/svc/seed/nonglobal.db
 usr/src/cmd/svc/servinfo/servinfo
+usr/src/cmd/svc/smfcron/smfcron
 usr/src/cmd/svc/startd/svc.startd
 usr/src/cmd/svc/svcadm/svcadm
 usr/src/cmd/svc/svccfg/svccfg
@@ -3997,6 +3998,7 @@ usr/src/man/man9e/usba_hcdi_pipe_close.9e
 usr/src/man/man9e/usba_hcdi_pipe_stop_isoc_polling.9e
 usr/src/man/man9f/AVL_NEXT.9f
 usr/src/man/man9f/AVL_PREV.9f
+usr/src/man/man9f/CRED.9f
 usr/src/man/man9f/avl_add.9f
 usr/src/man/man9f/avl_create.9f
 usr/src/man/man9f/avl_destroy.9f
@@ -4012,6 +4014,10 @@ usr/src/man/man9f/avl_numnodes.9f
 usr/src/man/man9f/avl_remove.9f
 usr/src/man/man9f/avl_swap.9f
 usr/src/man/man9f/bcanputnext.9f
+usr/src/man/man9f/crdup.9f
+usr/src/man/man9f/crfree.9f
+usr/src/man/man9f/crget.9f
+usr/src/man/man9f/crhold.9f
 usr/src/man/man9f/ddi_dma_cookie_get.9f
 usr/src/man/man9f/ddi_dma_cookie_one.9f
 usr/src/man/man9f/ddi_dma_ncookies.9f
@@ -4042,6 +4048,7 @@ usr/src/man/man9f/id_free.9f
 usr/src/man/man9f/id_space_create.9f
 usr/src/man/man9f/id_space_destroy.9f
 usr/src/man/man9f/id_space_extend.9f
+usr/src/man/man9f/kcred.9f
 usr/src/man/man9f/mac_fini_ops.9f
 usr/src/man/man9f/mac_free.9f
 usr/src/man/man9f/mac_hcksum_set.9f
@@ -4100,6 +4107,7 @@ usr/src/man/man9f/vmem_xfree.9f
 usr/src/man/man9f/vsnprintf.9f
 usr/src/man/man9f/vsprintf.9f
 usr/src/man/man9f/vzcmn_err.9f
+usr/src/man/man9f/zone_kcred.9f
 usr/src/man/man9s/mac_callbacks_t.9s
 usr/src/man/man9s/mac_register_t.9s
 usr/src/man/man9s/usb_bulk_req_t.9s
