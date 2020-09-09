@@ -19,6 +19,7 @@
 # CDDL HEADER END
 #
 # Copyright (c) 1990, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 
 SYMPROG= hosts inetd.conf networks protocols services netmasks
 
@@ -26,6 +27,7 @@ SYMPROG= hosts inetd.conf networks protocols services netmasks
 EDITPROG= ipaddrsel.conf ipsecalgs
 PROG= datemsk.ndpd ipsecinit.sample ipqosconf.1.sample ipqosconf.2.sample \
     ipqosconf.3.sample
+DPROG= services
 ETCPROG= $(SYMPROG) $(EDITPROG) $(PROG)
 SUBDIRS= default dhcp init.d ike nca ppp secret sock2path.d
 
@@ -37,10 +39,12 @@ install:=	TARGET= install
 ROOTVAR=	$(ROOT)/var
 INETETCDIR=	$(ROOTETC)/inet
 INETVARDIR=	$(ROOTVAR)/inet
-DIRS= 		$(INETETCDIR) $(INETVARDIR)
+DPROGDIRS=	$(DPROG:%=$(INETETCDIR)/%.d)
+DIRS= 		$(INETETCDIR) $(INETVARDIR) $(DPROGDIRS)
 SYMDIR= 	inet
 ETCINETPROG=	$(ETCPROG:%=$(INETETCDIR)/%)
 EDITFILES=	$(SYMPROG:%=$(INETETCDIR)/%) $(EDITPROG:%=$(INETETCDIR)/%)
+DPROGFILES=	$(DPROG:%=$(INETETCDIR)/%.d/_%)
 # Only old /etc/inet files get symlinks in /etc.
 SYMETCPROG=	$(SYMPROG:%=sym_%)
 SYMIPNODES=	$(INETETCDIR)/ipnodes
@@ -50,10 +54,12 @@ FILEMODE= 0444
 .KEEP_STATE:
 
 $(EDITFILES) := FILEMODE= 0644
+$(DPROGFILES) := FILEMODE= 0644
 
 all: $(ETCPROG) $(SUBDIRS)
 
-install: all $(DIRS) $(ETCINETPROG) $(SYMETCPROG) $(SYMIPNODES) $(SUBDIRS)
+install: all $(DIRS) $(ETCINETPROG) $(SYMETCPROG) $(SYMIPNODES) $(SUBDIRS) \
+	$(DPROGFILES)
 
 $(SYMIPNODES) :
 	$(RM) $@
@@ -61,6 +67,9 @@ $(SYMIPNODES) :
 
 $(INETETCDIR)/% : %
 	$(INS.file)
+
+$(INETETCDIR)/%.d/_% : %
+	$(INS.rename)
 
 sym_% : %
 	$(RM) $(ROOTETC)/$<

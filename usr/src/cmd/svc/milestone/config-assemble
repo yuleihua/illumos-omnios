@@ -1,0 +1,167 @@
+#!/usr/bin/ksh -p
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
+#
+
+. /lib/svc/share/smf_include.sh
+
+if [ -z "$SMF_FMRI" ]; then
+	echo "This script can only be invoked by smf(5)"
+	exit $SMF_EXIT_ERR_NOSMF
+fi
+
+tmpd=
+
+function setup {
+	tmpd=`/usr/bin/mktemp -d /tmp/assemble.XXXXXX`
+	if [[ -z "$tmpd" ]]; then
+		echo "Could not create temporary directory."
+		exit $SMF_EXIT_ERR_FATAL
+	fi
+}
+
+function cleanup {
+	[[ -n "$tmpd" && -d "$tmpd" ]] && rm -rf $tmpd
+}
+
+function assemble_services {
+	typeset -r svc=/etc/inet/services
+	typeset -r svcdir=$svc.d
+	typeset -r defsvc=$svcdir/_services
+	typeset -r tf=$tmpd/services
+
+	echo "Assembling $svc"
+
+	if [[ ! -f $defsvc ]]; then
+		echo "... $defsvc does not exist, no action taken"
+		return
+	fi
+
+	# In case the user has previously customised /etc/inet/services
+	# create a local changes file on first startup.
+	if [[ `svcprop -c -p state/migrated $SMF_FMRI` != true ]]; then
+		echo "... first startup, extracting local changes"
+		comm -13 $defsvc $svc > $svcdir/local-changes
+		[[ -s $svcdir/local-changes ]] || rm -f $svcdir/local-changes
+		svccfg -s $SMF_FMRI setprop state/migrated = true
+	fi
+
+	# Extract the header from the default file
+	sed -e '/^[^#]/q' $defsvc | sed '$d' > $tf.header
+
+	# Add to it
+	cat <<-EOM >> $tf.header
+
+###########################################################################
+#                                                                         #
+#  This file has been automatically generated from fragment files found   #
+#  under /etc/inet/services.d/                                            #
+#                                                                         #
+#  Packages which wish to add entries to this file should deliver a file  #
+#  to that location. The recommended naming schema for the fragment       #
+#  files is to use the name of the package which is delivering the file   #
+#  with '/' characters replaced by ':'                                    #
+#                                                                         #
+###########################################################################
+	EOM
+
+	# Copy the original file to duplicate the permissions before truncating
+	cp -p $svc $tf.services
+
+	for f in $svcdir/*; do
+		[[ -f "$f" ]] || continue
+		egrep -v '^[[:blank:]]*$' $f
+	done | nawk -v cpy=$tf.copyrights '
+	/^ *#.*[Cc]opyright +[0-9]/ {
+		print $0 >> cpy
+	}
+	/^ *#/ { next }
+	$2 ~ /[0-9]+\// {
+		name = $1
+		service = $2
+		split($0, a, "# *")
+		comment = a[2]
+		split(a[1], b)
+
+		if (service in services) {
+			if (services[service] != name)
+				aliases[service] = aliases[service] " " name
+		} else {
+			services[service] = name
+		}
+
+		if (length(comment) && !(service in comments))
+			comments[service] = a[2]
+
+		for (i = 3; i <= length(b); i++)
+			aliases[service] = aliases[service] " " b[i]
+	}
+	END {
+		for (s in services) {
+			alist = ""
+			if (s in aliases) {
+				delete seen
+				split(aliases[s], c);
+				for (i = 0; i < length(c); i++) {
+					al = c[i]
+					if (!(al in seen)) {
+						if (length(alist))
+							alist = alist " "
+						alist = alist al
+						seen[al] = 1
+					}
+				}
+			}
+			printf("%-14s %-10s %-10s", services[s], s, alist)
+			if (s in comments)
+				printf("	# %s", comments[s])
+			printf("\n")
+		}
+	}
+	' | sort -k 2,2n > $tf.services
+
+	(
+		cat $tf.header
+		echo
+		if [[ -s $tf.copyrights ]]; then
+			cat $tf.copyrights
+			echo
+		fi
+		cat $tf.services
+	) > $tf.new
+
+	if cmp -s $svc $tf.new; then
+		echo "... do change detected, no action taken"
+	else
+		echo "... detected change, installing new $svc"
+		mv $tf.new $svc
+		# nscd will detect the updated timestamp on the file and
+		# invalidate its cache without us having to do anything here.
+	fi
+}
+
+case "$1" in
+services)
+	setup
+	assemble_services
+	;;
+*)
+	echo "Usage: $0 { services }"
+	exit $SMF_EXIT_ERR_FATAL
+	;;
+esac
+
+cleanup
+
+exit $SMF_EXIT_OK
