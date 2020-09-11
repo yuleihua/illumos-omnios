@@ -47,6 +47,7 @@ TLM_DIR = tlm
 include $(NDMP_DIR)/Makefile.rpcgen
 
 CFLAGS += $(CCVERBOSE)
+CFLAGS += -I../../lib/libzutil/common
 
 CPPFLAGS += $(LFLAGS64)
 
@@ -75,7 +76,7 @@ CERRWARN += -_gcc=-Wno-switch
 CERRWARN += $(CNOWARN_UNINIT)
 CERRWARN += -_gcc=-Wno-address
 
-LDLIBS   += -lsocket -lnsl -lzfs -lsec -lndmp -lmd5 -lnvpair -lumem -lbsm -lcmdutils -linetutil
+LDLIBS   += -lsocket -lnsl -lzfs -lsec -lndmp -lmd5 -lnvpair -lumem -lbsm -lcmdutils -linetutil -lzutil
 
 OBJS= \
 	$(NDMP_DIR)/ndmp_xdr.o \

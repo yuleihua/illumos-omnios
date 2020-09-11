@@ -2414,7 +2414,7 @@ mover_tape_reader(void *ptr)
 	ndmpd_session_t *session = ptr;
 
 	if ((nlp = ndmp_get_nlp(session)) == NULL) {
-		return (-1);
+		return ((void *)(uintptr_t)-1);
 	}
 
 	cmds = &nlp->nlp_cmds;
@@ -2558,7 +2558,7 @@ mover_socket_writer(void *ptr)
 	ndmpd_session_t *session = ptr;
 
 	if ((nlp = ndmp_get_nlp(session)) == NULL) {
-		return (-1);
+		return ((void *)(uintptr_t)-1);
 	}
 
 	cmds = &nlp->nlp_cmds;
@@ -2768,7 +2768,7 @@ mover_socket_reader(void *ptr)
 	static int nr = 0;
 
 	if ((nlp = ndmp_get_nlp(session)) == NULL) {
-		return (-1);
+		return ((void *)(uintptr_t)-1);
 	}
 
 	cmds = &nlp->nlp_cmds;
@@ -2905,7 +2905,7 @@ mover_tape_writer(void *ptr)
 	static int nw = 0;
 
 	if ((nlp = ndmp_get_nlp(session)) == NULL) {
-		return (-1);
+		return ((void *)(uintptr_t)-1);
 	}
 
 	cmds = &nlp->nlp_cmds;

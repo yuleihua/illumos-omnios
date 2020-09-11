@@ -57,7 +57,7 @@
 #include "ndmpd.h"
 #include <bitmap.h>
 #include <traverse.h>
-
+#include <libzutil.h>
 
 /*
  * Maximum length of the string-representation of u_longlong_t type.
@@ -2193,8 +2193,10 @@ backup_reader_v3(void *ptr)
 	fs_traverse_t ft;
 	ndmp_lbr_params_t *nlp;
 	tlm_commands_t *cmds;
+	backup_reader_arg_t *argp;
 	int rc;
 
+	argp = (backup_reader_arg_t *)ptr;
 	if (!argp)
 		return ((void *)(uintptr_t)-1);
 
@@ -2306,7 +2308,7 @@ backup_reader_v3(void *ptr)
 	tlm_release_reader_writer_ipc(lcmd);
 	tlm_un_ref_job_stats(nlp->nlp_job_name);
 
-	return (rv);
+	return ((void *)(uintptr_t)rv);
 }
 
 
@@ -2484,7 +2486,6 @@ backup_out:
 void
 get_backup_size(ndmp_lbr_params_t *nlp)
 {
-	ndmp_bkup_size_arg_t *sarg = ptr;
 	fs_traverse_t ft;
 	u_longlong_t bk_size = 0;
 	char buf[256];
@@ -3799,7 +3800,7 @@ ndmpd_tar_backup_starter_v3(void *arg)
 	ndmp_session_unref(session);
 	syslog(LOG_DEBUG, "BACKUP COMPLETE [%s] (as jobname %s)",
 	    nlp->nlp_snapname, nlp->nlp_job_name);
-	return (err);
+	return ((void *)(uintptr_t)err);
 }
 
 
