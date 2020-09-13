@@ -1,6 +1,7 @@
 #
 # Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
 # Copyright (c) 2018, Joyent, Inc.
+# Copyright 2017 Nexenta Systems, Inc.  All rights reserved.
 #
 
 #
@@ -46,6 +47,7 @@ TLM_DIR = tlm
 include $(NDMP_DIR)/Makefile.rpcgen
 
 CFLAGS += $(CCVERBOSE)
+CFLAGS += -I../../lib/libzutil/common
 
 CPPFLAGS += $(LFLAGS64)
 
@@ -74,7 +76,7 @@ CERRWARN += -_gcc=-Wno-switch
 CERRWARN += $(CNOWARN_UNINIT)
 CERRWARN += -_gcc=-Wno-address
 
-LDLIBS   += -lsocket -lnsl -lzfs -lsec -lndmp -lmd5 -lnvpair -lumem -lbsm -lgen -lcmdutils -linetutil
+LDLIBS   += -lsocket -lnsl -lzfs -lsec -lndmp -lmd5 -lnvpair -lumem -lbsm -lcmdutils -linetutil -lzutil
 
 OBJS= \
 	$(NDMP_DIR)/ndmp_xdr.o \
@@ -83,6 +85,7 @@ OBJS= \
 NDMP_OBJ = \
 	ndmpd_callbacks.o \
 	ndmpd_chkpnt.o \
+	ndmpd_clone.o \
 	ndmpd_comm.o \
 	ndmpd_config.o \
 	ndmpd_connect.o \
@@ -91,7 +94,6 @@ NDMP_OBJ = \
 	ndmpd_dtime.o \
 	ndmpd_fhistory.o \
 	ndmpd_handler.o \
-	ndmpd_log.o \
 	ndmpd_main.o \
 	ndmpd_mark.o \
 	ndmpd_mover.o \
@@ -100,8 +102,7 @@ NDMP_OBJ = \
 	ndmpd_tape.o \
 	ndmpd_tar.o \
 	ndmpd_tar3.o \
-	ndmpd_util.o \
-	ndmpd_zfs.o
+	ndmpd_util.o
 
 TLM_OBJ = \
 	tlm_backup_reader.o \
@@ -124,11 +125,15 @@ MANIFEST = ndmp.xml
 ROOTMANIFESTDIR= $(ROOTSVCSYSTEM)
 $(ROOTMANIFEST) := FILEMODE = 444
 
-ROOTNDMPDDIR=	$(ROOTLIB)/ndmp
+ROOTNDMPDDIR = $(ROOTLIB)/ndmp
+LOGNDMPDDIR = $(ROOT)/var/log/ndmp
 ROOTNDMPDFILE = $(PROG:%=$(ROOTNDMPDDIR)/%)
 
 FILEMODE = 0444
 $(ROOTNDMPDFILE):= FILEMODE = 0555
+
+$(LOGNDMPDDIR):
+	$(INS.dir)
 
 $(ROOTNDMPDDIR):
 	$(INS.dir)
@@ -140,7 +145,8 @@ $(ROOTNDMPDDIR)/%: %
 
 all: $(PROG)
 
-install: all $(ROOTNDMPDDIR)  $(ROOTNDMPDFILE) $(ROOTSVCMETHOD) $(ROOTMANIFEST) 
+install: all $(ROOTNDMPDDIR) $(LOGNDMPDDIR) $(ROOTNDMPDFILE) $(ROOTSVCMETHOD) \
+	$(ROOTMANIFEST)
 
 check:	$(CHKMANIFEST)
 
