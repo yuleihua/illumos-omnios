@@ -161,6 +161,7 @@ ndmpd_data_start_backup_v2(ndmp_connection_t *connection, void *body)
 	}
 }
 
+
 /*
  * ndmpd_data_start_recover_v2
  *
@@ -317,6 +318,7 @@ ndmpd_data_abort_v2(ndmp_connection_t *connection, void *body)
 	ndmp_send_reply(connection, &reply, "sending data_abort reply");
 }
 
+
 /*
  * ************************************************************************
  * NDMP V3 HANDLERS
@@ -457,6 +459,7 @@ _error:
 	}
 }
 
+
 /*
  * ndmpd_data_start_recover_v3
  *
@@ -534,6 +537,7 @@ _error:
 	}
 }
 
+
 /*
  * ndmpd_data_abort_v3
  *
@@ -580,6 +584,7 @@ ndmpd_data_abort_v3(ndmp_connection_t *connection, void *body)
 		session->ns_data.dd_abort = TRUE;
 		ndmpd_data_error(session, NDMP_DATA_HALT_ABORTED);
 		break;
+
 	default:
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
 		syslog(LOG_ERR, "Unknown data V3 state %d",
@@ -679,6 +684,7 @@ ndmpd_data_listen_v3(ndmp_connection_t *connection, void *body)
 		reply.data_connection_addr.addr_type = request->addr_type;
 		session->ns_data.dd_data_addr.addr_type = NDMP_ADDR_LOCAL;
 		break;
+
 	case NDMP_ADDR_TCP:
 		if (create_listen_socket_v3(session, &addr, &port) < 0) {
 			reply.error = NDMP_IO_ERR;
@@ -796,8 +802,11 @@ ndmpd_data_connect_v3(ndmp_connection_t *connection, void *body)
  * ndmpd_data_get_env_v4
  *
  * Request handler. Returns the environment variable array sent
- * with the backup request. This request may only be sent with
- * a backup operation is in progress.
+ * with the backup or restore request. The RFC states the following:
+ * The request is typically issued following a successful backup operation
+ * but MAY be issued during or after a recovery operation as well. This
+ * request is only valid when the Data Server is in the ACTIVE
+ * or HALTED states.
  *
  * Parameters:
  *   connection (input) - connection handle.
@@ -819,18 +828,27 @@ ndmpd_data_get_env_v4(ndmp_connection_t *connection, void *body)
 	    session->ns_data.dd_state != NDMP_DATA_STATE_HALTED) {
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
 		reply.env.env_len = 0;
-	} else if (session->ns_data.dd_operation != NDMP_DATA_OP_BACKUP) {
-		syslog(LOG_ERR, "Backup operation not active.");
-		reply.error = NDMP_ILLEGAL_STATE_ERR;
-		reply.env.env_len = 0;
 	} else {
-		reply.error = NDMP_NO_ERR;
-		reply.env.env_len = session->ns_data.dd_env_len;
-		reply.env.env_val = session->ns_data.dd_env;
+		switch (session->ns_data.dd_operation) {
+		case NDMP_DATA_OP_BACKUP:
+		case NDMP_DATA_OP_RECOVER:
+		case NDMP_DATA_OP_RECOVER_FILEHIST:
+			reply.error = NDMP_NO_ERR;
+			reply.env.env_len = session->ns_data.dd_env_len;
+			reply.env.env_val = session->ns_data.dd_env;
+			break;
+
+		default:
+			syslog(LOG_ERR, "Backup/Restore operation not active.");
+			reply.error = NDMP_ILLEGAL_STATE_ERR;
+			reply.env.env_len = 0;
+			break;
+		}
 	}
 
 	ndmp_send_reply(connection, &reply, "sending data_get_env reply");
 }
+
 
 /*
  * ndmpd_data_get_state_v4
@@ -956,6 +974,7 @@ ndmpd_data_connect_v4(ndmp_connection_t *connection, void *body)
 	    "sending ndmp_data_connect_v4 reply");
 }
 
+
 /*
  * ndmpd_data_listen_v4
  *
@@ -1005,6 +1024,7 @@ ndmpd_data_listen_v4(ndmp_connection_t *connection, void *body)
 		reply.connect_addr.addr_type = request->addr_type;
 		session->ns_data.dd_data_addr.addr_type = NDMP_ADDR_LOCAL;
 		break;
+
 	case NDMP_ADDR_TCP:
 		if (create_listen_socket_v3(session, &addr, &port) < 0) {
 			reply.error = NDMP_IO_ERR;
@@ -1076,6 +1096,7 @@ ndmpd_data_start_recover_filehist_v4(ndmp_connection_t *connection, void *body)
 	ndmp_send_reply(connection, &reply,
 	    "sending ndmp_data_start_recover_filehist_reply_v4 reply");
 }
+
 
 /*
  * ************************************************************************
@@ -1461,6 +1482,7 @@ ndmpd_tar_start_backup_v3(ndmpd_session_t *session, char *bu_type,
 	return (NDMP_NO_ERR);
 }
 
+
 /*
  * ndmpd_tar_start_recover_v3
  *
@@ -1593,6 +1615,7 @@ ndmpd_tar_start_recover_v3(ndmpd_session_t *session,
 
 	return (NDMP_NO_ERR);
 }
+
 
 /*
  * discard_data_v3
@@ -1754,6 +1777,7 @@ ndmpd_remote_read_v3(ndmpd_session_t *session, char *data, ulong_t length)
 	return (0);
 }
 
+
 /*
  * nlp_release_job_stat
  *
@@ -1826,7 +1850,6 @@ ndmpd_data_init(ndmpd_session_t *session)
 }
 
 
-
 /*
  * ndmpd_data_cleanup
  *
@@ -1890,16 +1913,19 @@ ndmp_data_get_mover_mode(ndmpd_session_t *session)
 		rv = ((session->ns_data.dd_mover.addr_type == NDMP_ADDR_TCP)
 		    ? "remote" : "local");
 		break;
+
 	case NDMPV3:
 		rv = ((session->ns_data.dd_data_addr.addr_type == NDMP_ADDR_TCP)
 		    ? "remote" : "local");
 		break;
+
 	case NDMPV4:
 		rv = ((session->ns_data.dd_data_addr.addr_type ==
 		    NDMP_ADDR_TCP ||
 		    (session->ns_data.dd_data_addr_v4.addr_type ==
 		    NDMP_ADDR_TCP)) ? "remote" : "local");
 		break;
+
 	default:
 		rv = "Unknown";
 		syslog(LOG_ERR, "Invalid protocol version %d.",
@@ -2066,6 +2092,7 @@ ndmpd_tar_start_backup_v2(ndmpd_session_t *session, char *bu_type,
 	return (NDMP_NO_ERR);
 }
 
+
 /*
  * ndmpd_tar_start_recover_v2
  *
@@ -2210,6 +2237,7 @@ ndmpd_tar_start_recover_v2(ndmpd_session_t *session, char *bu_type,
 
 	return (NDMP_NO_ERR);
 }
+
 
 /*
  * ndmpd_data_get_info
