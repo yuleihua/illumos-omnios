@@ -71,6 +71,7 @@ SYSDEVMANIFESTS= $(SYSDEVSVCS:%=$(ROOTSVCSYSTEMDEVICE)/%)
 
 SYSTEMSVCS= \
 	boot-archive.xml \
+	config-assemble.xml \
 	console-login.xml \
 	early-manifest-import.xml \
 	identity.xml \
@@ -101,6 +102,7 @@ MANIFEST= $(FSSVCS) $(NETSVCS) $(MAINMILESTONES) $(SYSTEMSVCS) \
 
 SVCMETHOD=\
 	boot-archive \
+	config-assemble \
 	console-login \
 	devices-audio \
 	devices-local \

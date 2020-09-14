@@ -61,6 +61,7 @@ dir path=etc/fs/hsfs group=sys
 dir path=etc/fs/ufs group=sys
 dir path=etc/ftpd group=sys
 dir path=etc/inet group=sys
+dir path=etc/inet/services.d group=sys
 dir path=etc/init.d group=sys
 dir path=etc/lib group=sys
 dir path=etc/logadm.d group=sys
@@ -383,6 +384,7 @@ file path=etc/inet/netmasks group=sys preserve=true
 file path=etc/inet/networks group=sys preserve=true
 file path=etc/inet/protocols group=sys preserve=true
 file path=etc/inet/services group=sys preserve=true
+file path=etc/inet/services.d/_services group=sys preserve=true
 file path=etc/init.d/PRESERVE group=sys mode=0744 preserve=true
 file path=etc/init.d/README group=sys preserve=true
 file path=etc/init.d/sysetup group=sys mode=0744 preserve=true
@@ -532,6 +534,7 @@ file path=lib/svc/manifest/system/auditset.xml group=sys mode=0444
 file path=lib/svc/manifest/system/boot-archive-update.xml group=sys mode=0444
 file path=lib/svc/manifest/system/boot-archive.xml group=sys mode=0444
 file path=lib/svc/manifest/system/boot-config.xml group=sys mode=0444
+file path=lib/svc/manifest/system/config-assemble.xml group=sys mode=0444
 file path=lib/svc/manifest/system/consadm.xml group=sys mode=0444
 file path=lib/svc/manifest/system/console-login.xml group=sys mode=0444
 file path=lib/svc/manifest/system/coreadm.xml group=sys mode=0444
@@ -570,6 +573,7 @@ file path=lib/svc/manifest/system/utmp.xml group=sys mode=0444
 file path=lib/svc/manifest/system/vtdaemon.xml group=sys mode=0444
 file path=lib/svc/method/boot-archive mode=0555
 file path=lib/svc/method/boot-archive-update mode=0555
+file path=lib/svc/method/config-assemble mode=0555
 file path=lib/svc/method/console-login mode=0555
 file path=lib/svc/method/devices-audio mode=0555
 file path=lib/svc/method/devices-local mode=0555
