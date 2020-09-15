@@ -142,7 +142,7 @@ function assemble_services {
 	) > $tf.new
 
 	if cmp -s $svc $tf.new; then
-		echo "... do change detected, no action taken"
+		echo "... no change detected, no action taken"
 	else
 		echo "... detected change, installing new $svc"
 		mv $tf.new $svc
