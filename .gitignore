@@ -3364,7 +3364,9 @@ usr/src/man/man1s/dmake.1s
 usr/src/man/man1s/make.1s
 usr/src/man/man2/fchmodat.2
 usr/src/man/man2/futimens.2
+usr/src/man/man2/futimes.2
 usr/src/man/man2/linkat.2
+usr/src/man/man2/lutimes.2
 usr/src/man/man2/mkdirat.2
 usr/src/man/man2/mknodat.2
 usr/src/man/man2/ppoll.2
@@ -3655,6 +3657,9 @@ usr/src/man/man3head/TAILQ_NEXT.3head
 usr/src/man/man3head/TAILQ_PREV.3head
 usr/src/man/man3head/TAILQ_REMOVE.3head
 usr/src/man/man3head/TAILQ_SWAP.3head
+usr/src/man/man3head/TIMESPEC_TO_TIMEVAL.3head
+usr/src/man/man3head/TIMEVAL_TO_TIMESPEC.3head
+usr/src/man/man3head/timeval.3head
 usr/src/man/man3head/xlocale.3head
 usr/src/man/man3m/acosf.3m
 usr/src/man/man3m/acoshf.3m
@@ -4290,6 +4295,8 @@ usr/src/test/libc-tests/tests/timespec_get.32
 usr/src/test/libc-tests/tests/timespec_get.64
 usr/src/test/libc-tests/tests/uchar.32
 usr/src/test/libc-tests/tests/uchar.64
+usr/src/test/libc-tests/tests/utimes.32
+usr/src/test/libc-tests/tests/utimes.64
 usr/src/test/libc-tests/tests/wcsncasecmp-7344.32
 usr/src/test/libc-tests/tests/wcsncasecmp-7344.64
 usr/src/test/libc-tests/tests/wcsncasecmp-7350.32
