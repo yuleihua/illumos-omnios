@@ -42,6 +42,7 @@ lint.out
 /usr/src/tools/clobber-*.out
 /usr/src/tools/install-*.out
 # BEGIN AUTO-GENERATED
+b_next
 usr/src/boot/sys/boot/efi/libefi/amd64/machine
 usr/src/boot/sys/boot/efi/libefi/amd64/x86
 usr/src/boot/sys/boot/efi/libefi/i386/machine
@@ -1467,10 +1468,6 @@ usr/src/cmd/pools/poolcfg/poolcfg
 usr/src/cmd/pools/poolcfg/poolcfg_grammar.c
 usr/src/cmd/pools/poolcfg/poolcfg_grammar.h
 usr/src/cmd/pools/poolcfg/poolcfg_lex.c
-usr/src/cmd/pools/poold/libjkstat/jkstat.h
-usr/src/cmd/pools/poold/libjlgrp/jlgrp.h
-usr/src/cmd/pools/poold/libjpool/jpool.h
-usr/src/cmd/pools/poold/libjsyslog/jsyslog.h
 usr/src/cmd/pools/poold/poold
 usr/src/cmd/pools/poolstat/poolstat
 usr/src/cmd/power/pmconfig
@@ -1509,7 +1506,6 @@ usr/src/cmd/print/printmgr/bin/printmgr
 usr/src/cmd/print/printmgr/com/sun/admin/pm/client/helptools/parsehelp
 usr/src/cmd/print/printmgr/com/sun/admin/pm/client/pmCopyright.java
 usr/src/cmd/print/printmgr/com/sun/admin/pm/client/pmHelpResources.java
-usr/src/cmd/print/printmgr/com/sun/admin/pm/server/com_sun_admin_pm_server_DoPrinterNS.h
 usr/src/cmd/printf/printf
 usr/src/cmd/priocntl/FSSpriocntl
 usr/src/cmd/priocntl/FXpriocntl
@@ -3014,7 +3010,6 @@ usr/src/lib/libadt_jni/com/sun/audit/AuditEvent_uauth.java
 usr/src/lib/libadt_jni/com/sun/audit/AuditEvent_usermgr_add.java
 usr/src/lib/libadt_jni/com/sun/audit/AuditEvent_usermgr_delete.java
 usr/src/lib/libadt_jni/com/sun/audit/AuditEvent_usermgr_modify.java
-usr/src/lib/libadt_jni/com/sun/audit/AuditSession.h
 usr/src/lib/libadt_jni/common/adt_jni_event.c
 usr/src/lib/libadt_jni/common/mapfile-vers
 usr/src/lib/libast/amd64/libast.msg
@@ -3103,7 +3098,6 @@ usr/src/lib/libdtrace/i386/dt_lex.c
 usr/src/lib/libdtrace/i386/regs.d
 usr/src/lib/libdtrace/i386/regs.sed
 usr/src/lib/libdtrace/i386/y.output
-usr/src/lib/libdtrace_jni/java/native/
 usr/src/lib/libexacct/demo/exdump
 usr/src/lib/libficl/amd64/libficl-sys.so.4.1.0
 usr/src/lib/libficl/i386/libficl-sys.so.4.1.0
@@ -3513,6 +3507,7 @@ usr/src/man/man3c/open_wmemstream.3c
 usr/src/man/man3c/pthread_attr_setname_np.3c
 usr/src/man/man3c/pthread_mutexattr_setrobust.3c
 usr/src/man/man3c/pthread_setname_np.3c
+usr/src/man/man3c/qsort_r.3c
 usr/src/man/man3c/reallocarray.3c
 usr/src/man/man3c/reallocf.3c
 usr/src/man/man3c/recallocarray.3c
@@ -4238,6 +4233,9 @@ usr/src/test/libc-tests/tests/printf-9511.64
 usr/src/test/libc-tests/tests/priv_gettext/priv_gettext
 usr/src/test/libc-tests/tests/psignal-5097.32
 usr/src/test/libc-tests/tests/psignal-5097.64
+usr/src/test/libc-tests/tests/qsort/qsort_test
+usr/src/test/libc-tests/tests/qsort/qsort_test.amd64
+usr/src/test/libc-tests/tests/qsort/qsort_test.i386
 usr/src/test/libc-tests/tests/quick_exit_order.32
 usr/src/test/libc-tests/tests/quick_exit_order.64
 usr/src/test/libc-tests/tests/quick_exit_status.32
