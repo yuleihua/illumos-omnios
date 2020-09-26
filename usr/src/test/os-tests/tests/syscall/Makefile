@@ -10,50 +10,35 @@
 #
 
 #
-# Copyright (c) 2012 by Delphix. All rights reserved.
-# Copyright 2017 Gordon W. Ross
-# Copyright (c) 2018, Joyent, Inc.
-# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
+# Copyright 2020 Joyent, Inc.
 #
 
 include $(SRC)/cmd/Makefile.cmd
 include $(SRC)/test/Makefile.com
 
-# These test programs are built as both 32- and 64-bit variants
-PROGDA = rights recvmsg
-
-PROG =	conn dgram drop_priv nosignal sockpair \
-	$(PROGDA:%=%.32) $(PROGDA:%=%.64)
-
-LDLIBS += -lsocket
-LDLIBS64 += -lsocket
+PROGS = open
 
 CSTD = $(CSTD_GNU99)
-CPPFLAGS += -D_XOPEN_SOURCE=600 -D__EXTENSIONS__
-
-# needs work
-SMOFF += all_func_returns
-
-nosignal := LDLIBS += -lnsl
-rights.32 := LDLIBS += -lproc
-rights.64 := LDLIBS64 += -lproc
 
 ROOTOPTPKG = $(ROOT)/opt/os-tests
-TESTDIR = $(ROOTOPTPKG)/tests/sockfs
+TESTDIR = $(ROOTOPTPKG)/tests/syscall
 
-CMDS = $(PROG:%=$(TESTDIR)/%)
+PROGS32 = $(PROGS:%=%.32)
+PROGS64 = $(PROGS:%=%.64)
+CMDS = $(PROGS32) $(PROGS64)
 $(CMDS) := FILEMODE = 0555
 
-all: $(PROG)
+TESTDIRPROGS = $(PROGS32:%=$(TESTDIR)/%) \
+	$(PROGS64:%=$(TESTDIR)/%)
 
-install: $(CMDS)
+all: $(PROGS32) $(PROGS64)
+
+install: all $(TESTDIR) $(TESTDIRPROGS)
 
 clobber: clean
-	-$(RM) $(PROG)
 
 clean:
-
-$(CMDS): $(TESTDIR) $(PROG)
+	-$(RM) $(CMDS)
 
 $(TESTDIR):
 	$(INS.dir)

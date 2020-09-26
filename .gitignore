@@ -42,7 +42,6 @@ lint.out
 /usr/src/tools/clobber-*.out
 /usr/src/tools/install-*.out
 # BEGIN AUTO-GENERATED
-b_next
 usr/src/boot/sys/boot/efi/libefi/amd64/machine
 usr/src/boot/sys/boot/efi/libefi/amd64/x86
 usr/src/boot/sys/boot/efi/libefi/i386/machine
@@ -3564,6 +3563,11 @@ usr/src/man/man3c/wctrans_l.3c
 usr/src/man/man3c/wctype_l.3c
 usr/src/man/man3c/wcwidth_l.3c
 usr/src/man/man3ext/efi_reserved_sectors.3ext
+usr/src/man/man3head/CMSG_DATA.3head
+usr/src/man/man3head/CMSG_FIRSTHDR.3head
+usr/src/man/man3head/CMSG_LEN.3head
+usr/src/man/man3head/CMSG_NXTHDR.3head
+usr/src/man/man3head/CMSG_SPACE.3head
 usr/src/man/man3head/LIST_CLASS_ENTRY.3head
 usr/src/man/man3head/LIST_CLASS_HEAD.3head
 usr/src/man/man3head/LIST_CONCAT.3head
@@ -4355,11 +4359,15 @@ usr/src/test/os-tests/tests/sockfs/conn
 usr/src/test/os-tests/tests/sockfs/dgram
 usr/src/test/os-tests/tests/sockfs/drop_priv
 usr/src/test/os-tests/tests/sockfs/nosignal
+usr/src/test/os-tests/tests/sockfs/recvmsg.32
+usr/src/test/os-tests/tests/sockfs/recvmsg.64
 usr/src/test/os-tests/tests/sockfs/rights.32
 usr/src/test/os-tests/tests/sockfs/rights.64
 usr/src/test/os-tests/tests/sockfs/sockpair
 usr/src/test/os-tests/tests/spoof-ras/spoof-ras
 usr/src/test/os-tests/tests/stress/dladm-kstat
+usr/src/test/os-tests/tests/syscall/open.32
+usr/src/test/os-tests/tests/syscall/open.64
 usr/src/test/os-tests/tests/timer/timer_limit
 usr/src/test/os-tests/tests/uccid/atrparse
 usr/src/test/os-tests/tests/uccid/excl-badread
