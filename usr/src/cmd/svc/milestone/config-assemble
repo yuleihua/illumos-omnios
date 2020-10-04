@@ -76,9 +76,6 @@ function assemble_services {
 ###########################################################################
 	EOM
 
-	# Copy the original file to duplicate the permissions before truncating
-	cp -p $svc $tf.services
-
 	for f in $svcdir/*; do
 		[[ -f "$f" ]] || continue
 		egrep -v '^[[:blank:]]*$' $f
@@ -130,6 +127,9 @@ function assemble_services {
 		}
 	}
 	' | sort -k 2,2n > $tf.services
+
+	# Use cp to duplicate the permissions to the new file
+	cp -p $svc $tf.new
 
 	(
 		cat $tf.header
