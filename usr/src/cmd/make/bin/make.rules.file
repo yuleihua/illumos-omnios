@@ -21,6 +21,8 @@
 # Copyright 2003 Sun Microsystems, Inc. All rights reserved.
 # Use is subject to license terms.
 #
+# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
+#
 
 SUFFIXES = .o .c .c~ .cc .cc~ .y .y~ .l .l~ .s .s~ .sh .sh~ .S .S~ .i .ln \
 	.h .h~ .f .f~ .for .for~ .F .F~ .f90 .f90~ .ftn .ftn~ .mod .mod~ \
@@ -34,7 +36,7 @@ SUFFIXES = .o .c .c~ .cc .cc~ .y .y~ .l .l~ .s .s~ .sh .sh~ .S .S~ .i .ln \
 OUTPUT_OPTION=
 
 #	C language section.
-CC=cc
+CC=gcc
 CFLAGS=
 CPPFLAGS=
 LINT=lint
@@ -160,7 +162,7 @@ LEX.l=$(LEX) $(LFLAGS) -t
 	mv lex.yy.c $@
 
 #       C++ language section.
-CCC=CC
+CCC=g++
 CCFLAGS=
 COMPILE.cc=$(CCC) $(CCFLAGS) $(CPPFLAGS)  -c
 LINK.cc=$(CCC) $(CCFLAGS) $(CPPFLAGS) $(LDFLAGS)
@@ -217,7 +219,7 @@ LINK.C=$(CCC) $(CCFLAGS) $(CPPFLAGS) $(LDFLAGS)
 	$(RM) $%
 
 #	FORTRAN section.
-FC=f77
+FC=gfortran
 FFLAGS=
 COMPILE.f=$(FC) $(FFLAGS)  -c
 LINK.f=$(FC) $(FFLAGS) $(LDFLAGS)
@@ -306,7 +308,7 @@ LINK.r=$(FC) $(FFLAGS) $(RFLAGS) $(LDFLAGS)
 	$(RM) $%
 
 #	FORTRAN 90 section.
-F90C=f90
+F90C=$(FC)
 F90FLAGS=
 COMPILE.f90=$(F90C) $(F90FLAGS) -c
 LINK.f90=$(F90C) $(F90FLAGS) $(LDFLAGS)
@@ -384,7 +386,7 @@ COMPILE.mod=$(M2C) $(M2FLAGS) $(MODFLAGS)
 	$(RM) $%
 
 #	Pascal section.
-PC=pc
+PC=fpc
 PFLAGS=
 COMPILE.p=$(PC) $(PFLAGS) $(CPPFLAGS)  -c
 LINK.p=$(PC) $(PFLAGS) $(CPPFLAGS) $(LDFLAGS)
