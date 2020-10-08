@@ -25,7 +25,7 @@
  */
 
 /*
- * Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+ * Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
  */
 
 /*
