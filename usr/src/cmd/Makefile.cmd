@@ -121,13 +121,9 @@ LDLIBS =	$(LDLIBS.cmd)
 
 LDFLAGS.cmd = \
 	$(BDIRECT) $(ENVLDFLAGS1) $(ENVLDFLAGS2) $(ENVLDFLAGS3) \
-	$(MAPFILE.NES:%=-M%) $(MAPFILE.PGA:%=-M%) $(MAPFILE.NED:%=-M%)
+	$(MAPFILE.NES:%=-Wl,-M%) $(MAPFILE.PGA:%=-Wl,-M%) $(MAPFILE.NED:%=-Wl,-M%)
 
 LDFLAGS =	$(LDFLAGS.cmd)
-
-LINTFLAGS=	-axsm
-LINTFLAGS64=	-axsm -m64
-LINTOUT=	lint.out
 
 KRB5PROG=	$(PROG:%=$(KRB5BIN)/%)
 KRB5SBINPROG=	$(PROG:%=$(KRB5SBIN)/%)
@@ -164,7 +160,7 @@ ROOTUSRSBINPROG32=	$(PROG:%=$(ROOTUSRSBIN32)/%)
 ROOTUSRSBINPROG64=	$(PROG:%=$(ROOTUSRSBIN64)/%)
 
 # Symlink rules for /usr/ccs/bin commands. Note, those commands under
-# the rule of the linker area, are controlled by a different set of 
+# the rule of the linker area, are controlled by a different set of
 # rules defined in $(SRC)/cmd/sgs/Makefile.var.
 
 INS.ccsbinlink= \
@@ -266,7 +262,7 @@ CHKMANIFEST=		$(MANIFEST:%.xml=%.xmlchk)
 ROOTSVCMETHOD=		$(SVCMETHOD:%=$(ROOTLIBSVCMETHOD)/%)
 
 ROOTSVCBINDIR=		$(ROOTLIBSVCBIN)/__nonexistent_directory__
-ROOTSVCBIN= 		$(SVCBIN:%=$(ROOTSVCBINDIR)/%)
+ROOTSVCBIN=		$(SVCBIN:%=$(ROOTSVCBINDIR)/%)
 
 #
 
@@ -487,7 +483,7 @@ $(ROOTVARSMB)/%: %
 	$(POST_PROCESS)
 
 # Define the majority text domain in this directory.
-TEXT_DOMAIN= SUNW_OST_OSCMD	
+TEXT_DOMAIN= SUNW_OST_OSCMD
 
 CLOBBERFILES += $(XPG4) $(XPG6) $(DCFILE)
 
