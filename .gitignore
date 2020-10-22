@@ -214,6 +214,8 @@ usr/src/cmd/allocate/sr0
 usr/src/cmd/allocate/st0
 usr/src/cmd/allocate/st1
 usr/src/cmd/allocate/st_clean
+usr/src/cmd/amdzen/udf
+usr/src/cmd/amdzen/usmn
 usr/src/cmd/amt/amd64/amt
 usr/src/cmd/amt/amt
 usr/src/cmd/amt/i386/amt
@@ -3977,6 +3979,7 @@ usr/src/man/man4/ipmon.conf.4
 usr/src/man/man4/ipnat.conf.4
 usr/src/man/man4/ippool.conf.4
 usr/src/man/man5/endian.5
+usr/src/man/man7d/amdzen_stub.7d
 usr/src/man/man7p/NDP.7p
 usr/src/man/man7p/VXLAN.7p
 usr/src/man/man9/iportmap.9
