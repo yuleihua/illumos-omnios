@@ -299,10 +299,7 @@ $(JAVA_11_ONLY)file \
     path=usr/share/lib/java/javadoc/dtrace/api/jquery/images/ui-icons_cd0a0a_256x240.png \
     group=other
 $(JAVA_11_ONLY)file \
-    path=usr/share/lib/java/javadoc/dtrace/api/jquery/jquery-3.3.1.js \
-    group=other
-$(JAVA_11_ONLY)file \
-    path=usr/share/lib/java/javadoc/dtrace/api/jquery/jquery-migrate-3.0.1.js \
+    path=usr/share/lib/java/javadoc/dtrace/api/jquery/jquery-3.5.1.js \
     group=other
 $(JAVA_11_ONLY)file \
     path=usr/share/lib/java/javadoc/dtrace/api/jquery/jquery-ui.css \
