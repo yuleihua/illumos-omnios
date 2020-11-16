@@ -246,6 +246,7 @@ SUBDIRS +=				\
 	libxcurses2	\
 	libxnet		\
 	libzfs		\
+	libzfsbootenv	\
 	libzfs_core	\
 	libzfs_jni	\
 	libzonecfg	\
@@ -610,7 +611,8 @@ krb5:		gss_mechs/mech_krb5 libtecla libldap5
 libads:		libnsl
 libadt_jni:	libbsm
 libadutils:	libldap5 libresolv2
-libbe:		libzfs libinstzones libuuid libgen libdevinfo libefi libficl
+libbe:		libzfs libinstzones libuuid libgen libdevinfo libefi libficl \
+		libzfsbootenv
 libbsm:		libinetutil libscf libsecdb libtsol
 libbunyan:	libnvpair libumem
 libcfgadm:	libdevinfo
@@ -712,6 +714,7 @@ libvrrpadm:	libdladm libscf
 libvscan:	libscf libsecdb
 libzfs:		libdevid libgen libuutil libavl libefi libidmap \
 		libumem libtsol libzfs_core libcryptoutil pkcs11 libmd libzutil
+libzfsbootenv:	libzfs libnvpair
 libzfs_core:	libnvpair
 libzfs_jni:	libdiskmgt libzfs libzutil
 libzonecfg:	libuuid libsysevent libsec libbrand libpool libscf libproc \
