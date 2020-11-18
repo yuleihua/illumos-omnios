@@ -19,8 +19,9 @@ export BUILDPY2=
 export BUILDPY3=
 export BUILDPY2TOOLS=
 export BUILDPY3TOOLS=
-export PYTHON3_VERSION=3.7
-export PYTHON3_PKGVERS=-37
+export PYTHON3_VERSION=3.9
+export PYTHON3_PKGVERS=-39
+export PYTHON3_SUFFIX=
 export TOOLS_PYTHON=/usr/bin/python$PYTHON3_VERSION
 
 export ON_CLOSED_BINS=/opt/onbld/closed
