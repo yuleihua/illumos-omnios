@@ -50,6 +50,7 @@ usage: $0 [opts] -r
 	-c consolidation : consolidation being upgraded
 	-d repodir : directory for repositories
 	-e : remove 'entire' package
+	-p : persistently activate the new boot environment
 	-r : configure publisher only
 	-s : source BE to clone
 	-t : new BE name
@@ -187,8 +188,9 @@ zone_warned=0
 reposonly=0
 remove_entire=0
 gateonu=0
+persist=0
 
-while getopts :c:d:eOrs:t:U:u:vZ i ; do
+while getopts :c:d:eOprs:t:U:u:vZ i ; do
 	case $i in
 	c)
 		consolidation=$OPTARG
@@ -200,6 +202,9 @@ while getopts :c:d:eOrs:t:U:u:vZ i ; do
 		;;
 	e)
 		remove_entire=1
+		;;
+	p)
+		persist=1
 		;;
 	r)
 		reposonly=1
@@ -277,10 +282,13 @@ createargs=""
 tmpdir=`/usr/bin/mktemp -d /tmp/onu.XXXXXX`
 [ -z "$tmpdir" ] && exit_error "mktemp failed"
 
+beflags=-t
+[ "$persist" = 1 ] && beflags=
+
 do_cmd beadm create $createargs $targetbe
 do_cmd beadm mount $targetbe $tmpdir
 update $tmpdir
-do_cmd beadm activate $targetbe
+do_cmd beadm activate $beflags $targetbe
 
 if [ "$no_zones" != 1 ]; then
 	for zone in `do_cmd zoneadm -R $tmpdir list -cip`; do
