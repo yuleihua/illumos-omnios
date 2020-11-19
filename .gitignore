@@ -3457,6 +3457,7 @@ usr/src/man/man3c/isspace_l.3c
 usr/src/man/man3c/isupper_l.3c
 usr/src/man/man3c/iswalnum_l.3c
 usr/src/man/man3c/iswalpha_l.3c
+usr/src/man/man3c/iswascii_l.3c
 usr/src/man/man3c/iswblank_l.3c
 usr/src/man/man3c/iswcntrl_l.3c
 usr/src/man/man3c/iswctype_l.3c
@@ -3568,6 +3569,7 @@ usr/src/man/man3c/wctomb_l.3c
 usr/src/man/man3c/wctrans_l.3c
 usr/src/man/man3c/wctype_l.3c
 usr/src/man/man3c/wcwidth_l.3c
+usr/src/man/man3devid/devid_str_from_path.3devid
 usr/src/man/man3ext/efi_reserved_sectors.3ext
 usr/src/man/man3head/CMSG_DATA.3head
 usr/src/man/man3head/CMSG_FIRSTHDR.3head
@@ -3873,6 +3875,8 @@ usr/src/man/man3nvpair/nvlist_empty.3nvpair
 usr/src/man/man3ofmt/ofmt_close.3ofmt
 usr/src/man/man3ofmt/ofmt_open.3ofmt
 usr/src/man/man3ofmt/ofmt_print.3ofmt
+usr/src/man/man3ofmt/ofmt_print_header.3ofmt
+usr/src/man/man3ofmt/ofmt_set_fs.3ofmt
 usr/src/man/man3ofmt/ofmt_strerror.3ofmt
 usr/src/man/man3ofmt/ofmt_update_winsize.3ofmt
 usr/src/man/man3proc/Lalt_stack.3proc
@@ -3918,6 +3922,7 @@ usr/src/man/man3proc/Pobjname_resolved.3proc
 usr/src/man/man3proc/Ppriv_free.3proc
 usr/src/man/man3proc/Pputareg.3proc
 usr/src/man/man3proc/Pread_string.3proc
+usr/src/man/man3proc/Psecflags_free.3proc
 usr/src/man/man3proc/Psetsysexit.3proc
 usr/src/man/man3proc/Pstop.3proc
 usr/src/man/man3proc/Psymbol_iter_by_addr.3proc
@@ -3925,6 +3930,7 @@ usr/src/man/man3proc/Psymbol_iter_by_lmid.3proc
 usr/src/man/man3proc/Psymbol_iter_by_name.3proc
 usr/src/man/man3proc/Psysexit.3proc
 usr/src/man/man3proc/Punsetflags.3proc
+usr/src/man/man3proc/Pupanic_free.3proc
 usr/src/man/man3proc/Pwait.3proc
 usr/src/man/man3proc/Pxcreate.3proc
 usr/src/man/man3proc/Pxecwapt.3proc
@@ -4126,6 +4132,7 @@ usr/src/man/man9s/usb_bulk_request.9s
 usr/src/man/man9s/usb_ctrl_req_t.9s
 usr/src/man/man9s/usb_ctrl_request.9s
 usr/src/man/man9s/usb_ep_ss_comp_descr_t.9s
+usr/src/man/man9s/usb_ep_xdescr_t.9s
 usr/src/man/man9s/usb_intr_req_t.9s
 usr/src/man/man9s/usb_intr_request.9s
 usr/src/man/man9s/usb_isoc_req_t.9s
@@ -4518,9 +4525,9 @@ usr/src/tools/ndrgen/ndrgen
 usr/src/tools/ndrgen/ndrgen1
 usr/src/tools/ndrgen/y.tab.c
 usr/src/tools/ndrgen/y.tab.h
-usr/src/tools/onbld/Checks/py3/python3.7/
-usr/src/tools/onbld/Scm/py3/python3.7/
-usr/src/tools/onbld/py3/python3.7/
+usr/src/tools/onbld/Checks/py3/python3.9/
+usr/src/tools/onbld/Scm/py3/python3.9/
+usr/src/tools/onbld/py3/python3.9/
 usr/src/tools/proto/
 usr/src/tools/protocmp/protocmp
 usr/src/tools/protolist/protolist
