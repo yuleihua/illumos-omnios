@@ -19,9 +19,9 @@
 .\" "
 .\" "Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
 .\" "Copyright 2010, Richard Lowe
-.\" "Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
+.\" "Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 .\" "
-.TH ONU 1ONBLD "Mar 02, 2018"
+.TH ONU 1ONBLD "Nov 20, 2020"
 .SH NAME
 .I onu
 \- OS/Net Update
@@ -70,6 +70,10 @@ the following options:
 .TP 4
 .B \-e
 Specifies that the \fBentire\fR incorporation should be removed from the new boot-environment.
+.TP 4
+.B \-p
+Specifies that the new boot environment should be permanently activated.
+The default is to use a temporary activation, valid for the next reboot only.
 .TP 4
 .B \-s <beName>
 Specifies that <beName> should be used as the source Boot Environment to
