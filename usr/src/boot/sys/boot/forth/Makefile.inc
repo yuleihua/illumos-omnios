@@ -31,5 +31,4 @@ FILES +=	illumos-brand.png
 # OOCE additions
 FILES +=	illumos-small.png
 FILES +=	ooce.png
-FILES +=	dragon.png
-FILES +=	dragonf.png
+FILES +=	fenix.png

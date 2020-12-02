@@ -1,5 +1,5 @@
 \ Copyright (c) 1999 Daniel C. Sobral <dcs@FreeBSD.org>
-\ Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+\ Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 \ All rights reserved.
 \
 \ Redistribution and use in source and binary forms, with or without
@@ -292,41 +292,6 @@ create last_module_option sizeof module.next allot 0 last_module_option !
 	caddr free drop
 ;
 
-\ Set the screen resolution based on an environment variable.
-\ If the framebuffer is not active or the variable is not set, do nothing
-: set_resolution ( addr len -- )
-	framebuffer? if
-		getenv dup -1 = if
-			\ variable not set
-			drop
-		else
-			2dup
-			s" off" compare 0= if
-				1 framebuffer
-			else
-				s" set" 2 framebuffer
-			then
-		then
-	else
-		2drop
-	then
-;
-
-\ Set the screen font based on an environment variable.
-\ If the framebuffer is not active or the variable is not set, do nothing
-: set_font ( addr len -- )
-	framebuffer? if
-		getenv dup -1 = if
-			\ variable not set
-			drop
-		else
-			s" screen-font" setenv
-		then
-	else
-		2drop
-	then
-;
-
 \ Test if booted in an EFI environment
 : efi? ( -- flag )
 	s" efi-version" getenv?
@@ -386,6 +351,41 @@ create last_module_option sizeof module.next allot 0 last_module_option !
 		FALSE exit
 	then
 	s" screen-width" getenv?
+;
+
+\ Set the screen resolution based on an environment variable.
+\ If the framebuffer is not active or the variable is not set, do nothing
+: set_resolution ( addr len -- )
+	framebuffer? if
+		getenv dup -1 = if
+			\ variable not set
+			drop
+		else
+			2dup
+			s" off" compare 0= if
+				1 framebuffer
+			else
+				s" set" 2 framebuffer
+			then
+		then
+	else
+		2drop
+	then
+;
+
+\ Set the screen font based on an environment variable.
+\ If the framebuffer is not active or the variable is not set, do nothing
+: set_font ( addr len -- )
+	framebuffer? if
+		getenv dup -1 = if
+			\ variable not set
+			drop
+		else
+			s" screen-font" setenv
+		then
+	else
+		2drop
+	then
 ;
 
 \ Private definitions
