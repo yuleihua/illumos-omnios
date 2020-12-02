@@ -26,7 +26,9 @@ FORTH +=	screen.4th
 FORTH +=	shortcuts.4th
 FORTH +=	support.4th
 FORTH +=	version.4th
-FILES +=	illumos.png
+FILES +=	illumos-logo.png
+FILES +=	illumos-brand.png
+# OOCE additions
 FILES +=	illumos-small.png
 FILES +=	ooce.png
 FILES +=	dragon.png
