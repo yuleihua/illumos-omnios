@@ -24,6 +24,7 @@
  * Copyright 2016, Joyent Inc.
  * Copyright (c) 2015, 2016 by Delphix. All rights reserved.
  * Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+ * Copyright 2020 RackTop Systems Inc.
  */
 
 /*
@@ -214,10 +215,18 @@ extern int _autofssys(int, void *);
 static int
 autofs_cleanup(zoneid_t zoneid)
 {
+	int r;
+
 	/*
 	 * Ask autofs to unmount all trigger nodes in the given zone.
+	 * Handle ENOSYS in the case that the autofs kernel module is not
+	 * installed.
 	 */
-	return (_autofssys(AUTOFS_UNMOUNTALL, (void *)zoneid));
+	r = _autofssys(AUTOFS_UNMOUNTALL, (void *)zoneid);
+	if (r != 0 && errno == ENOSYS) {
+		return (0);
+	}
+	return (r);
 }
 
 static void
