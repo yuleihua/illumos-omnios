@@ -279,7 +279,7 @@ main(int argc, char *argv[])
 			flags |= CTF_FORCE_CONVERSION;
 			break;
 		case 'i':
-			flags |= CTF_ALLOW_NO_C_SRC;
+			ignore_non_c = B_TRUE;
 			break;
 		case 'j': {
 			long argno;
@@ -423,8 +423,7 @@ main(int argc, char *argv[])
 		 * However, for the benefit of intransigent build environments,
 		 * the -i and -m options can be used to relax this.
 		 */
-		if (err == ECTF_CONVNOCSRC &&
-		    (flags & CTF_ALLOW_NO_C_SRC) != 0) {
+		if (err == ECTF_CONVNOCSRC && ignore_non_c) {
 			exit(CTFCONVERT_OK);
 		}
 
