@@ -29,7 +29,7 @@
 # Copyright 2018 Nexenta Systems, Inc.
 # Copyright 2018 Gary Mills
 # Copyright 2019 Peter Tribble
-# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
+# Copyright 2021 OmniOS Community Edition (OmniOSce) Association.
 #
 
 include ../Makefile.master
@@ -233,7 +233,6 @@ COMMON_SUBDIRS=		\
 	keyserv		\
 	killall		\
 	krb5		\
-	ksh		\
 	kvmstat		\
 	last		\
 	lastcomm	\
@@ -384,7 +383,6 @@ COMMON_SUBDIRS=		\
 	setuname	\
 	sgs		\
 	sh		\
-	shcomp		\
 	sleep		\
 	smbios		\
 	smbsrv		\
@@ -531,6 +529,7 @@ MSGSUBDIRS=		\
 	acctadm		\
 	allocate	\
 	asa		\
+	ast		\
 	audio		\
 	audit		\
 	auditconfig	\
@@ -625,7 +624,6 @@ MSGSUBDIRS=		\
 	itadm		\
 	kbd		\
 	krb5		\
-	ksh		\
 	last		\
 	ldap		\
 	ldapcachemgr	\
@@ -701,7 +699,6 @@ MSGSUBDIRS=		\
 	sdpadm		\
 	sgs		\
 	sh		\
-	shcomp		\
 	smbsrv		\
 	sort		\
 	split		\
@@ -847,7 +844,7 @@ _dc: $(DCSUBDIRS)
 # Dependencies
 #
 fs.d:	fstyp
-ksh:	shcomp isaexec
+ast:	isaexec
 print:	lp
 fmt:	mailx
 

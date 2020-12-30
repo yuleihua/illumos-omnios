@@ -30,8 +30,8 @@
 # Copyright 2018 Nexenta Systems, Inc.
 # Copyright (c) 2016, Chris Fraire <cfraire@me.com>.
 # Copyright 2017 RackTop Systems.
-# Copyirght 2018 Jason King
-# Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+# Copyright 2018 Jason King
+# Copyright 2021 OmniOS Community Edition (OmniOSce) Association.
 #
 
 include ../Makefile.master
@@ -92,7 +92,6 @@ SUBDIRS +=				\
 	libadt_jni	\
 	libadutils	\
 	libaio		\
-	libast		\
 	libavl		\
 	libbe		\
 	libbrand	\
@@ -101,7 +100,6 @@ SUBDIRS +=				\
 	libbunyan	\
 	libc_db		\
 	libcfgadm	\
-	libcmd		\
 	libcmdutils	\
 	libcommputil	\
 	libcontract	\
@@ -120,7 +118,6 @@ SUBDIRS +=				\
 	libdisasm	\
 	libdiskmgt	\
 	libdladm	\
-	libdll		\
 	libdlpi		\
 	libdns_sd	\
 	libdoor		\
@@ -188,7 +185,6 @@ SUBDIRS +=				\
 	libpicltree	\
 	libpkg		\
 	libpool		\
-	libpp		\
 	libproc		\
 	libproject	\
 	libpthread	\
@@ -212,7 +208,6 @@ SUBDIRS +=				\
 	libsendfile	\
 	libsff		\
 	libshare	\
-	libshell	\
 	libsip		\
 	libsldap	\
 	libslp		\
@@ -223,7 +218,6 @@ SUBDIRS +=				\
 	libsrpt		\
 	libstmf		\
 	libstmfproxy	\
-	libsum		\
 	libsun_ima	\
 	libsysevent	\
 	libtecla	\
@@ -319,17 +313,14 @@ MSGSUBDIRS=		\
 	gss_mechs/mech_dh	\
 	gss_mechs/mech_krb5	\
 	krb5		\
-	libast		\
 	libbsm		\
 	libc		\
 	libcfgadm	\
-	libcmd		\
 	libcontract	\
 	libcurses	\
 	libdhcputil	\
 	libdiskmgt	\
 	libdladm	\
-	libdll		\
 	libgrubmgmt	\
 	libgss		\
 	libidmap	\
@@ -346,18 +337,15 @@ MSGSUBDIRS=		\
 	libpicl		\
 	libpkg		\
 	libpool		\
-	libpp		\
 	libreparse	\
 	libsasl		\
 	libscf		\
 	libsecdb	\
 	libshare	\
-	libshell	\
 	libsldap	\
 	libslp		\
 	libsmbfs	\
 	libsmedia	\
-	libsum		\
 	libtsol		\
 	libuutil	\
 	libvrrpadm	\
@@ -384,12 +372,10 @@ HDRSUBDIRS=				\
 	hal		\
 	hbaapi		\
 	libads		\
-	libast		\
 	libbrand	\
 	libbsm		\
 	libbunyan	\
 	libc		\
-	libcmd		\
 	libcmdutils	\
 	libcommputil	\
 	libcontract	\
@@ -407,7 +393,6 @@ HDRSUBDIRS=				\
 	libdisasm	\
 	libdiskmgt	\
 	libdladm	\
-	libdll		\
 	libdlpi		\
 	libdns_sd	\
 	libdtrace	\
@@ -454,7 +439,6 @@ HDRSUBDIRS=				\
 	libpicl		\
 	libpicltree	\
 	libpool		\
-	libpp		\
 	libproc		\
 	libraidcfg	\
 	librcm		\
@@ -469,7 +453,6 @@ HDRSUBDIRS=				\
 	libsec		\
 	libsff		\
 	libshare	\
-	libshell	\
 	libsip		\
 	libslp		\
 	libsmbfs	\
@@ -480,7 +463,6 @@ HDRSUBDIRS=				\
 	libsrpt		\
 	libstmf		\
 	libstmfproxy	\
-	libsum		\
 	libsun_ima	\
 	libsysevent	\
 	libtecla	\
@@ -618,7 +600,6 @@ libbsm:		libinetutil libscf libsecdb libtsol
 libbunyan:	libnvpair libumem
 libcfgadm:	libdevinfo
 libcontract:	libnvpair
-libcmd:		libsum libast
 libcmdutils:	libavl libnvpair
 libcpc:		libpctx
 libcrypt:	libgen
@@ -633,7 +614,6 @@ libdiskmgt:	libdevid libdevinfo libadm libefi libkstat libsysevent
 $(INTEL_BLD)libdiskmgt: libfdisk
 libdladm:	libdevinfo libinetutil libscf librcm libexacct libkstat \
 		libpool varpd
-libdll:		libast
 libdlpi:	libinetutil libdladm
 libds:		libsysevent
 libdtrace:	libproc libgen libctf libmapmalloc
@@ -673,7 +653,6 @@ libpcp:		libumem libdevinfo
 libpctx:	libproc
 libpkg:		libscf libadm
 libpool:	libscf libexacct
-libpp:		libast
 libppt:		libpcidb libdevinfo libcmdutils
 libproc:	../cmd/sgs/librtld_db ../cmd/sgs/libelf libctf
 $(INTEL_BLD)libproc: libsaveargs
@@ -690,7 +669,6 @@ libsec:		libavl libidmap
 libsecdb:	libnsl
 libsff:		libnvpair
 libshare:	libscf libzfs libuuid libfsmgt libsecdb libumem libsmbfs
-libshell:	libast libcmd libdll libsecdb
 libsip:		libmd5
 libsldap:	libldap5 libscf
 libsmbfs:	libkrb5 libsec libidmap pkcs11
@@ -698,7 +676,6 @@ libsmbios:	libdevinfo
 libsrpt:	libstmf
 libstmf:	libscf
 libstmfproxy:	libstmf libpthread
-libsum:		libast
 libsun_ima:	libdevinfo libsysevent
 libsysevent:	libsecdb
 libtecla:	libcurses
