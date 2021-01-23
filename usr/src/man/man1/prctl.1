@@ -1,9 +1,10 @@
 '\" te
 .\" Copyright (c) 2009 Sun Microsystems, Inc. All Rights Reserved
+.\" Copyright 2021 OmniOS Community Edition (OmniOSce) Association.
 .\" The contents of this file are subject to the terms of the Common Development and Distribution License (the "License").  You may not use this file except in compliance with the License. You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE or http://www.opensolaris.org/os/licensing.
 .\"  See the License for the specific language governing permissions and limitations under the License. When distributing Covered Code, include this CDDL HEADER in each file and include the License file at usr/src/OPENSOLARIS.LICENSE.  If applicable, add the following below this CDDL HEADER, with
 .\" the fields enclosed by brackets "[]" replaced with your own identifying information: Portions Copyright [yyyy] [name of copyright owner]
-.TH PRCTL 1 "April 9, 2016"
+.TH PRCTL 1 "Jan 23, 2021"
 .SH NAME
 prctl \- get or set the resource controls of running processes, tasks, and
 projects
@@ -270,6 +271,9 @@ NAME    PRIVILEGE       VALUE    FLAG   ACTION             RECIPIENT
 task.max-cpu-time
         usage            8s
         system          18.4Es    inf   none                -
+task.max-processes
+        usage              30
+        system          2.15G     max   deny                -
 task.max-lwps
         usage              39
         system          2.15G     max   deny                -
@@ -294,6 +298,9 @@ privileged       508MB      -   deny                -
 project.max-tasks
         usage               2
         system          2.15G     max   deny                -
+project.max-processes
+         usage             30
+        system          2.15G     max   deny                -
 project.max-lwps
          usage             39
         system          2.15G     max   deny                -
@@ -308,6 +315,8 @@ zone.max-sem-ids
         system          16.8M     max   deny                -
 zone.max-msg-ids
         system          16.8M     max   deny                -
+zone.max-processes
+        system          2.15G     max   deny                -
 zone.max-lwps
         system          2.15G     max   deny                -
 zone.cpu-shares
