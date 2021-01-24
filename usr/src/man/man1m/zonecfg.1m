@@ -2,10 +2,11 @@
 .\" Copyright (c) 2004, 2009 Sun Microsystems, Inc. All Rights Reserved.
 .\" Copyright 2015 Joyent, Inc.
 .\" Copyright 2017 Peter Tribble
+.\" Copyright 2021 OmniOS Community Edition (OmniOSce) Association.
 .\" The contents of this file are subject to the terms of the Common Development and Distribution License (the "License"). You may not use this file except in compliance with the License. You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE or http://www.opensolaris.org/os/licensing.
 .\" See the License for the specific language governing permissions and limitations under the License. When distributing Covered Code, include this CDDL HEADER in each file and include the License file at usr/src/OPENSOLARIS.LICENSE. If applicable, add the following below this CDDL HEADER, with the
 .\" fields enclosed by brackets "[]" replaced with your own identifying information: Portions Copyright [yyyy] [name of copyright owner]
-.TH ZONECFG 1M "Feb 13, 2019"
+.TH ZONECFG 1M "Jan 23, 2021"
 .SH NAME
 zonecfg \- set up zone configuration
 .SH SYNOPSIS
@@ -300,6 +301,16 @@ The following properties are supported:
 .sp .6
 .RS 4n
 \fBmax-msg-ids\fR
+.RE
+
+.sp
+.ne 2
+.na
+\fB(global)\fR
+.ad
+.sp .6
+.RS 4n
+\fBmax-processes\fR
 .RE
 
 .sp
@@ -769,6 +780,8 @@ is the preferred way to set the \fBzone.cpu-shares\fR rctl.
 .RS 4n
 The maximum number of LWPs simultaneously available to this zone. This property
 is the preferred way to set the \fBzone.max-lwps\fR rctl.
+If \fBmax-processes\fR is not explicitly set then it will be set to the
+same value as \fBmax-lwps\fR.
 .RE
 
 .sp
@@ -780,6 +793,19 @@ is the preferred way to set the \fBzone.max-lwps\fR rctl.
 .RS 4n
 The maximum number of message queue IDs allowed for this zone. This property is
 the preferred way to set the \fBzone.max-msg-ids\fR rctl.
+.RE
+
+.sp
+.ne 2
+.na
+\fBglobal: \fBmax-processes\fR\fR
+.ad
+.sp .6
+.RS 4n
+The maximum number of processes simultaneously available to this zone. This
+property is the preferred way to set the \fBzone.max-processes\fR rctl.
+If \fBmax-lwps\fR is not explicitly set, then setting this property will
+automatically set \fBmax-lwps\fR to 10 times the value of \fBmax-processes\fR.
 .RE
 
 .sp
@@ -982,6 +1008,7 @@ resource          property-name   type
 (global)          cpu-shares      simple
 (global)          max-lwps        simple
 (global)          max-msg-ids     simple
+(global)          max-processes   simple
 (global)          max-sem-ids     simple
 (global)          max-shm-ids     simple
 (global)          max-shm-memory  simple
