@@ -74,8 +74,6 @@
 #include <vm/pvn.h>
 #include <vm/seg_kmem.h>
 
-static int checkpage(page_t *, int);
-
 /*
  * FREE MEMORY MANAGEMENT
  *
@@ -343,6 +341,19 @@ static struct pageoutvmstats_str {
  */
 kmutex_t	memavail_lock;
 kcondvar_t	memavail_cv;
+
+typedef enum pageout_hand {
+	POH_FRONT = 1,
+	POH_BACK,
+} pageout_hand_t;
+
+typedef enum {
+	CKP_INELIGIBLE,
+	CKP_NOT_FREED,
+	CKP_FREED,
+} checkpage_result_t;
+
+static checkpage_result_t checkpage(page_t *, pageout_hand_t);
 
 static struct clockinit {
 	bool ci_init;
@@ -941,9 +952,6 @@ schedpaging(void *arg)
 pgcnt_t		pushes;
 ulong_t		push_list_size;		/* # of requests on pageout queue */
 
-#define	FRONT	1
-#define	BACK	2
-
 int dopageout = 1;	/* /etc/system tunable to disable page reclamation */
 
 /*
@@ -1195,7 +1203,7 @@ loop:
 	    (zones_over ||
 	    freemem < lotsfree + needfree ||
 	    PAGE_SCAN_STARTUP)) {
-		int rvfront, rvback;
+		checkpage_result_t rvfront, rvback;
 
 		DTRACE_PROBE2(pageout__loop, pgcnt_t, pcount, uint_t, inst);
 
@@ -1225,9 +1233,9 @@ loop:
 		 * If checkpage manages to add a page to the free list,
 		 * we give ourselves another couple of trips around memory.
 		 */
-		if ((rvfront = checkpage(fronthand, FRONT)) == 1)
+		if ((rvfront = checkpage(fronthand, POH_FRONT)) == CKP_FREED)
 			count = 0;
-		if ((rvback = checkpage(backhand, BACK)) == 1)
+		if ((rvback = checkpage(backhand, POH_BACK)) == CKP_FREED)
 			count = 0;
 
 		++pcount;
@@ -1241,17 +1249,17 @@ loop:
 		/*
 		 * Don't include ineligible pages in the number scanned.
 		 */
-		if (rvfront != -1 || rvback != -1)
+		if (rvfront != CKP_INELIGIBLE || rvback != CKP_INELIGIBLE)
 			nscan_cnt++;
 
 		backhand = page_next(backhand);
+		fronthand = page_next(fronthand);
 
 		/*
-		 * backhand update and wraparound check are done separately
-		 * because lint barks when it finds an empty "if" body
-		 */
-
-		if ((fronthand = page_next(fronthand)) == page_first())	{
+		 * The front hand has wrapped around to the first page in the
+		 * loop.
+		*/
+		if (fronthand == page_first())	{
 			DTRACE_PROBE1(pageout__wrap__front, uint_t, inst);
 
 			/*
@@ -1402,12 +1410,12 @@ reset:
  * If not, free the page, pushing it to disk first if necessary.
  *
  * Return values:
- *	-1 if the page is not a candidate at all,
- *	 0 if not freed, or
- *	 1 if we freed it.
+ *     CKP_INELIGIBLE if the page is not a candidate at all,
+ *     CKP_NOT_FREED  if the page was not freed, or
+ *     CKP_FREED      if we freed it.
  */
-static int
-checkpage(struct page *pp, int whichhand)
+static checkpage_result_t
+checkpage(struct page *pp, pageout_hand_t whichhand)
 {
 	int ppattr;
 	int isfs = 0;
@@ -1429,21 +1437,21 @@ checkpage(struct page *pp, int whichhand)
 	if (PP_ISKAS(pp) || PAGE_LOCKED(pp) || PP_ISFREE(pp) ||
 	    pp->p_lckcnt != 0 || pp->p_cowcnt != 0 ||
 	    hat_page_checkshare(pp, po_share)) {
-		return (-1);
+		return (CKP_INELIGIBLE);
 	}
 
 	if (!page_trylock(pp, SE_EXCL)) {
 		/*
 		 * Skip the page if we can't acquire the "exclusive" lock.
 		 */
-		return (-1);
+		return (CKP_INELIGIBLE);
 	} else if (PP_ISFREE(pp)) {
 		/*
 		 * It became free between the above check and our actually
-		 * locking the page.  Oh, well there will be other pages.
+		 * locking the page.  Oh well, there will be other pages.
 		 */
 		page_unlock(pp);
-		return (-1);
+		return (CKP_INELIGIBLE);
 	}
 
 	/*
@@ -1453,7 +1461,7 @@ checkpage(struct page *pp, int whichhand)
 	 */
 	if (pp->p_lckcnt != 0 || pp->p_cowcnt != 0) {
 		page_unlock(pp);
-		return (-1);
+		return (CKP_INELIGIBLE);
 	}
 
 	if (zones_over) {
@@ -1466,7 +1474,7 @@ checkpage(struct page *pp, int whichhand)
 			 * Leave the page alone.
 			 */
 			page_unlock(pp);
-			return (-1);
+			return (CKP_INELIGIBLE);
 		}
 		zid = pp->p_zoneid;
 	}
@@ -1488,7 +1496,7 @@ checkpage(struct page *pp, int whichhand)
 	 * The back hand examines the REF bit and always considers
 	 * SHARED pages as referenced.
 	 */
-	if (whichhand == FRONT)
+	if (whichhand == POH_FRONT)
 		pagesync_flag = HAT_SYNC_ZERORM;
 	else
 		pagesync_flag = HAT_SYNC_DONTZERO | HAT_SYNC_STOPON_REF |
@@ -1504,11 +1512,11 @@ recheck:
 	 */
 	if (ppattr & P_REF) {
 		DTRACE_PROBE2(pageout__isref, page_t *, pp, int, whichhand);
-		if (whichhand == FRONT) {
+		if (whichhand == POH_FRONT) {
 			hat_clrref(pp);
 		}
 		page_unlock(pp);
-		return (0);
+		return (CKP_NOT_FREED);
 	}
 
 	/*
@@ -1526,24 +1534,24 @@ recheck:
 		if (!page_try_demote_pages(pp)) {
 			VM_STAT_ADD(pageoutvmstats.checkpage[1]);
 			page_unlock(pp);
-			return (-1);
+			return (CKP_INELIGIBLE);
 		}
 		ASSERT(pp->p_szc == 0);
 		VM_STAT_ADD(pageoutvmstats.checkpage[2]);
 		/*
-		 * since page_try_demote_pages() could have unloaded some
+		 * Since page_try_demote_pages() could have unloaded some
 		 * mappings it makes sense to reload ppattr.
 		 */
 		ppattr = hat_page_getattr(pp, P_MOD | P_REF);
 	}
 
 	/*
-	 * If the page is currently dirty, we have to arrange
-	 * to have it cleaned before it can be freed.
+	 * If the page is currently dirty, we have to arrange to have it
+	 * cleaned before it can be freed.
 	 *
 	 * XXX - ASSERT(pp->p_vnode != NULL);
 	 */
-	if ((ppattr & P_MOD) && pp->p_vnode) {
+	if ((ppattr & P_MOD) && pp->p_vnode != NULL) {
 		struct vnode *vp = pp->p_vnode;
 		u_offset_t offset = pp->p_offset;
 
@@ -1562,34 +1570,32 @@ recheck:
 		page_unlock(pp);
 
 		/*
-		 * Queue i/o request for the pageout thread.
+		 * Queue I/O request for the pageout thread.
 		 */
 		if (!queue_io_request(vp, offset)) {
 			VN_RELE(vp);
-			return (0);
+			return (CKP_NOT_FREED);
 		}
 		if (isfs) {
 			zone_pageout_stat(zid, ZPO_DIRTY);
 		} else {
 			zone_pageout_stat(zid, ZPO_ANONDIRTY);
 		}
-		return (1);
+		return (CKP_FREED);
 	}
 
 	/*
-	 * Now we unload all the translations,
-	 * and put the page back on to the free list.
-	 * If the page was used (referenced or modified) after
-	 * the pagesync but before it was unloaded we catch it
-	 * and handle the page properly.
+	 * Now we unload all the translations and put the page back on to the
+	 * free list.  If the page was used (referenced or modified) after the
+	 * pagesync but before it was unloaded we catch it and handle the page
+	 * properly.
 	 */
-	DTRACE_PROBE2(pageout__free, page_t *, pp, int, whichhand);
+	DTRACE_PROBE2(pageout__free, page_t *, pp, pageout_hand_t, whichhand);
 	(void) hat_pageunload(pp, HAT_FORCE_PGUNLOAD);
 	ppattr = hat_page_getattr(pp, P_MOD | P_REF);
-	if ((ppattr & P_REF) || ((ppattr & P_MOD) && pp->p_vnode))
+	if ((ppattr & P_REF) || ((ppattr & P_MOD) && pp->p_vnode != NULL))
 		goto recheck;
 
-	/*LINTED: constant in conditional context*/
 	VN_DISPOSE(pp, B_FREE, 0, kcred);
 
 	CPU_STATS_ADD_K(vm, dfree, 1);
@@ -1606,7 +1612,7 @@ recheck:
 		zone_pageout_stat(zid, ZPO_ANON);
 	}
 
-	return (1);		/* freed a page! */
+	return (CKP_FREED);		/* freed a page! */
 }
 
 /*
