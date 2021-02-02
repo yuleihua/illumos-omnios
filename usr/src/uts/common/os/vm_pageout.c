@@ -77,6 +77,107 @@
 static int checkpage(page_t *, int);
 
 /*
+ * FREE MEMORY MANAGEMENT
+ *
+ * Management of the pool of free pages is a tricky business.  There are
+ * several critical threshold values which constrain our allocation of new
+ * pages and inform the rate of paging out of memory to swap.  These threshold
+ * values, and the behaviour they induce, are described below in descending
+ * order of size -- and thus increasing order of severity!
+ *
+ *   +---------------------------------------------------- physmem (all memory)
+ *   |
+ *   | Ordinarily there are no particular constraints placed on page
+ *   v allocation.  The page scanner is not running and page_create_va()
+ *   | will effectively grant all page requests (whether from the kernel
+ *   | or from user processes) without artificial delay.
+ *   |
+ *   +------------------------ lotsfree (1.56% of physmem, min. 16MB, max. 2GB)
+ *   |
+ *   | When we have less than "lotsfree" pages, pageout_scanner() is
+ *   v signalled by schedpaging() to begin looking for pages that can
+ *   | be evicted to disk to bring us back above lotsfree.  At this
+ *   | stage there is still no constraint on allocation of free pages.
+ *   |
+ *   | For small systems, we set a lower bound of 16MB for lotsfree;
+ *   v this is the natural value for a system with 1GB memory.  This is
+ *   | to ensure that the pageout reserve pool contains at least 4MB
+ *   | for use by ZFS.
+ *   |
+ *   | For systems with a large amount of memory, we constrain lotsfree
+ *   | to be at most 2GB (with a pageout reserve of around 0.5GB), as
+ *   v at some point the required slack relates more closely to the
+ *   | rate at which paging can occur than to the total amount of memory.
+ *   |
+ *   +------------------- desfree (1/2 of lotsfree, 0.78% of physmem, min. 8MB)
+ *   |
+ *   | When we drop below desfree, a number of kernel facilities will
+ *   v wait before allocating more memory, under the assumption that
+ *   | pageout or reaping will make progress and free up some memory.
+ *   | This behaviour is not especially coordinated; look for comparisons
+ *   | of desfree and freemem.
+ *   |
+ *   | In addition to various attempts at advisory caution, clock()
+ *   | will wake up the thread that is ordinarily parked in sched().
+ *   | This routine is responsible for the heavy-handed swapping out
+ *   v of entire processes in an attempt to arrest the slide of free
+ *   | memory.  See comments in sched.c for more details.
+ *   |
+ *   +----- minfree & throttlefree (3/4 of desfree, 0.59% of physmem, min. 6MB)
+ *   |
+ *   | These two separate tunables have, by default, the same value.
+ *   v Various parts of the kernel use minfree to signal the need for
+ *   | more aggressive reclamation of memory, and sched() is more
+ *   | aggressive at swapping processes out.
+ *   |
+ *   | If free memory falls below throttlefree, page_create_va() will
+ *   | use page_create_throttle() to begin holding most requests for
+ *   | new pages while pageout and reaping free up memory.  Sleeping
+ *   v allocations (e.g., KM_SLEEP) are held here while we wait for
+ *   | more memory.  Non-sleeping allocations are generally allowed to
+ *   | proceed, unless their priority is explicitly lowered with
+ *   | KM_NORMALPRI.
+ *   |
+ *   +------- pageout_reserve (3/4 of throttlefree, 0.44% of physmem, min. 4MB)
+ *   |
+ *   | When we hit throttlefree, the situation is already dire.  The
+ *   v system is generally paging out memory and swapping out entire
+ *   | processes in order to free up memory for continued operation.
+ *   |
+ *   | Unfortunately, evicting memory to disk generally requires short
+ *   | term use of additional memory; e.g., allocation of buffers for
+ *   | storage drivers, updating maps of free and used blocks, etc.
+ *   | As such, pageout_reserve is the number of pages that we keep in
+ *   | special reserve for use by pageout() and sched() and by any
+ *   v other parts of the kernel that need to be working for those to
+ *   | make forward progress such as the ZFS I/O pipeline.
+ *   |
+ *   | When we are below pageout_reserve, we fail or hold any allocation
+ *   | that has not explicitly requested access to the reserve pool.
+ *   | Access to the reserve is generally granted via the KM_PUSHPAGE
+ *   | flag, or by marking a thread T_PUSHPAGE such that all allocations
+ *   | can implicitly tap the reserve.  For more details, see the
+ *   v NOMEMWAIT() macro, the T_PUSHPAGE thread flag, the KM_PUSHPAGE
+ *   | and VM_PUSHPAGE allocation flags, and page_create_throttle().
+ *   |
+ *   +---------------------------------------------------------- no free memory
+ *   |
+ *   | If we have arrived here, things are very bad indeed.  It is
+ *   v surprisingly difficult to tell if this condition is even fatal,
+ *   | as enough memory may have been granted to pageout() and to the
+ *   | ZFS I/O pipeline that requests for eviction that have already been
+ *   | made will complete and free up memory some time soon.
+ *   |
+ *   | If free memory does not materialise, the system generally remains
+ *   | deadlocked.  The pageout_deadman() below is run once per second
+ *   | from clock(), seeking to limit the amount of time a single request
+ *   v to page out can be blocked before the system panics to get a crash
+ *   | dump and return to service.
+ *   |
+ *   +-------------------------------------------------------------------------
+ */
+
+/*
  * The following parameters control operation of the page replacement
  * algorithm.  They are initialized to 0, and then computed at boot time
  * based on the size of the system.  If they are patched non-zero in
