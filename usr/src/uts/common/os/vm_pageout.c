@@ -20,7 +20,7 @@
  */
 
 /*
- * Copyright 2020 Oxide Computer Company
+ * Copyright 2021 Oxide Computer Company
  */
 
 /*
@@ -196,6 +196,19 @@ static int	max_percent_cpu = 80;
 static pgcnt_t	maxfastscan = 0;
 static pgcnt_t	maxslowscan = 100;
 
+/*
+ * The operator may override these tunables to request a different minimum or
+ * maximum lotsfree value, or to change the divisor we use for automatic
+ * sizing.
+ *
+ * By default, we make lotsfree 1/64th of the total memory in the machine.  The
+ * minimum and maximum are specified in bytes, rather than pages; a zero value
+ * means the default values (below) are used.
+ */
+uint_t		lotsfree_fraction = 64;
+pgcnt_t		lotsfree_min = 0;
+pgcnt_t		lotsfree_max = 0;
+
 pgcnt_t	maxpgio = 0;
 pgcnt_t	minfree = 0;
 pgcnt_t	desfree = 0;
@@ -207,6 +220,18 @@ pgcnt_t	pageout_reserve = 0;
 pgcnt_t	deficit;
 pgcnt_t	nscan;
 pgcnt_t	desscan;
+
+#define		MEGABYTES		(1024ULL * 1024ULL)
+
+/*
+ * pageout_threshold_style:
+ *     set to 1 to use the previous default threshold size calculation;
+ *     i.e., each threshold is half of the next largest value.
+ */
+uint_t		pageout_threshold_style = 0;
+
+#define		LOTSFREE_MIN_DEFAULT	(16 * MEGABYTES)
+#define		LOTSFREE_MAX_DEFAULT	(2048 * MEGABYTES)
 
 /* kstats */
 uint64_t low_mem_scan;
@@ -332,10 +357,43 @@ static struct pageoutvmstats_str {
 kmutex_t	memavail_lock;
 kcondvar_t	memavail_cv;
 
-/*
- * The size of the clock loop.
- */
-#define	LOOPPAGES	total_pages
+static struct clockinit {
+	bool ci_init;
+	pgcnt_t ci_lotsfree_min;
+	pgcnt_t ci_lotsfree_max;
+	pgcnt_t ci_lotsfree;
+	pgcnt_t ci_desfree;
+	pgcnt_t ci_minfree;
+	pgcnt_t ci_throttlefree;
+	pgcnt_t ci_pageout_reserve;
+	pgcnt_t ci_maxpgio;
+	pgcnt_t ci_maxfastscan;
+	pgcnt_t ci_fastscan;
+	pgcnt_t ci_slowscan;
+	pgcnt_t ci_handspreadpages;
+} clockinit = { .ci_init = false };
+
+static pgcnt_t
+clamp(pgcnt_t value, pgcnt_t minimum, pgcnt_t maximum)
+{
+	if (value < minimum) {
+		return (minimum);
+	} else if (value > maximum) {
+		return (maximum);
+	} else {
+		return (value);
+	}
+}
+
+static pgcnt_t
+tune(pgcnt_t initval, pgcnt_t initval_ceiling, pgcnt_t defval)
+{
+	if (initval == 0 || initval >= initval_ceiling) {
+		return (defval);
+	} else {
+		return (initval);
+	}
+}
 
 /*
  * Local boolean to control scanning when zones are over their cap. Avoids
@@ -363,94 +421,70 @@ static boolean_t zones_over = B_FALSE;
  * minfree is 1/2 of desfree.
  */
 void
-setupclock(int recalc)
+setupclock(void)
 {
 	uint_t i;
 	pgcnt_t sz, tmp;
+	pgcnt_t defval;
+	bool half = (pageout_threshold_style == 1);
+	bool recalc = true;
 
-	static spgcnt_t init_lfree, init_dfree, init_mfree;
-	static spgcnt_t init_tfree, init_preserve, init_mpgio;
-	static spgcnt_t init_mfscan, init_fscan, init_sscan, init_hspages;
-
-	looppages = LOOPPAGES;
+	looppages = total_pages;
 
 	/*
-	 * setupclock can be called to recalculate the paging
-	 * parameters in the case of dynamic reconfiguration of memory.
-	 * So to make sure we make the proper calculations, if such a
-	 * situation should arise, we save away the initial values
-	 * of each parameter so we can recall them when needed. This
-	 * way we don't lose the settings an admin might have made
-	 * through the /etc/system file.
+	 * The operator may have provided specific values for some of the
+	 * tunables via /etc/system.  On our first call, we preserve those
+	 * values so that they can be used for subsequent recalculations.
+	 *
+	 * A value of zero for any tunable means we will use the default
+	 * sizing.
 	 */
 
-	if (!recalc) {
-		init_lfree = lotsfree;
-		init_dfree = desfree;
-		init_mfree = minfree;
-		init_tfree = throttlefree;
-		init_preserve = pageout_reserve;
-		init_mpgio = maxpgio;
-		init_mfscan = maxfastscan;
-		init_fscan = fastscan;
-		init_sscan = slowscan;
-		init_hspages = handspreadpages;
+	if (!clockinit.ci_init) {
+		clockinit.ci_init = true;
+
+		clockinit.ci_lotsfree_min = lotsfree_min;
+		clockinit.ci_lotsfree_max = lotsfree_max;
+		clockinit.ci_lotsfree = lotsfree;
+		clockinit.ci_desfree = desfree;
+		clockinit.ci_minfree = minfree;
+		clockinit.ci_throttlefree = throttlefree;
+		clockinit.ci_pageout_reserve = pageout_reserve;
+		clockinit.ci_maxpgio = maxpgio;
+		clockinit.ci_maxfastscan = maxfastscan;
+		clockinit.ci_fastscan = fastscan;
+		clockinit.ci_slowscan = slowscan;
+		clockinit.ci_handspreadpages = handspreadpages;
+		/*
+		 * The first call does not trigger a recalculation, only
+		 * subsequent calls.
+		 */
+		recalc = false;
 	}
 
 	/*
-	 * Set up thresholds for paging:
+	 * Configure paging threshold values.  For more details on what each
+	 * threshold signifies, see the comments at the top of this file.
 	 */
+	lotsfree_max = tune(clockinit.ci_lotsfree_max, looppages,
+	    btop(LOTSFREE_MAX_DEFAULT));
+	lotsfree_min = tune(clockinit.ci_lotsfree_min, lotsfree_max,
+	    btop(LOTSFREE_MIN_DEFAULT));
 
-	/*
-	 * Lotsfree is threshold where paging daemon turns on.
-	 */
-	if (init_lfree == 0 || init_lfree >= looppages)
-		lotsfree = MAX(looppages / 64, btop(512 * 1024));
-	else
-		lotsfree = init_lfree;
+	lotsfree = tune(clockinit.ci_lotsfree, looppages,
+	    clamp(looppages / lotsfree_fraction, lotsfree_min, lotsfree_max));
 
-	/*
-	 * Desfree is amount of memory desired free.
-	 * If less than this for extended period, start swapping.
-	 */
-	if (init_dfree == 0 || init_dfree >= lotsfree)
-		desfree = lotsfree / 2;
-	else
-		desfree = init_dfree;
+	desfree = tune(clockinit.ci_desfree, lotsfree,
+	    lotsfree / 2);
 
-	/*
-	 * Minfree is minimal amount of free memory which is tolerable.
-	 */
-	if (init_mfree == 0 || init_mfree >= desfree)
-		minfree = desfree / 2;
-	else
-		minfree = init_mfree;
+	minfree = tune(clockinit.ci_minfree, desfree,
+	    half ? desfree / 2 : 3 * desfree / 4);
 
-	/*
-	 * Throttlefree is the point at which we start throttling
-	 * PG_WAIT requests until enough memory becomes available.
-	 */
-	if (init_tfree == 0 || init_tfree >= desfree)
-		throttlefree = minfree;
-	else
-		throttlefree = init_tfree;
+	throttlefree = tune(clockinit.ci_throttlefree, desfree,
+	    minfree);
 
-	/*
-	 * Pageout_reserve is the number of pages that we keep in
-	 * stock for pageout's own use.  Having a few such pages
-	 * provides insurance against system deadlock due to
-	 * pageout needing pages.  When freemem < pageout_reserve,
-	 * non-blocking allocations are denied to any threads
-	 * other than pageout and sched.  (At some point we might
-	 * want to consider a per-thread flag like T_PUSHING_PAGES
-	 * to indicate that a thread is part of the page-pushing
-	 * dance (e.g. an interrupt thread) and thus is entitled
-	 * to the same special dispensation we accord pageout.)
-	 */
-	if (init_preserve == 0 || init_preserve >= throttlefree)
-		pageout_reserve = throttlefree / 2;
-	else
-		pageout_reserve = init_preserve;
+	pageout_reserve = tune(clockinit.ci_pageout_reserve, throttlefree,
+	    half ? throttlefree / 2 : 3 * throttlefree / 4);
 
 	/*
 	 * Maxpgio thresholds how much paging is acceptable.
@@ -459,10 +493,11 @@ setupclock(int recalc)
 	 *
 	 * XXX - Does not account for multiple swap devices.
 	 */
-	if (init_mpgio == 0)
+	if (clockinit.ci_maxpgio == 0) {
 		maxpgio = (DISKRPM * 2) / 3;
-	else
-		maxpgio = init_mpgio;
+	} else {
+		maxpgio = clockinit.ci_maxpgio;
+	}
 
 	/*
 	 * When the system is in a low memory state, the page scan rate varies
@@ -558,32 +593,37 @@ setupclock(int recalc)
 	 * run, and thereby consume memory. However, this is a pathological
 	 * state and performance will generally be considered unacceptable.
 	 */
-	if (init_mfscan == 0) {
-		if (pageout_new_spread != 0)
+	if (clockinit.ci_maxfastscan == 0) {
+		if (pageout_new_spread != 0) {
 			maxfastscan = pageout_new_spread;
-		else
+		} else {
 			maxfastscan = MAXHANDSPREADPAGES;
+		}
 	} else {
-		maxfastscan = init_mfscan;
+		maxfastscan = clockinit.ci_maxfastscan;
 	}
-	if (init_fscan == 0) {
+
+	if (clockinit.ci_fastscan == 0) {
 		fastscan = MIN(looppages / loopfraction, maxfastscan);
 	} else {
-		fastscan = init_fscan;
-		if (fastscan > looppages / loopfraction)
-			fastscan = looppages / loopfraction;
+		fastscan = clockinit.ci_fastscan;
 	}
+	if (fastscan > looppages / loopfraction)
+		fastscan = looppages / loopfraction;
 
 	/*
 	 * Set slow scan time to 1/10 the fast scan time, but
 	 * not to exceed maxslowscan.
 	 */
-	if (init_sscan == 0)
+	if (clockinit.ci_slowscan == 0) {
 		slowscan = MIN(fastscan / 10, maxslowscan);
-	else
-		slowscan = init_sscan;
-	if (slowscan > fastscan / 2)
+	} else {
+		slowscan = clockinit.ci_slowscan;
+	}
+
+	if (slowscan > fastscan / 2) {
 		slowscan = fastscan / 2;
+	}
 
 	/*
 	 * Handspreadpages is distance (in pages) between front and back
@@ -603,21 +643,23 @@ setupclock(int recalc)
 	 * the freelist since pageout does not end up freeing pages which
 	 * may be referenced a sec later.
 	 */
-	if (init_hspages == 0)
+	if (clockinit.ci_handspreadpages == 0) {
 		handspreadpages = fastscan;
-	else
-		handspreadpages = init_hspages;
+	} else {
+		handspreadpages = clockinit.ci_handspreadpages;
+	}
 
 	/*
 	 * Make sure that back hand follows front hand by at least
-	 * 1/SCHEDPAGING_HZ seconds.  Without this test, it is possible
-	 * for the back hand to look at a page during the same wakeup of
-	 * the pageout daemon in which the front hand cleared its ref bit.
+	 * 1/SCHEDPAGING_HZ seconds.  Without this test, it is possible for the
+	 * back hand to look at a page during the same wakeup of the pageout
+	 * daemon in which the front hand cleared its ref bit.
 	 */
-	if (handspreadpages >= looppages)
+	if (handspreadpages >= looppages) {
 		handspreadpages = looppages - 1;
+	}
 
-	if (recalc == 0) {
+	if (!recalc) {
 		/*
 		 * Setup basic values at initialization.
 		 */
@@ -1302,7 +1344,7 @@ loop:
 		pageout_rate = (hrrate_t)pageout_sample_pages *
 		    (hrrate_t)(NANOSEC) / pageout_sample_etime;
 		pageout_new_spread = pageout_rate / 10;
-		setupclock(1);
+		setupclock();
 	}
 
 	goto loop;
