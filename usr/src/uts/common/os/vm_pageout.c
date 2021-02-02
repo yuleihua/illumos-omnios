@@ -220,19 +220,19 @@ clock_t	zone_pageout_ticks;	/* tunable to change zone pagescan ticks */
  * are the number of ticks in each wakeup cycle that gives the
  * equivalent of some underlying %CPU duty cycle.
  *
- * For example, when RATETOSCHEDPAGING is 4 (the default), then schedpaging()
+ * For example, when SCHEDPAGING_HZ is 4 (the default), then schedpaging()
  * will run 4 times/sec to update pageout scanning parameters and kickoff
  * the pageout_scanner() thread if necessary.
  *
  * Given hz is 100, min_pageout_ticks will be set to 1 (1% of a CPU). When
  * pageout_ticks is set to min_pageout_ticks, then the total CPU time consumed
- * by the scanner in a 1 second interval is 4% of a CPU (RATETOSCHEDPAGING * 1).
+ * by the scanner in a 1 second interval is 4% of a CPU (SCHEDPAGING_HZ * 1).
  *
  * Given hz is 100, max_pageout_ticks will be set to 20 (20% of a CPU). When
  * pageout_ticks is set to max_pageout_ticks, then the total CPU time consumed
  * by the scanner in a 1 second interval is 80% of a CPU
- * (RATETOSCHEDPAGING * 20). There is no point making max_pageout_ticks >25
- * since schedpaging() runs RATETOSCHEDPAGING (4) times/sec.
+ * (SCHEDPAGING_HZ * 20). There is no point making max_pageout_ticks >25
+ * since schedpaging() runs SCHEDPAGING_HZ (4) times/sec.
  *
  * If hz is 1000, then min_pageout_ticks will be 10 and max_pageout_ticks
  * will be 200, so the CPU percentages are the same as when hz is 100.
@@ -507,7 +507,7 @@ setupclock(int recalc)
 	 * and reclaimed
 	 *
 	 * If the scanner is limited by desscan, then at the highest rate it
-	 * will scan up to fastscan/RATETOSCHEDPAGING pages per cycle. If the
+	 * will scan up to fastscan/SCHEDPAGING_HZ pages per cycle. If the
 	 * scanner is limited by the %CPU, then at the highest rate (20% of a
 	 * CPU per cycle) the number of pages scanned could be much less.
 	 *
@@ -610,7 +610,7 @@ setupclock(int recalc)
 
 	/*
 	 * Make sure that back hand follows front hand by at least
-	 * 1/RATETOSCHEDPAGING seconds.  Without this test, it is possible
+	 * 1/SCHEDPAGING_HZ seconds.  Without this test, it is possible
 	 * for the back hand to look at a page during the same wakeup of
 	 * the pageout daemon in which the front hand cleared its ref bit.
 	 */
@@ -675,7 +675,7 @@ setupclock(int recalc)
  * Pageout scheduling.
  *
  * Schedpaging controls the rate at which the page out daemon runs by
- * setting the global variables pageout_ticks and desscan RATETOSCHEDPAGING
+ * setting the global variables pageout_ticks and desscan SCHEDPAGING_HZ
  * times a second. The pageout_ticks variable controls the percent of one
  * CPU that each page scanner thread should consume (see min_percent_cpu
  * and max_percent_cpu descriptions). The desscan variable records the number
@@ -685,7 +685,7 @@ setupclock(int recalc)
  * current pass; schedpaging resets this value to zero each time it runs.
  */
 
-#define	RATETOSCHEDPAGING	4		/* times/second */
+#define	SCHEDPAGING_HZ	4		/* times/second */
 
 /* held while pageout_scanner or schedpaging are modifying shared data */
 static kmutex_t	pageout_mutex;
@@ -773,7 +773,7 @@ schedpaging(void *arg)
 		 * the %CPU will limit the scan. That will also be
 		 * maxed out below.
 		 */
-		desscan = fastscan / RATETOSCHEDPAGING;
+		desscan = fastscan / SCHEDPAGING_HZ;
 	} else {
 		/*
 		 * Once we've calculated a spread based on system
@@ -785,7 +785,7 @@ schedpaging(void *arg)
 		slowstmp = slowscan * vavail;
 		faststmp = fastscan * (lotsfree - vavail);
 		result = (slowstmp + faststmp) /
-		    nz(lotsfree) / RATETOSCHEDPAGING;
+		    nz(lotsfree) / SCHEDPAGING_HZ;
 		desscan = (pgcnt_t)result;
 	}
 
@@ -906,7 +906,7 @@ schedpaging(void *arg)
 	if (kmem_avail() > 0)
 		cv_broadcast(&memavail_cv);
 
-	(void) timeout(schedpaging, arg, hz / RATETOSCHEDPAGING);
+	(void) timeout(schedpaging, arg, hz / SCHEDPAGING_HZ);
 }
 
 pgcnt_t		pushes;
@@ -1012,7 +1012,7 @@ pageout()
 	/*
 	 * Limit pushes to avoid saturating pageout devices.
 	 */
-	max_pushes = maxpgio / RATETOSCHEDPAGING;
+	max_pushes = maxpgio / SCHEDPAGING_HZ;
 	CALLB_CPR_INIT(&cprinfo, &push_lock, callb_generic_cpr, "pageout");
 
 	for (;;) {
@@ -1072,9 +1072,9 @@ pageout_scanner(void *a)
 	mutex_enter(&pscan_mutex);
 
 	min_pageout_ticks = MAX(1,
-	    ((hz * min_percent_cpu) / 100) / RATETOSCHEDPAGING);
+	    ((hz * min_percent_cpu) / 100) / SCHEDPAGING_HZ);
 	max_pageout_ticks = MAX(min_pageout_ticks,
-	    ((hz * max_percent_cpu) / 100) / RATETOSCHEDPAGING);
+	    ((hz * max_percent_cpu) / 100) / SCHEDPAGING_HZ);
 
 loop:
 	cv_signal_pageout();
