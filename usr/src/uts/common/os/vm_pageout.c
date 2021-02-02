@@ -238,46 +238,33 @@ uint64_t low_mem_scan;
 uint64_t zone_cap_scan;
 uint64_t n_throttle;
 
-clock_t	zone_pageout_ticks;	/* tunable to change zone pagescan ticks */
-
 /*
- * Values for min_pageout_ticks, max_pageout_ticks and pageout_ticks
- * are the number of ticks in each wakeup cycle that gives the
- * equivalent of some underlying %CPU duty cycle.
+ * Values for min_pageout_nsec, max_pageout_nsec, pageout_nsec and
+ * zone_pageout_nsec are the number of nanoseconds in each wakeup cycle
+ * that gives the equivalent of some underlying %CPU duty cycle.
  *
- * For example, when SCHEDPAGING_HZ is 4 (the default), then schedpaging()
- * will run 4 times/sec to update pageout scanning parameters and kickoff
- * the pageout_scanner() thread if necessary.
+ * min_pageout_nsec:
+ *     nanoseconds/wakeup equivalent of min_percent_cpu.
  *
- * Given hz is 100, min_pageout_ticks will be set to 1 (1% of a CPU). When
- * pageout_ticks is set to min_pageout_ticks, then the total CPU time consumed
- * by the scanner in a 1 second interval is 4% of a CPU (SCHEDPAGING_HZ * 1).
+ * max_pageout_nsec:
+ *     nanoseconds/wakeup equivalent of max_percent_cpu.
  *
- * Given hz is 100, max_pageout_ticks will be set to 20 (20% of a CPU). When
- * pageout_ticks is set to max_pageout_ticks, then the total CPU time consumed
- * by the scanner in a 1 second interval is 80% of a CPU
- * (SCHEDPAGING_HZ * 20). There is no point making max_pageout_ticks >25
- * since schedpaging() runs SCHEDPAGING_HZ (4) times/sec.
- *
- * If hz is 1000, then min_pageout_ticks will be 10 and max_pageout_ticks
- * will be 200, so the CPU percentages are the same as when hz is 100.
- *
- * min_pageout_ticks:
- *     ticks/wakeup equivalent of min_percent_cpu.
- *
- * max_pageout_ticks:
- *     ticks/wakeup equivalent of max_percent_cpu.
- *
- * pageout_ticks:
- *     Number of clock ticks budgeted for each wakeup cycle.
+ * pageout_nsec:
+ *     Number of nanoseconds budgeted for each wakeup cycle.
  *     Computed each time around by schedpaging().
- *     Varies between min_pageout_ticks .. max_pageout_ticks,
+ *     Varies between min_pageout_nsec and max_pageout_nsec,
  *     depending on memory pressure or zones over their cap.
+ *
+ * zone_pageout_nsec:
+ *     Number of nanoseconds budget for each cycle when a zone
+ *     is over its memory cap. If this is zero, then the value
+ *     of max_pageout_nsec is used instead.
  */
 
-static clock_t	min_pageout_ticks;
-static clock_t	max_pageout_ticks;
-static clock_t	pageout_ticks;
+static hrtime_t		min_pageout_nsec;
+static hrtime_t		max_pageout_nsec;
+static hrtime_t		pageout_nsec;
+static hrtime_t		zone_pageout_nsec;
 
 #define	MAX_PSCAN_THREADS	16
 static boolean_t reset_hands[MAX_PSCAN_THREADS];
@@ -522,8 +509,8 @@ setupclock(void)
 	 * is set to the total_pages of system memory. Thus, the scanner could
 	 * theoretically scan all of memory in one pass. However, each sample
 	 * is also limited by the %CPU budget. This is controlled by
-	 * pageout_ticks which is set in schedpaging(). During the sampling
-	 * period, pageout_ticks is set to max_pageout_ticks. This tick value
+	 * pageout_nsec which is set in schedpaging(). During the sampling
+	 * period, pageout_nsec is set to max_pageout_nsec. This value
 	 * is derived from the max_percent_cpu (80%) described above. On a
 	 * system with more than a small amount of memory (~8GB), the scanner's
 	 * %CPU will be the limiting factor in calculating pageout_new_spread.
@@ -717,8 +704,8 @@ setupclock(void)
  * Pageout scheduling.
  *
  * Schedpaging controls the rate at which the page out daemon runs by
- * setting the global variables pageout_ticks and desscan SCHEDPAGING_HZ
- * times a second. The pageout_ticks variable controls the percent of one
+ * setting the global variables pageout_nsec and desscan SCHEDPAGING_HZ
+ * times a second. The pageout_nsec variable controls the percent of one
  * CPU that each page scanner thread should consume (see min_percent_cpu
  * and max_percent_cpu descriptions). The desscan variable records the number
  * of pages pageout should examine in its next pass; schedpaging sets this
@@ -806,7 +793,7 @@ schedpaging(void *arg)
 	 * happens, desscan becomes negative and pageout_scanner()
 	 * stops paging out.
 	 */
-	if ((needfree) && (pageout_new_spread == 0)) {
+	if (needfree > 0 && pageout_new_spread == 0) {
 		/*
 		 * If we've not yet collected enough samples to
 		 * calculate a spread, kick into high gear anytime
@@ -836,11 +823,11 @@ schedpaging(void *arg)
 	 * spread, also kick %CPU to the max.
 	 */
 	if (pageout_new_spread == 0) {
-		pageout_ticks = max_pageout_ticks;
+		pageout_nsec = max_pageout_nsec;
 	} else {
-		pageout_ticks = min_pageout_ticks +
+		pageout_nsec = min_pageout_nsec +
 		    (lotsfree - vavail) *
-		    (max_pageout_ticks - min_pageout_ticks) /
+		    (max_pageout_nsec - min_pageout_nsec) /
 		    nz(lotsfree);
 	}
 
@@ -912,10 +899,10 @@ schedpaging(void *arg)
 		 * Increase the scanning CPU% to the max. This implies
 		 * 80% of one CPU/sec if the scanner can run each
 		 * opportunity. Can also be tuned via setting
-		 * zone_pageout_ticks in /etc/system or with mdb.
+		 * zone_pageout_nsec in /etc/system or with mdb.
 		 */
-		pageout_ticks = (zone_pageout_ticks != 0) ?
-		    zone_pageout_ticks : max_pageout_ticks;
+		pageout_nsec = (zone_pageout_nsec != 0) ?
+		    zone_pageout_nsec : max_pageout_nsec;
 
 		zones_over = B_TRUE;
 		zone_cap_scan++;
@@ -1103,7 +1090,6 @@ pageout_scanner(void *a)
 	pgcnt_t	pcount;
 	uint_t inst = (uint_t)(uintptr_t)a;
 	hrtime_t sample_start, sample_end;
-	clock_t pageout_lbolt;
 	kmutex_t pscan_mutex;
 
 	VERIFY3U(inst, <, MAX_PSCAN_THREADS);
@@ -1113,10 +1099,17 @@ pageout_scanner(void *a)
 	CALLB_CPR_INIT(&cprinfo, &pscan_mutex, callb_generic_cpr, "poscan");
 	mutex_enter(&pscan_mutex);
 
-	min_pageout_ticks = MAX(1,
-	    ((hz * min_percent_cpu) / 100) / SCHEDPAGING_HZ);
-	max_pageout_ticks = MAX(min_pageout_ticks,
-	    ((hz * max_percent_cpu) / 100) / SCHEDPAGING_HZ);
+	/*
+	 * Establish the minimum and maximum length of time to be spent
+	 * scanning pages per wakeup, limiting the scanner duty cycle.  The
+	 * input percentage values (0-100) must be converted to a fraction of
+	 * the number of nanoseconds in a second of wall time, then further
+	 * scaled down by the number of scanner wakeups in a second:
+	*/
+	min_pageout_nsec = MAX(1,
+	    NANOSEC * min_percent_cpu / 100 / SCHEDPAGING_HZ);
+	max_pageout_nsec = MAX(min_pageout_nsec,
+	    NANOSEC * max_percent_cpu / 100 / SCHEDPAGING_HZ);
 
 loop:
 	cv_signal_pageout();
@@ -1189,7 +1182,6 @@ loop:
 	DTRACE_PROBE4(pageout__start, pgcnt_t, nscan_limit, uint_t, inst,
 	    page_t *, backhand, page_t *, fronthand);
 
-	pageout_lbolt = ddi_get_lbolt();
 	sample_start = gethrtime();
 
 	/*
@@ -1213,10 +1205,10 @@ loop:
 		 * just every once in a while.
 		 */
 		if ((pcount & PAGES_POLL_MASK) == PAGES_POLL_MASK) {
-			clock_t pageout_cycle_ticks;
+			hrtime_t pageout_cycle_nsec;
 
-			pageout_cycle_ticks = ddi_get_lbolt() - pageout_lbolt;
-			if (pageout_cycle_ticks >= pageout_ticks) {
+			pageout_cycle_nsec = gethrtime() - sample_start;
+			if (pageout_cycle_nsec >= pageout_nsec) {
 				/*
 				 * This is where we normally break out of the
 				 * loop when scanning zones or sampling.
