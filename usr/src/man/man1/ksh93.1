@@ -289,7 +289,7 @@ of \fIexpression\fR.
 .sp .6
 .RS 4n
 Define a function which is referenced by \fIvarname\fR. A function whose
-\fIvarname\fR contains a \fB\&.\fR is called a discipline function and the
+\fIvarname\fR contains a dot (\fB\&.\fR) is called a discipline function and the
 portion of the \fIvarname\fR preceding the last \fB\&.\fR must refer to an
 existing variable.
 .sp
@@ -703,14 +703,15 @@ A \fInameref\fR is a variable that is a reference to another variable. A
 value of the variable at the time of the \fBtypeset\fR command becomes the
 variable that is referenced whenever the \fInameref\fR variable is used. The
 name of a \fInameref\fR cannot contain a dot (\fI\&.\fR). When a variable or
-function name contains a \fB\&.,\fR and the portion of the name up to the first
-\fB\&.\fR matches the name of a \fInameref\fR, the variable referred to is
-obtained by replacing the \fInameref\fR portion with the name of the variable
-referenced by the \fInameref\fR. If a \fInameref\fR is used as the index of a
-\fBfor\fR loop, a name reference is established for each item in the list. A
-\fInameref\fR provides a convenient way to refer to the variable inside a
-function whose name is passed as an argument to a function. For example, if the
-name of a variable is passed as the first argument to a function, the command
+function name contains a dot (\fB\&.\fR) and the portion of the name up to the
+first \fB\&.\fR matches the name of a \fInameref\fR, the variable referred to
+is obtained by replacing the \fInameref\fR portion with the name of the
+variable referenced by the \fInameref\fR. If a \fInameref\fR is used as the
+index of a \fBfor\fR loop, a name reference is established for each item in the
+list. A \fInameref\fR provides a convenient way to refer to the variable inside
+a function whose name is passed as an argument to a function. For example, if
+the name of a variable is passed as the first argument to a function, the
+command
 .sp
 .in +2
 .nf
@@ -742,15 +743,15 @@ The shell reads all the characters from \fB${\fR to the matching \fB}\fR as
 part of the same word even if it contains braces or metacharacters. The value,
 if any, of the parameter is substituted. The braces are required when
 \fIparameter\fR is followed by a letter, digit, or underscore that is not to be
-interpreted as part of its name or when the variable name contains a \fB\&.\fR
-The braces are also required when a variable is subscripted unless it is part
-of an Arithmetic Expression or a Conditional Expression.
-If \fIparameter\fR is one or more digits then it is a positional parameter. A
+interpreted as part of its name or when the variable name contains a dot
+(\fB\&.\fR). The braces are also required when a variable is subscripted unless
+it is part of an Arithmetic Expression or a Conditional Expression. If
+\fIparameter\fR is one or more digits then it is a positional parameter. A
 positional parameter of more than one digit must be enclosed in braces. If
 \fIparameter\fR is \fB*\fR or \fB@\fR, then all the positional parameters,
 starting with \fB$1\fR, are substituted and separated by a field separator
 character. If an array \fIvname\fR with last subscript \fB*\fR or \fB@\fR is
-used, or for index arrays of the form \fIsub1\fR \fB..\fR \fIsub2\fR. is used,
+used, or for index arrays of the form \fIsub1\fR \fB\&..\fR \fIsub2\fR is used,
 then the value for each of the elements between \fIsub1\fR and \fIsub2\fR
 inclusive (or all elements for \fB*\fR and \fB@\fR) is substituted, separated
 by the first character of the value of \fBIFS\fR.
@@ -2945,7 +2946,7 @@ Same as \fB>\fR, except that it overrides the \fBnoclobber\fR option.
 .RS 14n
 Write output to a temporary file.  If the command completes successfully rename
 it to word, otherwise, delete the temporary file.  >;word cannot be used with
-the \fBexec\fR(2). built-in.
+the \fBexec\fR(2) built-in.
 .RE
 
 .sp
@@ -3291,16 +3292,16 @@ is equivalent to the command substitution \fB${\fR\fIvar.name\fR\fB;}\fR.
 Commands and functions that are executed as part of the \fIlist\fR
 of a \fBnamespace\fR command that modify variables or create new ones, create
 a new variable whose name is the name of the name space as given by
-\fIidentifier\fR preceded by \fB..\fR
+\fIidentifier\fR preceded by two dots (\fB\&..\fR).
 When a variable whose name is \fIname\fR is referenced, it is first searched
 for using \fB.\fR\fIidentifier\fR\fB.\fR\fIname\fR\fB.\fR
 Similarly, a function defined by a command in the \fBnamespace\fR \fIlist\fR
-is created using the name space name preceded by a \fB..\fR
+is created using the name space name preceded by two dots (\fB\&..\fR).
 .PP
 When  the \fIlist\fR of a \fBnamespace\fR command contains a \fBnamespace\fR
 command, the names of variables and functions that are created consist
 of the variable or function name preceded by the list of \fIidentifier\fRs
-each preceded by \fB..\fR
+each preceded by two dots (\fB\&..\fR).
 .PP
 Outside of a name space, a variable or function created inside a
 name space can be referenced by preceding it with the name space name.
@@ -3322,12 +3323,12 @@ instance.
 
 When a type is defined a special built-in command of that name is added.  These
 built-ins are declaration commands and follow the same expansion rules as all
-the special built-in commands defined below that are preceded by \fB.\fR  These
-commands can subsequently be used inside further type definitions. The man page
-for these commands can be generated by using the \fB--man\fR option or any of
-the other \fB--\fR options described with \fBgetopts\fR. The \fB-r, -a, -A,
--h\fR and \fB-S\fR options of \fBtypeset\fR are permitted with each of these
-new built-ins.
+the special built-in commands defined below that are preceded by a dot
+(\fB\&.\fR). These commands can subsequently be used inside further type
+definitions. The man page for these commands can be generated by using the
+\fB--man\fR option or any of the other \fB--\fR options described with
+\fBgetopts\fR. The \fB-r, -a, -A, -h\fR and \fB-S\fR options of \fBtypeset\fR
+are permitted with each of these new built-ins.
 
 An instance of a type is created by invoking the type name
 followed by one or more instance names.
@@ -3538,22 +3539,31 @@ argument to the . command except that only preset aliases are expanded, and a
 function of the specified name is executed as described in this manual page.
 .sp
 .LP
-If this directory is not in \fBFPATH\fR the shell first determines whether
-there is a built-in version of a command corresponding to a given pathname and
-if so it is invoked in the current process. If no-build-in is found, the shell
+If this directory is not in \fBFPATH\fR, the shell first determines whether
+there is a built-in version of a command corresponding to a given pathname and,
+if so, it is invoked in the current process. If no built-in is found, the shell
 checks for a file named \fB\&.paths\fR in this directory. If found and there is
-a line of the form \fBFPATH=\fR\fIpath\fR where \fIpath\fR is an existing
-directory then that directory is searched after immediately after the current
-directory as if it were found in the \fBFPATH\fR variable. If \fIpath\fR does
-not begin with /, it is checked for relative to the directory being searched.
+a line of the form:
+.sp
+.in +2
+\fBFPATH=\fR\fIpath\fR
+.in -2
+.sp
+where \fIpath\fR is an existing directory, then that directory is searched
+immediately after the current directory as if it were found in the \fBFPATH\fR
+variable. If \fIpath\fR does not begin with \fB/\fR, it is checked for relative
+to the directory being searched.
 .sp
 .LP
-The \fB\&.paths\fR file is then checked for a line of the form
+The \fB\&.paths\fR file is then checked for a line of the form:
+.sp
+.in +2
 \fBPLUGIN_LIB=\fR\fIlibname\fR [ \fB:\fR \fIlibname\fR \fB]\fR ...
-Each library named by \fIlibname\fR will be
-searched for as if it were an option argument to \fBbuiltin -f\fR, and if it
-contains a built-in of the specified name this is executed instead of a command
-by this name.
+.in -2
+.sp
+Each library named by \fIlibname\fR will be searched for as if it were an
+option argument to \fBbuiltin -f\fR and, if it contains a built-in of the
+specified name, this is executed instead of a command by this name.
 .sp
 .LP
 Any built-in loaded from a library found this way will be associated with the
@@ -3570,11 +3580,17 @@ command file doesn't have read permission, and/or if the \fBsetuid\fR and
 job it is to set up the permissions and execute the shell with the shell
 command file passed down as an open file.
 
-If the \fB.paths\fR contains a line of the form \fBname=\fR\fIvalue\fR in the
+If the \fB.paths\fR contains a line of the form:
+.sp
+.in +2
+\fBname=\fR\fIvalue\fR
+.in -2
+.sp
+in the
 first or second line, then the environment variable \fIname\fR is modified by
 prepending the directory specified by \fIvalue\fR to the directory list. If
 \fIvalue\fR is not an absolute directory, then it specifies a directory
-relative to the directory that the executable was found. If the environment
+relative to the directory in which the executable was found. If the environment
 variable \fIname\fR does not already exist it will be added to the environment
 list for the specified command.
 
