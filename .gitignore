@@ -4742,6 +4742,7 @@ usr/src/uts/intel/core_pcbe/core_pcbe_glm.c
 usr/src/uts/intel/core_pcbe/core_pcbe_glp.c
 usr/src/uts/intel/core_pcbe/core_pcbe_hsw.c
 usr/src/uts/intel/core_pcbe/core_pcbe_hsx.c
+usr/src/uts/intel/core_pcbe/core_pcbe_icl.c
 usr/src/uts/intel/core_pcbe/core_pcbe_ivb.c
 usr/src/uts/intel/core_pcbe/core_pcbe_ivt.c
 usr/src/uts/intel/core_pcbe/core_pcbe_jkt.c
@@ -4751,6 +4752,8 @@ usr/src/uts/intel/core_pcbe/core_pcbe_skl.c
 usr/src/uts/intel/core_pcbe/core_pcbe_skx.c
 usr/src/uts/intel/core_pcbe/core_pcbe_slm.c
 usr/src/uts/intel/core_pcbe/core_pcbe_snb.c
+usr/src/uts/intel/core_pcbe/core_pcbe_snr.c
+usr/src/uts/intel/core_pcbe/core_pcbe_tgl.c
 usr/src/uts/intel/core_pcbe/core_pcbe_wsm_ep_dp.c
 usr/src/uts/intel/core_pcbe/core_pcbe_wsm_ep_sp.c
 usr/src/uts/intel/core_pcbe/core_pcbe_wsm_ex.c
