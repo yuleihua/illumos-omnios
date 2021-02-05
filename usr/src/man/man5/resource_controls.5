@@ -9,7 +9,6 @@
 .SH NAME
 resource_controls \- resource controls available through project database
 .SH DESCRIPTION
-.LP
 The resource controls facility is configured through the project database. See
 \fBproject\fR(4). You can set and modify resource controls through the
 following utilities:
@@ -453,8 +452,8 @@ Total amount of physical locked memory available to a zone.
 .RS 4n
 Enhances resource isolation by preventing too many LWPs in one zone from
 affecting other zones. A zone's total LWPs can be further subdivided among
-projects within the zone within the zone by using \fBproject.max-lwps\fR
-entries. Expressed as an integer.
+projects within the zone by using \fBproject.max-lwps\fR entries. Expressed as
+an integer.
 .RE
 
 .sp
@@ -477,8 +476,8 @@ integer.
 .RS 4n
 Enhances resource isolation by preventing too many processes in one zone from
 affecting other zones. A zone's total processes can be further subdivided among
-projects within the zone within the zone by using \fBproject.max-processes\fR
-entries. Expressed as an integer.
+projects within the zone by using \fBproject.max-processes\fR entries.
+Expressed as an integer.
 .RE
 
 .sp
@@ -528,7 +527,6 @@ mappings and \fBtmpfs\fR mounts for this zone.
 .LP
 See \fBzones\fR(5).
 .SS "Units Used in Resource Controls"
-.LP
 Resource controls can be expressed as in units of size (bytes), time (seconds),
 or as a count (integer). These units use the strings specified below.
 .sp
@@ -613,7 +611,6 @@ Note that unit modifiers (for example, \fB5G\fR) are accepted by the
 \fBprctl\fR(1), \fBprojadd\fR(1M), and \fBprojmod\fR(1M) commands. You cannot
 use unit modifiers in the project database itself.
 .SS "Resource Control Values and Privilege Levels"
-.LP
 A threshold value on a resource control constitutes a point at which local
 actions can be triggered or global actions, such as logging, can occur.
 .sp
@@ -681,7 +678,6 @@ task.max-lwps=(priv,1K,deny)
 .in -2
 
 .SS "Global and Local Actions on Resource Control Values"
-.LP
 There are two categories of actions on resource control values: global and
 local.
 .sp
@@ -906,7 +902,6 @@ controls with the \fBRCTL_GLOBAL_CPUTIME\fR property
 .RE
 
 .SS "Resource Control Flags and Properties"
-.LP
 Each resource control on the system has a certain set of associated properties.
 This set of properties is defined as a set of flags, which are associated with
 all controlled instances of that resource. Global flags cannot be modified, but
@@ -1010,7 +1005,6 @@ resource control. An \fBinf\fR value has an infinite quantity. The value is
 never enforced. Hence, as configured, both threshold quantities represent
 infinite values that are never exceeded.
 .SS "Resource Control Enforcement"
-.LP
 More than one resource control can exist on a resource. A resource control can
 exist at each containment level in the process model. If resource controls are
 active on the same resource at different container levels, the smallest
@@ -1018,7 +1012,6 @@ container's control is enforced first. Thus, action is taken on
 \fBprocess.max-cpu-time\fR before \fBtask.max-cpu-time\fR if both controls are
 encountered simultaneously.
 .SH ATTRIBUTES
-.LP
 See \fBattributes\fR(5) for a description of the following attributes:
 .sp
 
@@ -1033,7 +1026,6 @@ Interface Stability	Evolving
 .TE
 
 .SH SEE ALSO
-.LP
 \fBprctl\fR(1), \fBpooladm\fR(1M), \fBpoolcfg\fR(1M), \fBprojadd\fR(1M),
 \fBprojmod\fR(1M), \fBrctladm\fR(1M), \fBsetrctl\fR(2),
 \fBrctlblk_set_value\fR(3C), \fBlibpool\fR(3LIB), \fBproject\fR(4),
