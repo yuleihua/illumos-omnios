@@ -199,7 +199,7 @@ print_node(ndr_node_t *np)
  * Supports formats such as size_is(x) or size_is(x / 2).  The supported
  * operators are:
  *
- * 	* / % + - & | ^
+ *	* / % + - & | ^
  */
 void
 print_field_attr(ndr_node_t *np)
