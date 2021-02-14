@@ -199,6 +199,9 @@ $(python3tools_ONLY)file \
     path=opt/onbld/lib/python$(PYTHON3_VERSION)/onbld/Checks/ProcessCheck.py \
     mode=0444
 $(python3tools_ONLY)file \
+    path=opt/onbld/lib/python$(PYTHON3_VERSION)/onbld/Checks/ShellLint.py \
+    mode=0444
+$(python3tools_ONLY)file \
     path=opt/onbld/lib/python$(PYTHON3_VERSION)/onbld/Checks/SpellCheck.py \
     mode=0444
 $(python3tools_ONLY)file \
@@ -242,6 +245,9 @@ $(python3tools_ONLY)file \
     mode=0444
 $(python3tools_ONLY)file \
     path=opt/onbld/lib/python$(PYTHON3_VERSION)/onbld/Checks/__pycache__/ProcessCheck.cpython$(PYTHON3_PKGVERS).pyc \
+    mode=0444
+$(python3tools_ONLY)file \
+    path=opt/onbld/lib/python$(PYTHON3_VERSION)/onbld/Checks/__pycache__/ShellLint.cpython$(PYTHON3_PKGVERS).pyc \
     mode=0444
 $(python3tools_ONLY)file \
     path=opt/onbld/lib/python$(PYTHON3_VERSION)/onbld/Checks/__pycache__/SpellCheck.cpython$(PYTHON3_PKGVERS).pyc \
@@ -338,6 +344,12 @@ $(python2tools_ONLY)file \
     mode=0444
 $(python2tools_ONLY)file \
     path=opt/onbld/lib/python$(PYTHON_VERSION)/onbld/Checks/ProcessCheck.pyc \
+    mode=0444
+$(python2tools_ONLY)file \
+    path=opt/onbld/lib/python$(PYTHON_VERSION)/onbld/Checks/ShellLint.py \
+    mode=0444
+$(python2tools_ONLY)file \
+    path=opt/onbld/lib/python$(PYTHON_VERSION)/onbld/Checks/ShellLint.pyc \
     mode=0444
 $(python2tools_ONLY)file \
     path=opt/onbld/lib/python$(PYTHON_VERSION)/onbld/Checks/SpellCheck.py \

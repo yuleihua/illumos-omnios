@@ -273,14 +273,9 @@ usr/src/cmd/ast/shcomp/shcomp
 usr/src/cmd/ast/tools/gentab
 usr/src/cmd/ast/tools/iffe
 usr/src/cmd/ast/tools/lcgen
-usr/src/cmd/ast/tools/mamake
-usr/src/cmd/ast/tools/mamprobe
-usr/src/cmd/ast/tools/mprobe
 usr/src/cmd/ast/tools/package
 usr/src/cmd/ast/tools/probe
 usr/src/cmd/ast/tools/proto
-usr/src/cmd/ast/tools/ratz
-usr/src/cmd/ast/tools/release
 usr/src/cmd/audio/audioconvert/audioconvert
 usr/src/cmd/audio/audioctl/audioctl
 usr/src/cmd/audio/audioplay/audioplay
@@ -2374,8 +2369,6 @@ usr/src/cmd/vgrind/vgrind
 usr/src/cmd/vgrind/vgrindefs
 usr/src/cmd/vi/misc/ctags
 usr/src/cmd/vi/misc/ctags.xpg4
-usr/src/cmd/vi/misc/cxref
-usr/src/cmd/vi/misc/fold
 usr/src/cmd/vi/port/ex
 usr/src/cmd/vi/port/ex.xpg4
 usr/src/cmd/vi/port/ex.xpg6
@@ -3359,6 +3352,7 @@ usr/src/lib/smbsrv/libmlsvc/i386/srvsvc_ndr.c
 usr/src/lib/smbsrv/libmlsvc/i386/svcctl_ndr.c
 usr/src/lib/smbsrv/libmlsvc/i386/winreg_ndr.c
 usr/src/lib/smbsrv/libsmb/common/smb_status_tbl.h
+usr/src/man/man1/ctags.1
 usr/src/man/man1/dmake.1
 usr/src/man/man1/egrep.1
 usr/src/man/man1/fgrep.1
