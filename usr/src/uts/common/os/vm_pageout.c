@@ -814,7 +814,7 @@ static bool pageout_pushing = false;
 static uint64_t pageout_pushcount = 0;
 static uint64_t pageout_pushcount_seen = 0;
 
-static int async_list_size = 256;	/* number of async request structs */
+static int async_list_size = 8192;	/* number of async request structs */
 
 static void pageout_scanner(void *);
 
