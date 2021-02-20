@@ -32,7 +32,6 @@ _MANFILES=	Intro.5			\
 		audit_binfile.5		\
 		audit_remote.5		\
 		audit_syslog.5		\
-		bhyve.5			\
 		brands.5		\
 		byteorder.5		\
 		cancellation.5		\
@@ -63,22 +62,17 @@ _MANFILES=	Intro.5			\
 		iconv_unicode.5		\
 		ieee802.3.5		\
 		ieee802.11.5		\
-		illumos.5		\
 		inotify.5		\
 		ipfilter.5		\
-		ipkg.5			\
 		isalist.5		\
 		kerberos.5		\
 		krb5_auth_rules.5	\
 		krb5envvar.5		\
-		kvm.5			\
 		largefile.5		\
 		lf64.5			\
 		lfcompile.5		\
 		lfcompile64.5		\
-		lipkg.5			\
 		locale.5		\
-		lx.5			\
 		man.5			\
 		mandoc_char.5		\
 		mandoc_roff.5		\
@@ -117,7 +111,6 @@ _MANFILES=	Intro.5			\
 		pkcs11_kernel.5		\
 		pkcs11_softtoken.5	\
 		pkcs11_tpm.5		\
-		pkgsrc.5		\
 		privileges.5		\
 		prof.5			\
 		rbac.5			\
@@ -131,7 +124,6 @@ _MANFILES=	Intro.5			\
 		smf_restarter.5		\
 		smf_security.5		\
 		smf_template.5		\
-		sparse.5		\
 		standards.5		\
 		sticky.5		\
 		tbl.5			\
