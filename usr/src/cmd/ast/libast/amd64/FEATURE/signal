@@ -63,7 +63,7 @@
 #define _def_signal_ast	1
 #define _sys_types	1	/* #include <sys/types.h> ok */
 
-#define SIG_MAX	73
+#define SIG_MAX	74
 
 static const char* const	sig_name[] =
 {
@@ -125,6 +125,7 @@ static const char* const	sig_name[] =
 	"RTMIN+13",
 	"RTMIN+14",
 	"RTMIN+15",
+	"RTMIN+16",
 	"RTMAX-15",
 	"RTMAX-14",
 	"RTMAX-13",
@@ -219,7 +220,8 @@ static const char* const	sig_text[] =
 	"Realtime priority 28",
 	"Realtime priority 29",
 	"Realtime priority 30",
-	"Realtime priority 31 (hi)",
+	"Realtime priority 31",
+	"Realtime priority 32 (hi)",
 	0
 };
 #endif
