@@ -21,7 +21,7 @@
 
 #
 # Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
-# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
+# Copyright 2021 OmniOS Community Edition (OmniOSce) Association.
 #
 
 set name=pkg.fmri value=pkg:/system/zones@$(PKGVERS)
@@ -103,14 +103,7 @@ file path=usr/share/man/man1m/zoneadm.1m
 file path=usr/share/man/man1m/zoneadmd.1m
 file path=usr/share/man/man1m/zonecfg.1m
 file path=usr/share/man/man1m/zonestatd.1m
-file path=usr/share/man/man5/bhyve.5
 file path=usr/share/man/man5/brands.5
-file path=usr/share/man/man5/illumos.5
-file path=usr/share/man/man5/ipkg.5
-file path=usr/share/man/man5/kvm.5
-file path=usr/share/man/man5/lipkg.5
-file path=usr/share/man/man5/pkgsrc.5
-file path=usr/share/man/man5/sparse.5
 file path=usr/share/man/man5/zones.5
 file path=usr/share/man/man7d/zcons.7d
 file path=usr/share/man/man7d/zfd.7d

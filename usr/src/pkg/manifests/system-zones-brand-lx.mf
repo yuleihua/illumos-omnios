@@ -24,7 +24,7 @@
 # Use is subject to license terms.
 # Copyright 2017 Joyent, Inc.
 # Copyright 2017 ASS-Einrichtungssysteme GmbH
-# Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
+# Copyright 2021 OmniOS Community Edition (OmniOSce) Association.
 #
 
 #
@@ -71,7 +71,6 @@ dir path=usr/lib/devfsadm group=sys
 dir path=usr/lib/devfsadm/linkmod group=sys
 dir path=usr/share
 dir path=usr/share/man
-dir path=usr/share/man/man5
 dir path=usr/share/man/man7fs
 driver name=lx_ptm perms="lx_ptmajor 0666 root sys"
 driver name=lx_systrace perms="* 0644 root sys"
@@ -111,7 +110,6 @@ file path=usr/lib/brand/lx/lxinit mode=0555
 file path=usr/lib/brand/lx/pts_ignorelist mode=0444
 file path=usr/lib/devfsadm/linkmod/SUNW_lx_link_$(ARCH).so group=sys
 file path=usr/lib/lx_brand.so.1
-file path=usr/share/man/man5/lx.5
 hardlink path=usr/kernel/dtrace/$(ARCH64)/lx_systrace \
     target=../../../kernel/drv/$(ARCH64)/lx_systrace
 hardlink path=usr/kernel/fs/$(ARCH64)/lxautofs \
