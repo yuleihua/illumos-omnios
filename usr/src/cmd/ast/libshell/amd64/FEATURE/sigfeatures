@@ -44,5 +44,5 @@
 #undef	_SIGRTMIN
 #define _SIGRTMIN	42
 #undef	_SIGRTMAX
-#define _SIGRTMAX	73
+#define _SIGRTMAX	74
 #endif
