@@ -137,7 +137,6 @@ COMMON_SUBDIRS=		\
 	dirname		\
 	dis		\
 	diskinfo	\
-	diskmgtd	\
 	dispadmin	\
 	dladm		\
 	dlstat		\
@@ -223,7 +222,6 @@ COMMON_SUBDIRS=		\
 	ipf		\
 	isainfo		\
 	isalist		\
-	itutools	\
 	iscsiadm	\
 	iscsid		\
 	iscsitsvc	\
@@ -798,17 +796,10 @@ AUDITSUBDIRS=		\
 	auditstat	\
 	praudit
 
-#
-# commands not owned by the systems group
-#
-BWOSDIRS=
-
-
 all :=		TARGET = all
 install :=	TARGET = install
 clean :=	TARGET = clean
 clobber :=	TARGET = clobber
-lint :=		TARGET = lint
 _msg :=		TARGET = _msg
 _dc :=		TARGET = _dc
 
@@ -816,9 +807,9 @@ _dc :=		TARGET = _dc
 
 SUBDIRS = $(COMMON_SUBDIRS) $($(MACH)_SUBDIRS)
 
-.PARALLEL:	$(BWOSDIRS) $(SUBDIRS) $(MSGSUBDIRS) $(AUDITSUBDIRS)
+.PARALLEL:	$(SUBDIRS) $(MSGSUBDIRS) $(AUDITSUBDIRS)
 
-all install clean clobber lint: $(FIRST_SUBDIRS) .WAIT $(SUBDIRS) \
+all install clean clobber: $(FIRST_SUBDIRS) .WAIT $(SUBDIRS) \
 	$(AUDITSUBDIRS)
 
 #
@@ -848,11 +839,7 @@ ast:	isaexec
 print:	lp
 fmt:	mailx
 
-$(FIRST_SUBDIRS) $(BWOSDIRS) $(SUBDIRS) $(AUDITSUBDIRS): FRC
-	@if [ -f $@/Makefile  ]; then \
-		cd $@; pwd; $(MAKE) $(TARGET); \
-	else \
-		true; \
-	fi
+$(FIRST_SUBDIRS) $(SUBDIRS) $(AUDITSUBDIRS): FRC
+		cd $@; pwd; $(MAKE) $(TARGET)
 
 FRC:
