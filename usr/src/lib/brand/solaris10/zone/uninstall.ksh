@@ -118,7 +118,7 @@ unset fs_all
 (( fs_all_c = 0 ))
 /sbin/zfs list -H -t filesystem -o name -r $ZONEPATH_RDS | while read fs; do
 	# only look at filesystems directly below $ZONEPATH_RDS
-	[[ "$fs" != ~()($ZONEPATH_RDS/+([^/])) ]] && continue
+	[[ "$fs" != ~()$ZONEPATH_RDS/+([^/]) ]] && continue
 
 	fs_all[$fs_all_c]=$fs
 	(( fs_all_c = $fs_all_c + 1 ))
