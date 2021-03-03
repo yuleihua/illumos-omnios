@@ -44,8 +44,9 @@
 .\" Portions Copyright (c) 1992, X/Open Company Limited  All Rights Reserved
 .\" Copyright (c) 2008, Sun Microsystems, Inc.  All Rights Reserved
 .\" Copyright 2019, Joyent, Inc.
+.\" Copyright 2021 OmniOS Community Edition (OmniOSce) Association.
 .\"
-.TH MAKE 1 "March 8, 2019"
+.TH MAKE 1 "March 3, 2021"
 .SH NAME
 make \- maintain, update, and regenerate related programs and files
 .SH SYNOPSIS
@@ -1396,14 +1397,14 @@ Commands	\fBASFLAGS\fR
 	\fBCOMPILE.S\fR	\fB$(CC) $(ASFLAGS) $(CPPFLAGS)\fR \fB-c\fR
 _
 
-C	\fBCC\fR	\fBcc\fR
+C	\fBCC\fR	\fBgcc\fR
 Compiler	\fBCFLAGS\fR
 Commands	\fBCPPFLAGS\fR
 	\fBCOMPILE.c\fR	\fB$(CC) $(CFLAGS) $(CPPFLAGS)\fR \fB-c\fR
 	\fBLINK.c\fR	\fB$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)\fR
 _
 
-C++	\fBCCC\fR	\fBCC\fR
+C++	\fBCCC\fR	\fBg++\fR
 Compiler	\fBCCFLAGS\fR	\fBCFLAGS\fR
 Commands	\fBCPPFLAGS\fR
 	\fBCOMPILE.cc\fR	\fB$(CCC) $(CCFLAGS) $(CPPFLAGS)\fR \fB-c\fR
@@ -1412,7 +1413,7 @@ Commands	\fBCPPFLAGS\fR
 	\fBLINK.C\fR	\fB$(CCC) $(CCFLAGS) $(CPPFLAGS) $(LDFLAGS)\fR
 _
 
-FORTRAN 77	\fBFC\fR	\fBf77\fR
+FORTRAN 77	\fBFC\fR	\fBgfortran\fR
 Compiler	\fBFFLAGS\fR
 Commands	\fBCOMPILE.f\fR	\fB$(FC) $(FFLAGS)\fR \fB-c\fR
 	\fBLINK.f\fR	\fB$(FC) $(FFLAGS) $(LDFLAGS)\fR
@@ -1420,7 +1421,7 @@ Commands	\fBCOMPILE.f\fR	\fB$(FC) $(FFLAGS)\fR \fB-c\fR
 	\fBLINK.F\fR	\fB$(FC) $(FFLAGS) $(CPPFLAGS) $(LDFLAGS)\fR
 _
 
-FORTRAN 90	\fBFC\fR	\fBf90\fR
+FORTRAN 90	\fBFC\fR	\fBgfortran\fR
 Compiler	\fBF90FLAGS\fR
 Commands	\fBCOMPILE.f90\fR	\fB$(F90C) $(F90FLAGS)\fR \fB-c\fR
 	\fBLINK.f90\fR	\fB$(F90C) $(F90FLAGS) $(LDFLAGS)\fR
@@ -1452,7 +1453,7 @@ Commands	\fBM2FLAGS\fR
 	\fBCOMPILE.mod\fR	\fB$(M2C) $(M2FLAGS) $(MODFLAGS)\fR
 _
 
-Pascal	\fBPC\fR	\fBpc\fR
+Pascal	\fBPC\fR	\fBfpc\fR
 Compiler	\fBPFLAGS\fR
 Commands	\fBCOMPILE.p\fR	\fB$(PC) $(PFLAGS) $(CPPFLAGS)\fR \fB-c\fR
 	\fBLINK.p\fR	\fB$(PC) $(PFLAGS) $(CPPFLAGS) $(LDFLAGS)\fR
