@@ -3484,6 +3484,7 @@ usr/src/man/man3c/iswspecial_l.3c
 usr/src/man/man3c/iswupper_l.3c
 usr/src/man/man3c/iswxdigit_l.3c
 usr/src/man/man3c/isxdigit_l.3c
+usr/src/man/man3c/l
 usr/src/man/man3c/le16toh.3c
 usr/src/man/man3c/le32toh.3c
 usr/src/man/man3c/le64toh.3c
@@ -4073,6 +4074,7 @@ usr/src/man/man9f/kcred.9f
 usr/src/man/man9f/mac_fini_ops.9f
 usr/src/man/man9f/mac_free.9f
 usr/src/man/man9f/mac_hcksum_set.9f
+usr/src/man/man9f/mac_prop_info_set_default_fec.9f
 usr/src/man/man9f/mac_prop_info_set_default_link_flowctrl.9f
 usr/src/man/man9f/mac_prop_info_set_default_str.9f
 usr/src/man/man9f/mac_prop_info_set_default_uint32.9f
