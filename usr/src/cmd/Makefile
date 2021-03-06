@@ -488,6 +488,7 @@ i386_SUBDIRS=		\
 	addbadsec	\
 	ahciem		\
 	amdzen		\
+	bhhwcompat	\
 	bhyve		\
 	bhyvectl	\
 	biosdev		\
