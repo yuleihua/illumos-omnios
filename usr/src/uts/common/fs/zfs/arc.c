@@ -4416,6 +4416,7 @@ int64_t arc_pages_pp_reserve = 64;
 int64_t arc_swapfs_reserve = 64;
 
 static volatile uint64_t arc_virt_machine_reserved;
+int zfs_virt_machine_arc_shrink = 1;
 
 /*
  * XXX: A possible concern is that we allow arc_virt_machine_reserved to
@@ -4525,10 +4526,13 @@ arc_available_memory(void)
 	 * are running or starting. We add desfree to keep us out of
 	 * particularly dire circumstances.
 	 */
-	n = PAGESIZE * (availrmem - arc_virt_machine_reserved - desfree);
-	if (n < lowest) {
-		lowest = n;
-		r = FMR_VIRT_MACHINE;
+	if (zfs_virt_machine_arc_shrink != 0) {
+		n = PAGESIZE *
+		    (availrmem - arc_virt_machine_reserved - desfree);
+		if (n < lowest) {
+			lowest = n;
+			r = FMR_VIRT_MACHINE;
+		}
 	}
 
 #if defined(__i386)
