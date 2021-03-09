@@ -316,6 +316,7 @@ usr/src/cmd/bc/bc.xpg6
 usr/src/cmd/bc/lib.b
 usr/src/cmd/bdiff/bdiff
 usr/src/cmd/beadm/beadm
+usr/src/cmd/bhhwcompat/bhhwcompat
 usr/src/cmd/bhyve/bhyve
 usr/src/cmd/bhyve/mevent_test
 usr/src/cmd/bhyvectl/bhyvectl
@@ -3484,7 +3485,6 @@ usr/src/man/man3c/iswspecial_l.3c
 usr/src/man/man3c/iswupper_l.3c
 usr/src/man/man3c/iswxdigit_l.3c
 usr/src/man/man3c/isxdigit_l.3c
-usr/src/man/man3c/l
 usr/src/man/man3c/le16toh.3c
 usr/src/man/man3c/le32toh.3c
 usr/src/man/man3c/le64toh.3c
