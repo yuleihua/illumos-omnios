@@ -25,6 +25,7 @@
  * Copyright 2014 Igor Kozhukhov <ikozhukhov@gmail.com>.
  * Copyright 2017 RackTop Systems.
  * Copyright 2019 Joyent, Inc.
+ * Copyright 2021 Oxide Computer Company
  */
 
 #ifndef _SYS_CPUVAR_H
@@ -437,9 +438,9 @@ extern void	cpuset_atomic_del(cpuset_t *, const uint_t);
 extern void	cpuset_atomic_add(cpuset_t *, const uint_t);
 extern long	cpuset_atomic_xadd(cpuset_t *, const uint_t);
 extern long	cpuset_atomic_xdel(cpuset_t *, const uint_t);
-extern void	cpuset_or(cpuset_t *, cpuset_t *);
-extern void	cpuset_xor(cpuset_t *, cpuset_t *);
-extern void	cpuset_and(cpuset_t *, cpuset_t *);
+extern void	cpuset_or(cpuset_t *, const cpuset_t *);
+extern void	cpuset_xor(cpuset_t *, const cpuset_t *);
+extern void	cpuset_and(cpuset_t *, const cpuset_t *);
 extern void	cpuset_zero(cpuset_t *);
 
 
