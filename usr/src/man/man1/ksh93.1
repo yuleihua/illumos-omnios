@@ -3,7 +3,7 @@
 .\" To view license terms, see http://www.eclipse.org/org/documents/epl-v10.html
 .\" Portions Copyright (c) 2009, Sun Microsystems, Inc.
 .\" Portions Copyright 2021 OmniOS Community Edition (OmniOSce) Association.
-.Dd March 2, 2021
+.Dd March 8, 2021
 .Dt KSH93 1
 .Os
 .Sh NAME
@@ -1688,7 +1688,9 @@ character class, and any adjacent characters in
 that are in the
 .Sy issspace
 character class, delimit a field.
-One or more characters in IFS that belong to the
+One or more characters in
+.Ev IFS
+that belong to the
 .Sy issspace
 character class, delimit a field.
 In addition, if the same
@@ -1989,7 +1991,7 @@ Valid brace patterns are:
 .Bl -item -offset Ds -compact
 .Sm off
 .It
-.Brq Sy \&*,*
+.Brq Sy \&*,* Ns Oo Sy ,* Oc Ns No ...
 .It
 .Brq Ar l1 Sy \&.. Ar l2
 .It
@@ -2029,15 +2031,14 @@ The resulting fields are checked to see if they have any brace patterns.
 .Pp
 In the first form, a field is created for each string between
 .Sy {
-and
-.Sy \&,
-between
-.Sy \&,
-and
-.Sy \&,
+and the first comma
+.Pq Sq \&, ,
+between a pair of commas
+.Pq Sq \&,
 and between
-.Sy \&,
-and
+the last comma
+.Pq Sq \&,
+and the terminating
 .Sy } .
 The string
 represented by
@@ -2047,7 +2048,7 @@ Otherwise, each
 .Sy {
 and
 .Sy }
-with
+within
 .Sy *
 must be quoted.
 .Pp
@@ -3767,11 +3768,11 @@ the shell first determines whether there is a built-in version of a command
 corresponding to a given pathname and, if so, it is invoked in the current
 process.
 If no built-in is found, the shell checks for a file named
-.Sy \&.paths
+.Pa \&.paths
 in this directory.
 If found and there is a line of the form:
 .Pp
-.D1 Sy FPATH= Ns Ar path
+.D1 Ev FPATH Ns = Ns Ar path
 .Pp
 where
 .Ar path
@@ -3786,10 +3787,10 @@ does not begin with
 it is checked for relative to the directory being searched.
 .Pp
 The
-.Sy \&.paths
+.Pa \&.paths
 file is then checked for a line of the form:
 .Pp
-.D1 Sy PLUGIN_LIB= Ns Ar libname Ns Oo Sy \&: Ns Ar libname Oc Ns No ...
+.D1 Ev PLUGIN_LIB Ns = Ns Ar libname Ns Oo Sy \&: Ns Ar libname Oc Ns No ...
 .Pp
 Each library named by
 .Ar libname
@@ -3800,7 +3801,7 @@ of a command by this name.
 .Pp
 Any built-in loaded from a library found this way will be associated with the
 directory containing the
-.Pa .paths
+.Pa \&.paths
 file so it will only execute if not found in an earlier directory.
 .Pp
 Finally, the directory will be checked for a file of the given name.
@@ -3817,7 +3818,7 @@ bits are set on the file, then the shell executes an agent whose job it is to
 set up the permissions and execute the shell with the shell command file passed
 down as an open file.
 If the
-.Pa .paths
+.Pa \&.paths
 contains a line of the form:
 .Pp
 .D1 Sy name= Ns Ar value
@@ -4923,9 +4924,9 @@ to the built-in name.
 A built-in specified by a pathname will only be executed when that pathname
 would be found during the path search.
 Built-ins found in libraries loaded via the
-.Pa .paths
+.Pa \&.paths
 file will be associated with the pathname of the directory containing the
-.Pa .paths
+.Pa \&.paths
 file.
 .Pp
 The ISO C/C++ prototype is
@@ -5687,15 +5688,19 @@ is preceded by the alternative format specifier,
 the string is quoted in manner suitable for a field in a
 .Sy .csv
 format file.
-.It Sy %( Ns Ar date-format Ns Sy \&)
+.It Sy \&% Ns Oo Sy \&( Ns Ar date-format Ns Sy \&) Oc Ns Sy T
 A
-.Sy %( Ns Ar date-format Ns Sy \&)
+.Sy \&% Ns Oo Sy \&( Ns Ar date-format Ns Sy \&) Oc Ns Sy T
 format can be used to treat an argument as a date/time string and to format the
 date/time according to the
 .Ar date-format
 as defined for the
 .Xr date 1
 command.
+For example,
+.Sq printf '%(%s)T' now
+would print the current time in UNIX timestamp format
+.Pq seconds since 00:00:00 UTC, January 1, 1970 .
 .It Sy %Z
 A
 .Sy %Z
@@ -7109,7 +7114,7 @@ command for additional details.
 The scripting interface is
 .Sy Uncommitted .
 The environment variables,
-.Sy \&.paths
+.Pa \&.paths
 feature, and editing modes are
 .Sy Volatile .
 .Sh SEE ALSO
