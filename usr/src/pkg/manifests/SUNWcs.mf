@@ -1733,6 +1733,9 @@ depend fmri=runtime/perl/module/sun-solaris type=require
 # shell/ksh93 provides the system /bin/sh
 depend fmri=shell/ksh93 type=require
 #
+# shell/ksh93 provides the system /bin/sh
+depend fmri=shell/ksh93 type=require
+#
 # The boot loader package
 #
 depend fmri=system/boot/loader type=require

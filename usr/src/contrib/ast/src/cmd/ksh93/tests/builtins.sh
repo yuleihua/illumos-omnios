@@ -219,6 +219,9 @@ fi
 if	[[ $(printf -- "%s" foo) != foo ]]
 then	err_exit 'printf -- not working'
 fi
+if	[[ $(printf -- --) != -- ]]
+then	err_exit 'printf -- -- ... not working'
+fi
 if	[[ $(printf -- -eexist) != -eexist ]]
 then	err_exit 'printf -- -eexist. not working'
 fi
