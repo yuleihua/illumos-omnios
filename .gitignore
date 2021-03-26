@@ -1489,6 +1489,7 @@ usr/src/cmd/passmgmt/passmgmt
 usr/src/cmd/passwd/passwd
 usr/src/cmd/pathchk/pathchk
 usr/src/cmd/pbind/amd64/pbind
+usr/src/cmd/pcidb/pcidb
 usr/src/cmd/pcidr/pcidr
 usr/src/cmd/pcieb/pcieb
 usr/src/cmd/pcitool/i386/pcitool
