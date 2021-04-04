@@ -765,7 +765,15 @@ vioif_m_setpromisc(void *arg, boolean_t on)
 	uint8_t val = on ? 1 : 0;
 
 	if (!vif->vif_has_ctrlq_rx) {
-		return (ENOTSUP);
+		/*
+		 * For now, return success here. This allows VNICs to be
+		 * created over vioif interfaces in bhyve guests, even though
+		 * the bhyve viona driver does not yet support promiscuous
+		 * mode. Such VNICs will only work if their MAC address is
+		 * added to the list of secondary-macs on the underlying
+		 * GZ VNIC for the bhyve VM.
+		 */
+		return (0);
 	}
 
 	return (vioif_ctrlq_req(vif, VIRTIO_NET_CTRL_RX,
