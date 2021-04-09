@@ -766,12 +766,14 @@ vioif_m_setpromisc(void *arg, boolean_t on)
 
 	if (!vif->vif_has_ctrlq_rx) {
 		/*
-		 * For now, return success here. This allows VNICs to be
-		 * created over vioif interfaces in bhyve guests, even though
-		 * the bhyve viona driver does not yet support promiscuous
-		 * mode. Such VNICs will only work if their MAC address is
-		 * added to the list of secondary-macs on the underlying
-		 * GZ VNIC for the bhyve VM.
+		 * While most hypervisors support the control queue, bhyve
+		 * (or more specifically viona) on illumos currently does not.
+		 *
+		 * Until that support is added to viona, we pretend
+		 * the request always succeeds to match the historic behavior
+		 * of the illumos vioif driver. Once that support has been
+		 * added to viona, we should do the correct thing and return
+		 * ENOTSUP
 		 */
 		return (0);
 	}
