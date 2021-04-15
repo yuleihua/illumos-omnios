@@ -26,7 +26,7 @@
 # Copyright 2017 ASS-Einrichtungssysteme GmbH, Inc.  All rights reserved.
 #
 
-PROGS =	lx_install lx_boot
+PROGS =	lx_boot
 PROGS += lx_boot_zone_redhat lx_boot_zone_ubuntu lx_boot_zone_debian
 PROGS += lx_boot_zone_busybox lx_boot_zone_suse lx_boot_zone_void
 

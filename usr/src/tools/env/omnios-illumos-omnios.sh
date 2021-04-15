@@ -13,7 +13,7 @@ export GNUC_ROOT=/opt/gcc-7/
 for name in PRIMARY_CC PRIMARY_CCC SHADOW_CCS SHADOW_CCCS; do
         typeset -n var=$name
         var="`echo $var | sed '
-                s^/usr/^/opt/^
+                s^/usr/gcc^/opt/gcc^
                 s^/opt/gcc/^/opt/gcc-^
         '`"
 done

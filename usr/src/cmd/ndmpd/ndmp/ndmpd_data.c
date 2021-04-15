@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2014 Nexenta Systems, Inc.  All rights reserved.
+ * Copyright 2017 Nexenta Systems, Inc.  All rights reserved.
  */
 
 /*
@@ -41,6 +41,7 @@
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/socket.h>
+#include <syslog.h>
 #include <netinet/in.h>
 #include <errno.h>
 #include <arpa/inet.h>
@@ -156,13 +157,14 @@ ndmpd_data_start_backup_v2(ndmp_connection_t *connection, void *body)
 	 * Otherwise, send the reply containing the error here.
 	 */
 	if (err != NDMP_NO_ERR) {
-		NDMP_LOG(LOG_DEBUG, "err: %d", err);
+		syslog(LOG_ERR, "err: %d", err);
 		reply.error = err;
 		ndmp_send_reply(connection, &reply,
 		    "sending data_start_backup reply");
 		ndmpd_data_cleanup(session);
 	}
 }
+
 
 /*
  * ndmpd_data_start_recover_v2
@@ -226,7 +228,7 @@ ndmpd_data_get_env_v2(ndmp_connection_t *connection, void *body)
 
 	(void) memset((void*)&reply, 0, sizeof (reply));
 	if (session->ns_data.dd_operation != NDMP_DATA_OP_BACKUP) {
-		NDMP_LOG(LOG_ERR, "Backup operation not active.");
+		syslog(LOG_ERR, "Backup operation not active.");
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
 		reply.env.env_len = 0;
 	} else {
@@ -259,7 +261,6 @@ ndmpd_data_stop_v2(ndmp_connection_t *connection, void *body)
 	ndmpd_session_t *session = ndmp_get_client_data(connection);
 
 	if (session->ns_data.dd_state != NDMP_DATA_STATE_HALTED) {
-		NDMP_LOG(LOG_ERR, "Invalid state to process stop request.");
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
 		ndmp_send_reply(connection, &reply,
 		    "sending data_stop reply");
@@ -303,7 +304,6 @@ ndmpd_data_abort_v2(ndmp_connection_t *connection, void *body)
 
 	if (session->ns_data.dd_state == NDMP_DATA_STATE_IDLE ||
 	    session->ns_data.dd_state == NDMP_DATA_STATE_HALTED) {
-		NDMP_LOG(LOG_ERR, "Invalid state to process abort request.");
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
 		ndmp_send_reply(connection, &reply,
 		    "sending data_abort reply");
@@ -321,6 +321,7 @@ ndmpd_data_abort_v2(ndmp_connection_t *connection, void *body)
 	reply.error = NDMP_NO_ERR;
 	ndmp_send_reply(connection, &reply, "sending data_abort reply");
 }
+
 
 /*
  * ************************************************************************
@@ -401,17 +402,15 @@ ndmpd_data_start_backup_v3(ndmp_connection_t *connection, void *body)
 	(void) memset((void*)&reply, 0, sizeof (reply));
 
 	if (session->ns_data.dd_state != NDMP_DATA_STATE_CONNECTED) {
-		NDMP_LOG(LOG_ERR,
-		    "Can't start new backup in current state.");
-		NDMP_LOG(LOG_ERR,
-		    "Connection to the mover is not established.");
+		syslog(LOG_ERR,
+		    "Can't start new backup in NOT CONNECTED state.");
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
 		goto _error;
 	}
 
 	if (session->ns_data.dd_data_addr.addr_type == NDMP_ADDR_LOCAL) {
 		if (session->ns_tape.td_mode == NDMP_TAPE_READ_MODE) {
-			NDMP_LOG(LOG_ERR, "Write protected device.");
+			syslog(LOG_ERR, "Write protected device.");
 			reply.error = NDMP_WRITE_PROTECT_ERR;
 			goto _error;
 		}
@@ -436,8 +435,10 @@ ndmpd_data_start_backup_v3(ndmp_connection_t *connection, void *body)
 		    msg_invalid);
 		NDMP_APILOG((void *) session, NDMP_LOG_ERROR, ++ndmp_log_msg_id,
 		    msg_types);
-		NDMP_LOG(LOG_ERR, msg_invalid);
-		NDMP_LOG(LOG_ERR, msg_types);
+		syslog(LOG_ERR, "Invalid backup type: %s.",
+		    request->bu_type);
+		syslog(LOG_ERR,
+		    "Supported backup types are tar, dump, and zfs.");
 
 		reply.error = NDMP_ILLEGAL_ARGS_ERR;
 		goto _error;
@@ -467,6 +468,7 @@ _error:
 	}
 }
 
+
 /*
  * ndmpd_data_start_recover_v3
  *
@@ -491,7 +493,7 @@ ndmpd_data_start_recover_v3(ndmp_connection_t *connection, void *body)
 	(void) memset((void*)&reply, 0, sizeof (reply));
 
 	if (session->ns_data.dd_state != NDMP_DATA_STATE_CONNECTED) {
-		NDMP_LOG(LOG_ERR, "Can't start new recover in current state.");
+		syslog(LOG_ERR, "Can't start new recover in current state.");
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
 		goto _error;
 	}
@@ -515,8 +517,10 @@ ndmpd_data_start_recover_v3(ndmp_connection_t *connection, void *body)
 		    msg_invalid);
 		NDMP_APILOG((void *) session, NDMP_LOG_ERROR, ++ndmp_log_msg_id,
 		    msg_types);
-		NDMP_LOG(LOG_ERR, msg_invalid);
-		NDMP_LOG(LOG_ERR, msg_types);
+		syslog(LOG_ERR, "Invalid backup type: %s.",
+		    request->bu_type);
+		syslog(LOG_ERR,
+		    "Supported backup types are tar, dump, and zfs.");
 
 		reply.error = NDMP_ILLEGAL_ARGS_ERR;
 		goto _error;
@@ -548,6 +552,7 @@ _error:
 	}
 }
 
+
 /*
  * ndmpd_data_abort_v3
  *
@@ -572,7 +577,6 @@ ndmpd_data_abort_v3(ndmp_connection_t *connection, void *body)
 	switch (session->ns_data.dd_state) {
 	case NDMP_DATA_STATE_IDLE:
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
-		NDMP_LOG(LOG_ERR, "Invalid state to process abort request.");
 		break;
 
 	case NDMP_DATA_STATE_ACTIVE:
@@ -595,9 +599,10 @@ ndmpd_data_abort_v3(ndmp_connection_t *connection, void *body)
 		session->ns_data.dd_abort = TRUE;
 		ndmpd_data_error(session, NDMP_DATA_HALT_ABORTED);
 		break;
+
 	default:
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
-		NDMP_LOG(LOG_DEBUG, "Unknown data V3 state %d",
+		syslog(LOG_ERR, "Unknown data V3 state %d",
 		    session->ns_data.dd_state);
 	}
 
@@ -626,7 +631,6 @@ ndmpd_data_stop_v3(ndmp_connection_t *connection, void *body)
 	ndmpd_session_t *session = ndmp_get_client_data(connection);
 
 	if (session->ns_data.dd_state != NDMP_DATA_STATE_HALTED) {
-		NDMP_LOG(LOG_ERR, "Invalid state to process stop request.");
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
 		ndmp_send_reply(connection, &reply,
 		    "sending data_stop_v3 reply");
@@ -674,11 +678,11 @@ ndmpd_data_listen_v3(ndmp_connection_t *connection, void *body)
 
 	if (session->ns_data.dd_state != NDMP_DATA_STATE_IDLE) {
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
-		NDMP_LOG(LOG_ERR,
+		syslog(LOG_ERR,
 		    "Invalid internal data state to process listen request.");
 	} else if (session->ns_mover.md_state != NDMP_MOVER_STATE_IDLE) {
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
-		NDMP_LOG(LOG_ERR,
+		syslog(LOG_ERR,
 		    "Invalid mover state to process listen request.");
 	} else {
 		reply.error = NDMP_NO_ERR;
@@ -695,6 +699,7 @@ ndmpd_data_listen_v3(ndmp_connection_t *connection, void *body)
 		reply.data_connection_addr.addr_type = request->addr_type;
 		session->ns_data.dd_data_addr.addr_type = NDMP_ADDR_LOCAL;
 		break;
+
 	case NDMP_ADDR_TCP:
 		if (create_listen_socket_v3(session, &addr, &port) < 0) {
 			reply.error = NDMP_IO_ERR;
@@ -708,12 +713,12 @@ ndmpd_data_listen_v3(ndmp_connection_t *connection, void *body)
 		session->ns_data.dd_data_addr.addr_type = NDMP_ADDR_TCP;
 		session->ns_data.dd_data_addr.tcp_ip_v3 = addr;
 		session->ns_data.dd_data_addr.tcp_port_v3 = ntohs(port);
-		NDMP_LOG(LOG_DEBUG, "listen_socket: %d",
+		syslog(LOG_DEBUG, "listen_socket: %d",
 		    session->ns_data.dd_listen_sock);
 		break;
 
 	default:
-		NDMP_LOG(LOG_DEBUG, "Invalid address type: %d",
+		syslog(LOG_ERR, "Invalid address type: %d",
 		    request->addr_type);
 		reply.error = NDMP_ILLEGAL_ARGS_ERR;
 		break;
@@ -753,11 +758,10 @@ ndmpd_data_connect_v3(ndmp_connection_t *connection, void *body)
 
 	if (!ndmp_valid_v3addr_type(request->addr.addr_type)) {
 		reply.error = NDMP_ILLEGAL_ARGS_ERR;
-		NDMP_LOG(LOG_DEBUG, "Invalid address type %d",
+		syslog(LOG_ERR, "Invalid address type %d",
 		    request->addr.addr_type);
 	} else if (session->ns_data.dd_state != NDMP_DATA_STATE_IDLE) {
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
-		NDMP_LOG(LOG_ERR, "Invalid state to process connect request.");
 	} else {
 		reply.error = NDMP_NO_ERR;
 	}
@@ -777,7 +781,7 @@ ndmpd_data_connect_v3(ndmp_connection_t *connection, void *body)
 		if (session->ns_mover.md_state != NDMP_MOVER_STATE_LISTEN ||
 		    session->ns_mover.md_listen_sock != -1) {
 			reply.error = NDMP_ILLEGAL_STATE_ERR;
-			NDMP_LOG(LOG_ERR,
+			syslog(LOG_ERR,
 			    "Mover is not in local listen state.");
 		} else {
 			session->ns_mover.md_state = NDMP_MOVER_STATE_ACTIVE;
@@ -791,7 +795,7 @@ ndmpd_data_connect_v3(ndmp_connection_t *connection, void *body)
 
 	default:
 		reply.error = NDMP_ILLEGAL_ARGS_ERR;
-		NDMP_LOG(LOG_DEBUG, "Invalid address type %d",
+		syslog(LOG_ERR, "Invalid address type %d",
 		    request->addr.addr_type);
 	}
 
@@ -813,8 +817,11 @@ ndmpd_data_connect_v3(ndmp_connection_t *connection, void *body)
  * ndmpd_data_get_env_v4
  *
  * Request handler. Returns the environment variable array sent
- * with the backup request. This request may only be sent with
- * a backup operation is in progress.
+ * with the backup or restore request. The RFC states the following:
+ * The request is typically issued following a successful backup operation
+ * but MAY be issued during or after a recovery operation as well. This
+ * request is only valid when the Data Server is in the ACTIVE
+ * or HALTED states.
  *
  * Parameters:
  *   connection (input) - connection handle.
@@ -834,21 +841,29 @@ ndmpd_data_get_env_v4(ndmp_connection_t *connection, void *body)
 
 	if (session->ns_data.dd_state != NDMP_DATA_STATE_ACTIVE &&
 	    session->ns_data.dd_state != NDMP_DATA_STATE_HALTED) {
-		NDMP_LOG(LOG_ERR, "Invalid state for the data server.");
-		reply.error = NDMP_ILLEGAL_STATE_ERR;
-		reply.env.env_len = 0;
-	} else if (session->ns_data.dd_operation != NDMP_DATA_OP_BACKUP) {
-		NDMP_LOG(LOG_ERR, "Backup operation not active.");
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
 		reply.env.env_len = 0;
 	} else {
-		reply.error = NDMP_NO_ERR;
-		reply.env.env_len = session->ns_data.dd_env_len;
-		reply.env.env_val = session->ns_data.dd_env;
+		switch (session->ns_data.dd_operation) {
+		case NDMP_DATA_OP_BACKUP:
+		case NDMP_DATA_OP_RECOVER:
+		case NDMP_DATA_OP_RECOVER_FILEHIST:
+			reply.error = NDMP_NO_ERR;
+			reply.env.env_len = session->ns_data.dd_env_len;
+			reply.env.env_val = session->ns_data.dd_env;
+			break;
+
+		default:
+			syslog(LOG_ERR, "Backup/Restore operation not active.");
+			reply.error = NDMP_ILLEGAL_STATE_ERR;
+			reply.env.env_len = 0;
+			break;
+		}
 	}
 
 	ndmp_send_reply(connection, &reply, "sending data_get_env reply");
 }
+
 
 /*
  * ndmpd_data_get_state_v4
@@ -926,11 +941,10 @@ ndmpd_data_connect_v4(ndmp_connection_t *connection, void *body)
 
 	if (!ndmp_valid_v3addr_type(request->addr.addr_type)) {
 		reply.error = NDMP_ILLEGAL_ARGS_ERR;
-		NDMP_LOG(LOG_DEBUG, "Invalid address type %d",
+		syslog(LOG_ERR, "Invalid address type %d",
 		    request->addr.addr_type);
 	} else if (session->ns_data.dd_state != NDMP_DATA_STATE_IDLE) {
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
-		NDMP_LOG(LOG_ERR, "Invalid state to process connect request.");
 	} else {
 		reply.error = NDMP_NO_ERR;
 	}
@@ -950,7 +964,7 @@ ndmpd_data_connect_v4(ndmp_connection_t *connection, void *body)
 		if (session->ns_mover.md_state != NDMP_MOVER_STATE_LISTEN ||
 		    session->ns_mover.md_listen_sock != -1) {
 			reply.error = NDMP_ILLEGAL_STATE_ERR;
-			NDMP_LOG(LOG_ERR,
+			syslog(LOG_ERR,
 			    "Mover is not in local listen state.");
 		} else {
 			session->ns_mover.md_state = NDMP_MOVER_STATE_ACTIVE;
@@ -964,7 +978,7 @@ ndmpd_data_connect_v4(ndmp_connection_t *connection, void *body)
 
 	default:
 		reply.error = NDMP_ILLEGAL_ARGS_ERR;
-		NDMP_LOG(LOG_DEBUG, "Invalid address type %d",
+		syslog(LOG_ERR, "Invalid address type %d",
 		    request->addr.addr_type);
 	}
 
@@ -974,6 +988,7 @@ ndmpd_data_connect_v4(ndmp_connection_t *connection, void *body)
 	ndmp_send_reply(connection, &reply,
 	    "sending ndmp_data_connect_v4 reply");
 }
+
 
 /*
  * ndmpd_data_listen_v4
@@ -1003,11 +1018,11 @@ ndmpd_data_listen_v4(ndmp_connection_t *connection, void *body)
 
 	if (session->ns_data.dd_state != NDMP_DATA_STATE_IDLE) {
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
-		NDMP_LOG(LOG_ERR,
+		syslog(LOG_ERR,
 		    "Invalid internal data state to process listen request.");
 	} else if (session->ns_mover.md_state != NDMP_MOVER_STATE_IDLE) {
 		reply.error = NDMP_ILLEGAL_STATE_ERR;
-		NDMP_LOG(LOG_ERR,
+		syslog(LOG_ERR,
 		    "Invalid mover state to process listen request.");
 	} else {
 		reply.error = NDMP_NO_ERR;
@@ -1024,6 +1039,7 @@ ndmpd_data_listen_v4(ndmp_connection_t *connection, void *body)
 		reply.connect_addr.addr_type = request->addr_type;
 		session->ns_data.dd_data_addr.addr_type = NDMP_ADDR_LOCAL;
 		break;
+
 	case NDMP_ADDR_TCP:
 		if (create_listen_socket_v3(session, &addr, &port) < 0) {
 			reply.error = NDMP_IO_ERR;
@@ -1051,12 +1067,12 @@ ndmpd_data_listen_v4(ndmp_connection_t *connection, void *body)
 		session->ns_data.dd_data_addr.addr_type = NDMP_ADDR_TCP;
 		session->ns_data.dd_data_addr.tcp_ip_v3 = addr;
 		session->ns_data.dd_data_addr.tcp_port_v3 = ntohs(port);
-		NDMP_LOG(LOG_DEBUG, "listen_socket: %d",
+		syslog(LOG_DEBUG, "listen_socket: %d",
 		    session->ns_data.dd_listen_sock);
 		break;
 
 	default:
-		NDMP_LOG(LOG_DEBUG, "Invalid address type: %d",
+		syslog(LOG_ERR, "Invalid address type: %d",
 		    request->addr_type);
 		reply.error = NDMP_ILLEGAL_ARGS_ERR;
 		break;
@@ -1089,12 +1105,13 @@ ndmpd_data_start_recover_filehist_v4(ndmp_connection_t *connection, void *body)
 {
 	ndmp_data_start_recover_filehist_reply_v4 reply;
 
-	NDMP_LOG(LOG_DEBUG, "Request not supported");
+	syslog(LOG_DEBUG, "Request not supported");
 	reply.error = NDMP_NOT_SUPPORTED_ERR;
 
 	ndmp_send_reply(connection, &reply,
 	    "sending ndmp_data_start_recover_filehist_reply_v4 reply");
 }
+
 
 /*
  * ************************************************************************
@@ -1195,11 +1212,11 @@ ndmpd_data_error(ndmpd_session_t *session, ndmp_data_halt_reason reason)
 
 	if (session->ns_protocol_version == NDMPV4) {
 		if (ndmpd_data_error_send_v4(session, reason) < 0)
-			NDMP_LOG(LOG_DEBUG,
+			syslog(LOG_ERR,
 			    "Error sending notify_data_halted request");
 	} else {
 		if (ndmpd_data_error_send(session, reason) < 0)
-			NDMP_LOG(LOG_DEBUG,
+			syslog(LOG_ERR,
 			    "Error sending notify_data_halted request");
 	}
 
@@ -1257,9 +1274,9 @@ data_accept_connection_v3(void *cookie, int fd, ulong_t mode)
 	session->ns_data.dd_sock = accept(fd, (struct sockaddr *)&from,
 	    &from_len);
 
-	NDMP_LOG(LOG_DEBUG, "sock fd: %d",
+	syslog(LOG_DEBUG, "sock fd: %d",
 	    session->ns_data.dd_sock);
-	NDMP_LOG(LOG_DEBUG, "sin: port %d addr %s",
+	syslog(LOG_DEBUG, "sin: port %d addr %s",
 	    ntohs(from.sin_port),
 	    inet_ntoa(IN_ADDR(from.sin_addr.s_addr)));
 
@@ -1268,7 +1285,7 @@ data_accept_connection_v3(void *cookie, int fd, ulong_t mode)
 	session->ns_data.dd_listen_sock = -1;
 
 	if (session->ns_data.dd_sock < 0) {
-		NDMP_LOG(LOG_DEBUG, "Accept error: %m");
+		syslog(LOG_ERR, "Accept error: %m");
 		ndmpd_data_error(session, NDMP_DATA_HALT_CONNECT_ERROR);
 		return;
 	}
@@ -1311,7 +1328,7 @@ create_listen_socket_v3(ndmpd_session_t *session, ulong_t *addr, ushort_t *port)
 		session->ns_data.dd_listen_sock = -1;
 		return (-1);
 	}
-	NDMP_LOG(LOG_DEBUG, "addr: %s:%d",
+	syslog(LOG_DEBUG, "addr: %s:%d",
 	    inet_ntoa(IN_ADDR(*addr)), ntohs(*port));
 
 	return (0);
@@ -1373,6 +1390,7 @@ ndmpd_tar_start_backup_v3(ndmpd_session_t *session, char *bu_type,
 	ndmp_lbr_params_t *nlp;
 	ndmpd_module_params_t *params;
 	ndmp_data_start_backup_reply_v3 reply;
+	pthread_t tid;
 
 	(void) memset((void*)&reply, 0, sizeof (reply));
 
@@ -1442,7 +1460,7 @@ ndmpd_tar_start_backup_v3(ndmpd_session_t *session, char *bu_type,
 
 	reply.error = ndmp_backup_get_params_v3(session, params);
 	if (reply.error != NDMP_NO_ERR) {
-		NDMP_LOG(LOG_DEBUG, "err: %d", err);
+		syslog(LOG_ERR, "err: %d", err);
 		NDMP_FREE(nlp->nlp_params);
 		return (reply.error);
 	}
@@ -1450,7 +1468,7 @@ ndmpd_tar_start_backup_v3(ndmpd_session_t *session, char *bu_type,
 	reply.error = NDMP_NO_ERR;
 	if (ndmp_send_response(session->ns_connection, NDMP_NO_ERR,
 	    &reply) < 0) {
-		NDMP_LOG(LOG_DEBUG, "Sending data_start_backup_v3 reply");
+		syslog(LOG_DEBUG, "Sending data_start_backup_v3 reply");
 		return (NDMP_NO_ERR);
 	}
 
@@ -1465,16 +1483,20 @@ ndmpd_tar_start_backup_v3(ndmpd_session_t *session, char *bu_type,
 	 * Cannot wait for the thread to exit as we are replying to the
 	 * client request here.
 	 */
-	err = pthread_create(NULL, NULL,
+	err = pthread_create(&tid, NULL,
 	    session->ns_data.dd_module.dm_start_func,
 	    params);
+
 	if (err != 0) {
-		NDMP_LOG(LOG_ERR, "Can't start backup session.");
+		syslog(LOG_ERR, "Can't start V3 backup session.");
 		return (NDMP_ILLEGAL_ARGS_ERR);
 	}
 
+	(void) pthread_detach(tid);
+
 	return (NDMP_NO_ERR);
 }
+
 
 /*
  * ndmpd_tar_start_recover_v3
@@ -1501,6 +1523,7 @@ ndmpd_tar_start_recover_v3(ndmpd_session_t *session,
 	ndmp_data_start_recover_reply_v3 reply;
 	ndmpd_module_params_t *params;
 	ndmp_lbr_params_t *nlp;
+	pthread_t tid;
 	int err;
 
 	(void) memset((void*)&reply, 0, sizeof (reply));
@@ -1577,7 +1600,7 @@ ndmpd_tar_start_recover_v3(ndmpd_session_t *session,
 	    &reply) < 0) {
 		NDMP_FREE(nlp->nlp_params);
 		ndmpd_free_nlist_v3(session);
-		NDMP_LOG(LOG_DEBUG,
+		syslog(LOG_ERR,
 		    "Error sending ndmp_data_start_recover_reply");
 		ndmpd_data_error(session, NDMP_DATA_HALT_CONNECT_ERROR);
 		return (NDMP_NO_ERR);
@@ -1594,16 +1617,20 @@ ndmpd_tar_start_recover_v3(ndmpd_session_t *session,
 	 * Cannot wait for the thread to exit as we are replying to the
 	 * client request here.
 	 */
-	err = pthread_create(NULL, NULL,
+	err = pthread_create(&tid, NULL,
 	    session->ns_data.dd_module.dm_start_func,
 	    params);
 
 	if (err != 0) {
-		NDMP_LOG(LOG_ERR, "Can't start recover session.");
+		syslog(LOG_ERR, "Can't start V3 recover session.");
 		return (NDMP_ILLEGAL_ARGS_ERR);
 	}
+
+	(void) pthread_detach(tid);
+
 	return (NDMP_NO_ERR);
 }
+
 
 static ndmp_error
 ndmpd_zfs_start_op(ndmpd_session_t *session, ndmp_pval *env_val,
@@ -1635,7 +1662,7 @@ ndmpd_zfs_start_op(ndmpd_session_t *session, ndmp_pval *env_val,
 		}
 
 		if (ndmpd_zfs_pre_backup(ndmpd_zfs_args)) {
-			NDMP_LOG(LOG_ERR, "pre_backup error");
+			syslog(LOG_ERR, "pre_backup error");
 			return (NDMP_ILLEGAL_ARGS_ERR);
 		}
 
@@ -1656,13 +1683,17 @@ ndmpd_zfs_start_op(ndmpd_session_t *session, ndmp_pval *env_val,
 		}
 
 		if (ndmpd_zfs_pre_restore(ndmpd_zfs_args)) {
-			NDMP_LOG(LOG_ERR, "pre_restore error");
+			syslog(LOG_ERR, "pre_restore error");
 			(void) ndmpd_zfs_post_restore(ndmpd_zfs_args);
 			return (NDMP_ILLEGAL_ARGS_ERR);
 		}
 		session->ns_data.dd_module.dm_start_func =
 		    ndmpd_zfs_restore_starter;
 		(void) strlcpy(str, "recover", 8);
+		break;
+	case NDMP_DATA_OP_NOACTION:
+	case NDMP_DATA_OP_RECOVER_FILEHIST:
+		return (NDMP_ILLEGAL_ARGS_ERR);
 		break;
 	}
 
@@ -1684,7 +1715,7 @@ ndmpd_zfs_start_op(ndmpd_session_t *session, ndmp_pval *env_val,
 
 	if (ndmp_send_response(session->ns_connection, NDMP_NO_ERR,
 	    reply) < 0) {
-		NDMP_LOG(LOG_DEBUG, "Sending data_start_%s_v3 reply", str);
+		syslog(LOG_DEBUG, "Sending data_start_%s_v3 reply", str);
 		if (op == NDMP_DATA_OP_RECOVER)
 			ndmpd_data_error(session, NDMP_DATA_HALT_CONNECT_ERROR);
 		ndmpd_zfs_fini(ndmpd_zfs_args);
@@ -1692,11 +1723,10 @@ ndmpd_zfs_start_op(ndmpd_session_t *session, ndmp_pval *env_val,
 	}
 
 	err = pthread_create(&tid, NULL,
-	    session->ns_data.dd_module.dm_start_func,
-	    ndmpd_zfs_args);
+	    (funct_t)session->ns_data.dd_module.dm_start_func, ndmpd_zfs_args);
 
 	if (err) {
-		NDMP_LOG(LOG_ERR, "Can't start %s session (errno %d)",
+		syslog(LOG_ERR, "Can't start %s session (errno %d)",
 		    str, err);
 		ndmpd_zfs_fini(ndmpd_zfs_args);
 		MOD_DONE(ndmpd_zfs_params, -1);
@@ -1742,7 +1772,7 @@ discard_data_v3(ndmpd_session_t *session, ulong_t length)
 	/* Read and discard the data. */
 	n = read(session->ns_data.dd_sock, buf, toread);
 	if (n < 0) {
-		NDMP_LOG(LOG_ERR, "Socket read error: %m.");
+		syslog(LOG_ERR, "Socket read error: %m.");
 		n = -1;
 	}
 
@@ -1774,13 +1804,6 @@ ndmpd_remote_read_v3(ndmpd_session_t *session, char *data, ulong_t length)
 	tlm_job_stats_t *jstat;
 	longlong_t fsize;
 
-	NDMP_LOG(LOG_DEBUG, "ns_data.dd_xx: [%llu, %llu, %llu, %llu, %llu]",
-	    session->ns_data.dd_bytes_left_to_read,
-	    session->ns_data.dd_read_offset,
-	    session->ns_data.dd_read_length,
-	    session->ns_data.dd_position,
-	    session->ns_data.dd_discard_length);
-
 	count = 0;
 	while (count < length) {
 		len = length - count;
@@ -1811,9 +1834,6 @@ ndmpd_remote_read_v3(ndmpd_session_t *session, char *data, ulong_t length)
 				jstat = session->ns_ndmp_lbr_params->nlp_jstat;
 				fsize = jstat->js_bytes_in_file;
 
-				NDMP_LOG(LOG_DEBUG, "bytes_left [%llu / %u]",
-				    fsize, len);
-
 				/*
 				 * Fall back to the old way if fsize if too
 				 * small.
@@ -1832,14 +1852,14 @@ ndmpd_remote_read_v3(ndmpd_session_t *session, char *data, ulong_t length)
 			request.length =
 			    long_long_to_quad(session->ns_data.dd_read_length);
 
-			NDMP_LOG(LOG_DEBUG, "to NOTIFY_DATA_READ [%llu, %llu]",
+			syslog(LOG_DEBUG, "to NOTIFY_DATA_READ [%lu, %lu]",
 			    session->ns_data.dd_read_offset,
 			    session->ns_data.dd_read_length);
 
 			if (ndmp_send_request_lock(session->ns_connection,
 			    NDMP_NOTIFY_DATA_READ, NDMP_NO_ERR,
 			    &request, 0) < 0) {
-				NDMP_LOG(LOG_DEBUG,
+				syslog(LOG_ERR,
 				    "Sending notify_data_read request");
 				return (-1);
 			}
@@ -1868,13 +1888,13 @@ ndmpd_remote_read_v3(ndmpd_session_t *session, char *data, ulong_t length)
 
 		if ((n = read(session->ns_data.dd_sock, &data[count],
 		    len)) < 0) {
-			NDMP_LOG(LOG_ERR, "Socket read error: %m.");
+			syslog(LOG_ERR, "Socket read error: %m.");
 			return (-1);
 		}
 
 		/* read returns 0 if the connection was closed */
 		if (n == 0) {
-			NDMP_LOG(LOG_DEBUG, "n 0 errno %d",
+			syslog(LOG_ERR, "n 0 errno %d",
 			    errno);
 			return (-1);
 		}
@@ -1885,6 +1905,7 @@ ndmpd_remote_read_v3(ndmpd_session_t *session, char *data, ulong_t length)
 	}
 	return (0);
 }
+
 
 /*
  * nlp_release_job_stat
@@ -1903,7 +1924,6 @@ nlp_release_job_stat(ndmpd_session_t *session)
 	ndmp_lbr_params_t *nlp;
 
 	if ((nlp = ndmp_get_nlp(session)) == NULL) {
-		NDMP_LOG(LOG_DEBUG, "nlp == NULL");
 		return;
 	}
 	if (nlp->nlp_jstat != NULL) {
@@ -1911,8 +1931,7 @@ nlp_release_job_stat(ndmpd_session_t *session)
 		    (u_longlong_t)nlp->nlp_jstat->js_bytes_total;
 		tlm_un_ref_job_stats(nlp->nlp_jstat->js_job_name);
 		nlp->nlp_jstat = NULL;
-	} else
-		NDMP_LOG(LOG_DEBUG, "JSTAT == NULL");
+	}
 }
 
 
@@ -1960,7 +1979,6 @@ ndmpd_data_init(ndmpd_session_t *session)
 }
 
 
-
 /*
  * ndmpd_data_cleanup
  *
@@ -1976,7 +1994,7 @@ void
 ndmpd_data_cleanup(ndmpd_session_t *session)
 {
 	if (session->ns_data.dd_listen_sock != -1) {
-		NDMP_LOG(LOG_DEBUG, "data.listen_sock: %d",
+		syslog(LOG_DEBUG, "data.listen_sock: %d",
 		    session->ns_data.dd_listen_sock);
 		(void) ndmpd_remove_file_handler(session,
 		    session->ns_data.dd_listen_sock);
@@ -1984,7 +2002,7 @@ ndmpd_data_cleanup(ndmpd_session_t *session)
 		session->ns_data.dd_listen_sock = -1;
 	}
 	if (session->ns_data.dd_sock != -1) {
-		NDMP_LOG(LOG_DEBUG, "data.sock: %d",
+		syslog(LOG_ERR, "data.sock: %d",
 		    session->ns_data.dd_sock);
 
 		/*
@@ -2024,19 +2042,22 @@ ndmp_data_get_mover_mode(ndmpd_session_t *session)
 		rv = ((session->ns_data.dd_mover.addr_type == NDMP_ADDR_TCP)
 		    ? "remote" : "local");
 		break;
+
 	case NDMPV3:
 		rv = ((session->ns_data.dd_data_addr.addr_type == NDMP_ADDR_TCP)
 		    ? "remote" : "local");
 		break;
+
 	case NDMPV4:
 		rv = ((session->ns_data.dd_data_addr.addr_type ==
 		    NDMP_ADDR_TCP ||
 		    (session->ns_data.dd_data_addr_v4.addr_type ==
 		    NDMP_ADDR_TCP)) ? "remote" : "local");
 		break;
+
 	default:
 		rv = "Unknown";
-		NDMP_LOG(LOG_ERR, "Invalid protocol version %d.",
+		syslog(LOG_ERR, "Invalid protocol version %d.",
 		    session->ns_protocol_version);
 	}
 
@@ -2068,16 +2089,17 @@ ndmpd_tar_start_backup_v2(ndmpd_session_t *session, char *bu_type,
 	ndmp_data_start_backup_reply reply;
 	ndmpd_module_params_t *params;
 	ndmp_lbr_params_t *nlp;
+	pthread_t tid;
 	int err;
 
 	if (session->ns_data.dd_state != NDMP_DATA_STATE_IDLE) {
-		NDMP_LOG(LOG_ERR, "Can't start new backup in current state.");
+		syslog(LOG_ERR, "Can't start new backup in current state.");
 		return (NDMP_ILLEGAL_STATE_ERR);
 	}
 	if (strcmp(bu_type, NDMP_DUMP_TYPE) != 0 &&
 	    strcmp(bu_type, NDMP_TAR_TYPE) != 0) {
-		NDMP_LOG(LOG_ERR, "Invalid backup type: %s.", bu_type);
-		NDMP_LOG(LOG_ERR, "Supported backup types are tar and dump.");
+		syslog(LOG_ERR, "Invalid backup type: %s.", bu_type);
+		syslog(LOG_ERR, "Supported backup types are tar and dump.");
 		return (NDMP_ILLEGAL_ARGS_ERR);
 	}
 	if ((err = ndmpd_save_env(session, env_val, env_len)) != NDMP_NO_ERR)
@@ -2138,14 +2160,14 @@ ndmpd_tar_start_backup_v2(ndmpd_session_t *session, char *bu_type,
 
 	if ((err = ndmp_backup_extract_params(session,
 	    params)) != NDMP_NO_ERR) {
-		NDMP_LOG(LOG_DEBUG, "err: %d", err);
+		syslog(LOG_ERR, "err: %d", err);
 		NDMP_FREE(nlp->nlp_params);
 		return (err);
 	}
 
 	err = ndmpd_mover_connect(session, NDMP_MOVER_MODE_READ);
 	if (err != NDMP_NO_ERR) {
-		NDMP_LOG(LOG_DEBUG,
+		syslog(LOG_ERR,
 		    "mover connect err: %d", err);
 		NDMP_FREE(nlp->nlp_params);
 		return (err);
@@ -2156,12 +2178,12 @@ ndmpd_tar_start_backup_v2(ndmpd_session_t *session, char *bu_type,
 	session->ns_data.dd_operation = NDMP_DATA_OP_BACKUP;
 	session->ns_data.dd_abort = FALSE;
 
-	NDMP_LOG(LOG_DEBUG, "starting backup");
+	syslog(LOG_DEBUG, "starting backup");
 
 	reply.error = NDMP_NO_ERR;
 	if (ndmp_send_response(session->ns_connection, NDMP_NO_ERR,
 	    &reply) < 0) {
-		NDMP_LOG(LOG_DEBUG, "Sending data_start_backup reply");
+		syslog(LOG_DEBUG, "Sending data_start_backup reply");
 		NDMP_FREE(nlp->nlp_params);
 		if (session->ns_data.dd_mover.addr_type == NDMP_ADDR_TCP) {
 			/*
@@ -2185,12 +2207,20 @@ ndmpd_tar_start_backup_v2(ndmpd_session_t *session, char *bu_type,
 	 * Cannot wait for the thread to exit as we are replying to the
 	 * client request here.
 	 */
-	(void) pthread_create(NULL, NULL,
+	(void) pthread_create(&tid, NULL,
 	    session->ns_data.dd_module.dm_start_func,
 	    params);
 
+	if (err) {
+		syslog(LOG_ERR, "Can't start V2 backup session.");
+		return (NDMP_ILLEGAL_ARGS_ERR);
+	}
+
+	(void) pthread_detach(tid);
+
 	return (NDMP_NO_ERR);
 }
+
 
 /*
  * ndmpd_tar_start_recover_v2
@@ -2217,17 +2247,18 @@ ndmpd_tar_start_recover_v2(ndmpd_session_t *session, char *bu_type,
 	ndmp_data_start_recover_reply_v2 reply;
 	ndmpd_module_params_t *params;
 	ndmp_lbr_params_t *nlp;
+	pthread_t tid;
 	int err;
 
 	if (session->ns_data.dd_state != NDMP_DATA_STATE_IDLE) {
-		NDMP_LOG(LOG_ERR, "Can't start new recover in current state.");
+		syslog(LOG_ERR, "Can't start new recover in current state.");
 		return (NDMP_ILLEGAL_STATE_ERR);
 	}
 
 	if (strcmp(bu_type, NDMP_DUMP_TYPE) != 0 &&
 	    strcmp(bu_type, NDMP_TAR_TYPE) != 0) {
-		NDMP_LOG(LOG_ERR, "Invalid backup type: %s.", bu_type);
-		NDMP_LOG(LOG_ERR, "Supported backup types are tar and dump.");
+		syslog(LOG_ERR, "Invalid backup type: %s.", bu_type);
+		syslog(LOG_ERR, "Supported backup types are tar and dump.");
 		return (NDMP_ILLEGAL_ARGS_ERR);
 	}
 
@@ -2296,7 +2327,7 @@ ndmpd_tar_start_recover_v2(ndmpd_session_t *session, char *bu_type,
 	reply.error = NDMP_NO_ERR;
 	if (ndmp_send_response(session->ns_connection, NDMP_NO_ERR,
 	    &reply) < 0) {
-		NDMP_LOG(LOG_DEBUG, "Sending data_start_recover reply");
+		syslog(LOG_DEBUG, "Sending data_start_recover reply");
 		NDMP_FREE(nlp->nlp_params);
 		if (session->ns_data.dd_mover.addr_type == NDMP_ADDR_TCP) {
 			/*
@@ -2322,12 +2353,20 @@ ndmpd_tar_start_recover_v2(ndmpd_session_t *session, char *bu_type,
 	 * Cannot wait for the thread to exit as we are replying to the
 	 * client request here.
 	 */
-	(void) pthread_create(NULL, NULL,
+	(void) pthread_create(&tid, NULL,
 	    session->ns_data.dd_module.dm_start_func,
 	    params);
 
+	if (err != 0) {
+		syslog(LOG_ERR, "Can't start V2 recover session.");
+		return (NDMP_ILLEGAL_ARGS_ERR);
+	}
+
+	(void) pthread_detach(tid);
+
 	return (NDMP_NO_ERR);
 }
+
 
 /*
  * ndmpd_data_get_info

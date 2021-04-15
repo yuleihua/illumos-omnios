@@ -148,6 +148,7 @@ uint_t		hyperv_recommends;
  * hyperv_features3 (EDX):
  *   This indicates which miscellaneous features are available to the partition.
  */
+uint_t			hyperv_ver_major;
 uint_t			hyperv_features;
 static uint_t		hyperv_features1;
 static uint_t		hyperv_pm_features;
@@ -269,8 +270,9 @@ hyperv_identify(void)
 
 	do_cpuid(CPUID_LEAF_HV_IDENTITY, &regs);
 
+	hyperv_ver_major = regs.cp_ebx >> 16;
 	cmn_err(CE_CONT, "?Hyper-V Version: %d.%d.%d [SP%d]\n",
-	    regs.cp_ebx >> 16, regs.cp_ebx & 0xffff,
+	    hyperv_ver_major, regs.cp_ebx & 0xffff,
 	    regs.cp_eax, regs.cp_ecx);
 
 	/*
@@ -278,7 +280,7 @@ hyperv_identify(void)
 	 * function ms_hyperv_init_platform().
 	 */
 	cmn_err(CE_CONT, "?Hyper-V Host Build: %d-%d.%d-%d-%d.%d\n",
-	    regs.cp_eax, regs.cp_ebx >> 16,
+	    regs.cp_eax, hyperv_ver_major,
 	    regs.cp_ebx & 0xffff, regs.cp_ecx,
 	    regs.cp_edx >> 24, regs.cp_edx & 0xffffff);
 

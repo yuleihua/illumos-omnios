@@ -2263,7 +2263,6 @@ zone_mcap_kstat_create(zone_t *zone)
 	/* The kstat "name" field is not large enough for a full zonename */
 	kstat_named_init(&zmp->zm_zonename, "zonename", KSTAT_DATA_STRING);
 	kstat_named_setstr(&zmp->zm_zonename, zone->zone_name);
-	kstat_named_setstr(&zmp->zm_zonename, zone->zone_name);
 	kstat_named_init(&zmp->zm_rss, "rss", KSTAT_DATA_UINT64);
 	kstat_named_init(&zmp->zm_phys_cap, "physcap", KSTAT_DATA_UINT64);
 	kstat_named_init(&zmp->zm_swap, "swap", KSTAT_DATA_UINT64);

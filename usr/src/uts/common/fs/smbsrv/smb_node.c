@@ -20,7 +20,7 @@
  */
 /*
  * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2019 Nexenta Systems, Inc.  All rights reserved.
+ * Copyright 2020 Tintri by DDN, Inc. All rights reserved.
  */
 /*
  * SMB Node State Machine
@@ -1479,6 +1479,7 @@ smb_node_setattr(smb_request_t *sr, smb_node_t *node,
 	int rc;
 	uint_t times_mask;
 	smb_attr_t tmp_attr;
+	smb_node_t *unnamed_node;
 
 	SMB_NODE_VALID(node);
 
@@ -1543,14 +1544,6 @@ smb_node_setattr(smb_request_t *sr, smb_node_t *node,
 	}
 
 	/*
-	 * If we have an open file, and we set the size,
-	 * then set the "written" flag so that at close,
-	 * we can force an mtime update.
-	 */
-	if (of != NULL && (attr->sa_mask & SMB_AT_SIZE) != 0)
-		of->f_written = B_TRUE;
-
-	/*
 	 * When operating on an open file, some settable attributes
 	 * become "sticky" in the open file object until close.
 	 * (see above re. timestamps)
@@ -1613,6 +1606,13 @@ smb_node_setattr(smb_request_t *sr, smb_node_t *node,
 	if (node->n_dnode != NULL) {
 		smb_node_notify_change(node->n_dnode,
 		    FILE_ACTION_MODIFIED, node->od_name);
+	}
+
+	if ((unnamed_node = SMB_IS_STREAM(node)) != NULL) {
+		ASSERT(unnamed_node->n_magic == SMB_NODE_MAGIC);
+		ASSERT(unnamed_node->n_state != SMB_NODE_STATE_DESTROYING);
+		smb_node_notify_change(node->n_dnode,
+		    FILE_ACTION_MODIFIED_STREAM, node->od_name);
 	}
 
 	return (0);

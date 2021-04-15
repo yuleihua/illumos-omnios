@@ -66,6 +66,7 @@ __FBSDID("$FreeBSD$");
 #include <md5.h>
 
 #include "bhyverun.h"
+#include "debug.h"
 #include "pci_emul.h"
 #include "virtio.h"
 #include "block_if.h"
@@ -93,6 +94,7 @@ _Static_assert(VTBLK_RINGSZ <= BLOCKIF_RING_MAX, "Each ring entry must be able t
 #define	VTBLK_F_WCE		(1 << 9)	/* Legacy alias for FLUSH */
 #define	VTBLK_F_TOPOLOGY	(1 << 10)	/* Topology information is available */
 #define	VTBLK_F_CONFIG_WCE	(1 << 11)	/* Writeback mode available in config */
+#define	VTBLK_F_MQ		(1 << 12)	/* Multi-Queue */
 #define	VTBLK_F_DISCARD		(1 << 13)	/* Trim blocks */
 #define	VTBLK_F_WRITE_ZEROES	(1 << 14)	/* Write zeros */
 
@@ -138,7 +140,8 @@ struct vtblk_config {
 		uint32_t opt_io_size;
 	} vbc_topology;
 	uint8_t		vbc_writeback;
-	uint8_t		unused0[3];
+	uint8_t		unused0[1];
+	uint16_t	num_queues;
 	uint32_t	max_discard_sectors;
 	uint32_t	max_discard_seg;
 	uint32_t	discard_sector_alignment;
@@ -172,8 +175,8 @@ struct virtio_blk_hdr {
  * Debug printf
  */
 static int pci_vtblk_debug;
-#define	DPRINTF(params) if (pci_vtblk_debug) printf params
-#define	WPRINTF(params) printf params
+#define	DPRINTF(params) if (pci_vtblk_debug) PRINTLN params
+#define	WPRINTF(params) PRINTLN params
 
 struct pci_vtblk_ioreq {
 	struct blockif_req		io_req;
@@ -237,7 +240,7 @@ pci_vtblk_reset(void *vsc)
 {
 	struct pci_vtblk_softc *sc = vsc;
 
-	DPRINTF(("vtblk: device reset requested !\n"));
+	DPRINTF(("vtblk: device reset requested !"));
 	vi_reset_dev(&sc->vbsc_vs);
 #ifndef __FreeBSD__
 	/* Disable write cache until FLUSH feature is negotiated */
@@ -335,7 +338,7 @@ pci_vtblk_proc(struct pci_vtblk_softc *sc, struct vqueue_info *vq)
 	}
 	io->io_req.br_resid = iolen;
 
-	DPRINTF(("virtio-block: %s op, %zd bytes, %d segs, offset %ld\n\r",
+	DPRINTF(("virtio-block: %s op, %zd bytes, %d segs, offset %ld",
 		 writeop ? "write/discard" : "read/ident", iolen, i - 1,
 		 io->io_req.br_offset));
 
@@ -426,7 +429,7 @@ pci_vtblk_init(struct vmctx *ctx, struct pci_devinst *pi, char *opts)
 	int i, sectsz, sts, sto;
 
 	if (opts == NULL) {
-		printf("virtio-block: backing device required\n");
+		WPRINTF(("virtio-block: backing device required"));
 		return (1);
 	}
 
@@ -549,7 +552,7 @@ pci_vtblk_init(struct vmctx *ctx, struct pci_devinst *pi, char *opts)
 	sc->vbsc_cfg.vbc_writeback = 0;
 	sc->vbsc_cfg.max_discard_sectors = VTBLK_MAX_DISCARD_SECT;
 	sc->vbsc_cfg.max_discard_seg = VTBLK_MAX_DISCARD_SEG;
-	sc->vbsc_cfg.discard_sector_alignment = sectsz / VTBLK_BSIZE;
+	sc->vbsc_cfg.discard_sector_alignment = MAX(sectsz, sts) / VTBLK_BSIZE;
 
 	/*
 	 * Should we move some of this into virtio.c?  Could
@@ -575,7 +578,7 @@ static int
 pci_vtblk_cfgwrite(void *vsc, int offset, int size, uint32_t value)
 {
 
-	DPRINTF(("vtblk: write to readonly reg %d\n\r", offset));
+	DPRINTF(("vtblk: write to readonly reg %d", offset));
 	return (1);
 }
 

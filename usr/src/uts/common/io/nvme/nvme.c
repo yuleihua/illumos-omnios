@@ -13,8 +13,8 @@
  * Copyright 2018 Nexenta Systems, Inc.
  * Copyright 2016 Tegile Systems, Inc. All rights reserved.
  * Copyright (c) 2016 The MathWorks, Inc.  All rights reserved.
+ * Copyright 2020 Joyent, Inc.
  * Copyright 2019 Western Digital Corporation.
- * Copyright 2019 Joyent, Inc.
  * Copyright 2020 Racktop Systems.
  */
 
@@ -59,7 +59,7 @@
  * but they share some driver state: the command array (holding pointers to
  * commands currently being processed by the hardware) and the active command
  * counter. Access to a submission queue and the shared state is protected by
- * nq_mutex, completion queue is protected by ncq_mutex.
+ * nq_mutex; completion queue is protected by ncq_mutex.
  *
  * When a command is submitted to a queue pair the active command counter is
  * incremented and a pointer to the command is stored in the command array. The
@@ -202,6 +202,23 @@
  * device.
  *
  *
+ * NVMe Hotplug:
+ *
+ * The driver supports hot removal. The driver uses the NDI event framework
+ * to register a callback, nvme_remove_callback, to clean up when a disk is
+ * removed. In particular, the driver will unqueue outstanding I/O commands and
+ * set n_dead on the softstate to true so that other operations, such as ioctls
+ * and command submissions, fail as well.
+ *
+ * While the callback registration relies on the NDI event framework, the
+ * removal event itself is kicked off in the PCIe hotplug framework, when the
+ * PCIe bridge driver ("pcieb") gets a hotplug interrupt indicatating that a
+ * device was removed from the slot.
+ *
+ * The NVMe driver instance itself will remain until the final close of the
+ * device.
+ *
+ *
  * DDI UFM Support
  *
  * The driver supports the DDI UFM framework for reporting information about
@@ -272,6 +289,7 @@
 #include <sys/stat.h>
 #include <sys/policy.h>
 #include <sys/list.h>
+#include <sys/dkio.h>
 
 #include <sys/nvme.h>
 
@@ -289,6 +307,7 @@
 CTASSERT(sizeof (nvme_identify_ctrl_t) == 0x1000);
 CTASSERT(offsetof(nvme_identify_ctrl_t, id_oacs) == 256);
 CTASSERT(offsetof(nvme_identify_ctrl_t, id_sqes) == 512);
+CTASSERT(offsetof(nvme_identify_ctrl_t, id_oncs) == 520);
 CTASSERT(offsetof(nvme_identify_ctrl_t, id_subnqn) == 768);
 CTASSERT(offsetof(nvme_identify_ctrl_t, id_nvmof) == 1792);
 CTASSERT(offsetof(nvme_identify_ctrl_t, id_psd) == 2048);
@@ -296,6 +315,7 @@ CTASSERT(offsetof(nvme_identify_ctrl_t, id_vs) == 3072);
 
 CTASSERT(sizeof (nvme_identify_nsid_t) == 0x1000);
 CTASSERT(offsetof(nvme_identify_nsid_t, id_fpi) == 32);
+CTASSERT(offsetof(nvme_identify_nsid_t, id_anagrpid) == 92);
 CTASSERT(offsetof(nvme_identify_nsid_t, id_nguid) == 104);
 CTASSERT(offsetof(nvme_identify_nsid_t, id_lbaf) == 128);
 CTASSERT(offsetof(nvme_identify_nsid_t, id_vs) == 384);
@@ -390,6 +410,7 @@ static int nvme_bd_read(void *, bd_xfer_t *);
 static int nvme_bd_write(void *, bd_xfer_t *);
 static int nvme_bd_sync(void *, bd_xfer_t *);
 static int nvme_bd_devid(void *, dev_info_t *, ddi_devid_t *);
+static int nvme_bd_free_space(void *, bd_xfer_t *);
 
 static int nvme_prp_dma_constructor(void *, void *, int);
 static void nvme_prp_dma_destructor(void *, void *);
@@ -550,6 +571,7 @@ static bd_ops_t nvme_bd_ops = {
 	.o_sync_cache	= nvme_bd_sync,
 	.o_read		= nvme_bd_read,
 	.o_write	= nvme_bd_write,
+	.o_free_space	= nvme_bd_free_space,
 };
 
 /*
@@ -1061,6 +1083,10 @@ nvme_submit_admin_cmd(nvme_qpair_t *qp, nvme_cmd_t *cmd)
 static int
 nvme_submit_io_cmd(nvme_qpair_t *qp, nvme_cmd_t *cmd)
 {
+	if (cmd->nc_nvme->n_dead) {
+		return (EIO);
+	}
+
 	if (sema_tryp(&qp->nq_sema) == 0)
 		return (EAGAIN);
 
@@ -1075,6 +1101,22 @@ nvme_submit_cmd_common(nvme_qpair_t *qp, nvme_cmd_t *cmd)
 
 	mutex_enter(&qp->nq_mutex);
 	cmd->nc_completed = B_FALSE;
+
+	/*
+	 * Now that we hold the queue pair lock, we must check whether or not
+	 * the controller has been listed as dead (e.g. was removed due to
+	 * hotplug). This is necessary as otherwise we could race with
+	 * nvme_remove_callback(). Because this has not been enqueued, we don't
+	 * call nvme_unqueue_cmd(), which is why we must manually decrement the
+	 * semaphore.
+	 */
+	if (cmd->nc_nvme->n_dead) {
+		taskq_dispatch_ent(qp->nq_cq->ncq_cmd_taskq, cmd->nc_callback,
+		    cmd, TQ_NOSLEEP, &cmd->nc_tqent);
+		sema_v(&qp->nq_sema);
+		mutex_exit(&qp->nq_mutex);
+		return;
+	}
 
 	/*
 	 * Try to insert the cmd into the active cmd array at the nq_next_cmd
@@ -3262,6 +3304,47 @@ nvme_fm_errcb(dev_info_t *dip, ddi_fm_error_t *fm_error, const void *arg)
 	return (fm_error->fme_status);
 }
 
+static void
+nvme_remove_callback(dev_info_t *dip, ddi_eventcookie_t cookie, void *a,
+    void *b)
+{
+	nvme_t *nvme = a;
+
+	nvme->n_dead = B_TRUE;
+
+	/*
+	 * Fail all outstanding commands, including those in the admin queue
+	 * (queue 0).
+	 */
+	for (uint_t i = 0; i < nvme->n_ioq_count + 1; i++) {
+		nvme_qpair_t *qp = nvme->n_ioq[i];
+
+		mutex_enter(&qp->nq_mutex);
+		for (size_t j = 0; j < qp->nq_nentry; j++) {
+			nvme_cmd_t *cmd = qp->nq_cmd[j];
+			nvme_cmd_t *u_cmd;
+
+			if (cmd == NULL) {
+				continue;
+			}
+
+			/*
+			 * Since we have the queue lock held the entire time we
+			 * iterate over it, it's not possible for the queue to
+			 * change underneath us. Thus, we don't need to check
+			 * that the return value of nvme_unqueue_cmd matches the
+			 * requested cmd to unqueue.
+			 */
+			u_cmd = nvme_unqueue_cmd(nvme, qp, cmd->nc_sqe.sqe_cid);
+			taskq_dispatch_ent(qp->nq_cq->ncq_cmd_taskq,
+			    cmd->nc_callback, cmd, TQ_NOSLEEP, &cmd->nc_tqent);
+
+			ASSERT3P(u_cmd, ==, cmd);
+		}
+		mutex_exit(&qp->nq_mutex);
+	}
+}
+
 static int
 nvme_attach(dev_info_t *dip, ddi_attach_cmd_t cmd)
 {
@@ -3271,6 +3354,7 @@ nvme_attach(dev_info_t *dip, ddi_attach_cmd_t cmd)
 	off_t regsize;
 	int i;
 	char name[32];
+	bd_ops_t ops = nvme_bd_ops;
 
 	if (cmd != DDI_ATTACH)
 		return (DDI_FAILURE);
@@ -3283,6 +3367,17 @@ nvme_attach(dev_info_t *dip, ddi_attach_cmd_t cmd)
 	nvme = ddi_get_soft_state(nvme_state, instance);
 	ddi_set_driver_private(dip, nvme);
 	nvme->n_dip = dip;
+
+	/* Set up event handlers for hot removal. */
+	if (ddi_get_eventcookie(nvme->n_dip, DDI_DEVI_REMOVE_EVENT,
+	    &nvme->n_rm_cookie) != DDI_SUCCESS) {
+		goto fail;
+	}
+	if (ddi_add_event_handler(nvme->n_dip, nvme->n_rm_cookie,
+	    nvme_remove_callback, nvme, &nvme->n_ev_rm_cb_id) !=
+	    DDI_SUCCESS) {
+		goto fail;
+	}
 
 	mutex_init(&nvme->n_minor.nm_mutex, NULL, MUTEX_DRIVER, NULL);
 
@@ -3420,6 +3515,9 @@ nvme_attach(dev_info_t *dip, ddi_attach_cmd_t cmd)
 	if (nvme_init(nvme) != DDI_SUCCESS)
 		goto fail;
 
+	if (!nvme->n_idctl->id_oncs.on_dset_mgmt)
+		ops.o_free_space = NULL;
+
 	/*
 	 * Initialize the driver with the UFM subsystem
 	 */
@@ -3448,7 +3546,7 @@ nvme_attach(dev_info_t *dip, ddi_attach_cmd_t cmd)
 			continue;
 
 		nvme->n_ns[i].ns_bd_hdl = bd_alloc_handle(&nvme->n_ns[i],
-		    &nvme_bd_ops, &nvme->n_prp_dma_attr, KM_SLEEP);
+		    &ops, &nvme->n_prp_dma_attr, KM_SLEEP);
 
 		if (nvme->n_ns[i].ns_bd_hdl == NULL) {
 			dev_err(dip, CE_WARN,
@@ -3594,6 +3692,12 @@ nvme_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
 	if (nvme->n_product != NULL)
 		strfree(nvme->n_product);
 
+	/* Clean up hot removal event handler. */
+	if (nvme->n_ev_rm_cb_id != NULL) {
+		(void) ddi_remove_event_handler(nvme->n_ev_rm_cb_id);
+	}
+	nvme->n_ev_rm_cb_id = NULL;
+
 	ddi_soft_state_free(nvme_state, instance);
 
 	return (DDI_SUCCESS);
@@ -3671,17 +3775,82 @@ nvme_fill_prp(nvme_cmd_t *cmd, bd_xfer_t *xfer)
 	return (DDI_SUCCESS);
 }
 
+/*
+ * The maximum number of requests supported for a deallocate request is
+ * NVME_DSET_MGMT_MAX_RANGES (256) -- this is from the NVMe 1.1 spec (and
+ * unchanged through at least 1.4a). The definition of nvme_range_t is also
+ * from the NVMe 1.1 spec. Together, the result is that all of the ranges for
+ * a deallocate request will fit into the smallest supported namespace page
+ * (4k).
+ */
+CTASSERT(sizeof (nvme_range_t) * NVME_DSET_MGMT_MAX_RANGES == 4096);
+
+static int
+nvme_fill_ranges(nvme_cmd_t *cmd, bd_xfer_t *xfer, uint64_t blocksize,
+    int allocflag)
+{
+	const dkioc_free_list_t *dfl = xfer->x_dfl;
+	const dkioc_free_list_ext_t *exts = dfl->dfl_exts;
+	nvme_t *nvme = cmd->nc_nvme;
+	nvme_range_t *ranges = NULL;
+	uint_t i;
+
+	/*
+	 * The number of ranges in the request is 0s based (that is
+	 * word10 == 0 -> 1 range, word10 == 1 -> 2 ranges, ...,
+	 * word10 == 255 -> 256 ranges). Therefore the allowed values are
+	 * [1..NVME_DSET_MGMT_MAX_RANGES]. If blkdev gives us a bad request,
+	 * we either provided bad info in nvme_bd_driveinfo() or there is a bug
+	 * in blkdev.
+	 */
+	VERIFY3U(dfl->dfl_num_exts, >, 0);
+	VERIFY3U(dfl->dfl_num_exts, <=, NVME_DSET_MGMT_MAX_RANGES);
+	cmd->nc_sqe.sqe_cdw10 = (dfl->dfl_num_exts - 1) & 0xff;
+
+	cmd->nc_sqe.sqe_cdw11 = NVME_DSET_MGMT_ATTR_DEALLOCATE;
+
+	cmd->nc_dma = kmem_cache_alloc(nvme->n_prp_cache, allocflag);
+	if (cmd->nc_dma == NULL)
+		return (DDI_FAILURE);
+
+	bzero(cmd->nc_dma->nd_memp, cmd->nc_dma->nd_len);
+	ranges = (nvme_range_t *)cmd->nc_dma->nd_memp;
+
+	cmd->nc_sqe.sqe_dptr.d_prp[0] = cmd->nc_dma->nd_cookie.dmac_laddress;
+	cmd->nc_sqe.sqe_dptr.d_prp[1] = 0;
+
+	for (i = 0; i < dfl->dfl_num_exts; i++) {
+		uint64_t lba, len;
+
+		lba = (dfl->dfl_offset + exts[i].dfle_start) / blocksize;
+		len = exts[i].dfle_length / blocksize;
+
+		VERIFY3U(len, <=, UINT32_MAX);
+
+		/* No context attributes for a deallocate request */
+		ranges[i].nr_ctxattr = 0;
+		ranges[i].nr_len = len;
+		ranges[i].nr_lba = lba;
+	}
+
+	(void) ddi_dma_sync(cmd->nc_dma->nd_dmah, 0, cmd->nc_dma->nd_len,
+	    DDI_DMA_SYNC_FORDEV);
+
+	return (DDI_SUCCESS);
+}
+
 static nvme_cmd_t *
 nvme_create_nvm_cmd(nvme_namespace_t *ns, uint8_t opc, bd_xfer_t *xfer)
 {
 	nvme_t *nvme = ns->ns_nvme;
 	nvme_cmd_t *cmd;
+	int allocflag;
 
 	/*
 	 * Blkdev only sets BD_XFER_POLL when dumping, so don't sleep.
 	 */
-	cmd = nvme_alloc_cmd(nvme, (xfer->x_flags & BD_XFER_POLL) ?
-	    KM_NOSLEEP : KM_SLEEP);
+	allocflag = (xfer->x_flags & BD_XFER_POLL) ? KM_NOSLEEP : KM_SLEEP;
+	cmd = nvme_alloc_cmd(nvme, allocflag);
 
 	if (cmd == NULL)
 		return (NULL);
@@ -3707,6 +3876,14 @@ nvme_create_nvm_cmd(nvme_namespace_t *ns, uint8_t opc, bd_xfer_t *xfer)
 
 	case NVME_OPC_NVM_FLUSH:
 		cmd->nc_sqe.sqe_nsid = ns->ns_id;
+		break;
+
+	case NVME_OPC_NVM_DSET_MGMT:
+		cmd->nc_sqe.sqe_nsid = ns->ns_id;
+
+		if (nvme_fill_ranges(cmd, xfer,
+		    (uint64_t)ns->ns_block_size, allocflag) != DDI_SUCCESS)
+			goto fail;
 		break;
 
 	default:
@@ -3795,12 +3972,25 @@ nvme_bd_driveinfo(void *arg, bd_drive_t *drive)
 	drive->d_serial_len = sizeof (nvme->n_idctl->id_serial);
 	drive->d_revision = nvme->n_idctl->id_fwrev;
 	drive->d_revision_len = sizeof (nvme->n_idctl->id_fwrev);
+
+	/*
+	 * If we support the dataset management command, the only restrictions
+	 * on a discard request are the maximum number of ranges (segments)
+	 * per single request.
+	 */
+	if (nvme->n_idctl->id_oncs.on_dset_mgmt)
+		drive->d_max_free_seg = NVME_DSET_MGMT_MAX_RANGES;
 }
 
 static int
 nvme_bd_mediainfo(void *arg, bd_media_t *media)
 {
 	nvme_namespace_t *ns = arg;
+	nvme_t *nvme = ns->ns_nvme;
+
+	if (nvme->n_dead) {
+		return (EIO);
+	}
 
 	media->m_nblks = ns->ns_block_count;
 	media->m_blksize = ns->ns_block_size;
@@ -3821,8 +4011,9 @@ nvme_bd_cmd(nvme_namespace_t *ns, bd_xfer_t *xfer, uint8_t opc)
 	boolean_t poll;
 	int ret;
 
-	if (nvme->n_dead)
+	if (nvme->n_dead) {
 		return (EIO);
+	}
 
 	cmd = nvme_create_nvm_cmd(ns, opc, xfer);
 	if (cmd == NULL)
@@ -3903,6 +4094,11 @@ static int
 nvme_bd_devid(void *arg, dev_info_t *devinfo, ddi_devid_t *devid)
 {
 	nvme_namespace_t *ns = arg;
+	nvme_t *nvme = ns->ns_nvme;
+
+	if (nvme->n_dead) {
+		return (EIO);
+	}
 
 	/*LINTED: E_BAD_PTR_CAST_ALIGN*/
 	if (*(uint64_t *)ns->ns_eui64 != 0) {
@@ -3912,6 +4108,20 @@ nvme_bd_devid(void *arg, dev_info_t *devinfo, ddi_devid_t *devid)
 		return (ddi_devid_init(devinfo, DEVID_ENCAP,
 		    strlen(ns->ns_devid), ns->ns_devid, devid));
 	}
+}
+
+static int
+nvme_bd_free_space(void *arg, bd_xfer_t *xfer)
+{
+	nvme_namespace_t *ns = arg;
+
+	if (xfer->x_dfl == NULL)
+		return (EINVAL);
+
+	if (!ns->ns_nvme->n_idctl->id_oncs.on_dset_mgmt)
+		return (ENOTSUP);
+
+	return (nvme_bd_cmd(ns, xfer, NVME_OPC_NVM_DSET_MGMT));
 }
 
 static int
@@ -4249,7 +4459,6 @@ nvme_ioctl_get_features(nvme_t *nvme, int nsid, nvme_ioctl_t *nioc,
 	switch (feature) {
 	case NVME_FEAT_ARBITRATION:
 	case NVME_FEAT_POWER_MGMT:
-	case NVME_FEAT_TEMPERATURE:
 	case NVME_FEAT_ERROR:
 	case NVME_FEAT_NQUEUES:
 	case NVME_FEAT_INTR_COAL:
@@ -4258,6 +4467,27 @@ nvme_ioctl_get_features(nvme_t *nvme, int nsid, nvme_ioctl_t *nioc,
 	case NVME_FEAT_PROGRESS:
 		if (nsid != 0)
 			return (EINVAL);
+		break;
+
+	case NVME_FEAT_TEMPERATURE:
+		if (nsid != 0)
+			return (EINVAL);
+		res = nioc->n_arg & 0xffffffffUL;
+		if (NVME_VERSION_ATLEAST(&nvme->n_version, 1, 2)) {
+			nvme_temp_threshold_t tt;
+
+			tt.r = res;
+			if (tt.b.tt_thsel != NVME_TEMP_THRESH_OVER &&
+			    tt.b.tt_thsel != NVME_TEMP_THRESH_UNDER) {
+				return (EINVAL);
+			}
+
+			if (tt.b.tt_tmpsel > NVME_TEMP_THRESH_MAX_SENSOR) {
+				return (EINVAL);
+			}
+		} else if (res != 0) {
+			return (EINVAL);
+		}
 		break;
 
 	case NVME_FEAT_INTR_VECT:

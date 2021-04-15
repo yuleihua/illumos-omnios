@@ -337,7 +337,7 @@ destroy_zone_dataset()
 			continue
 
 		# skip desendents of the origin we plan to destroy
-		[[ "$name" == ~()(${fs}/*) ]] &&
+		[[ "$name" == ~()${fs}/* ]] &&
 			continue
 
 		# record this clone and it's origin
@@ -359,7 +359,7 @@ destroy_zone_dataset()
 	(( j = 0 ))
 	while (( $j < $clones_c )); do
 		# is the clone origin a descendant of $fs?
-		if [[ "${clones_origin[$j]}" != ~()(${fs}/*) ]]; then
+		if [[ "${clones_origin[$j]}" != ~()${fs}/* ]]; then
 			# we don't care.
 			(( j = $j + 1 ))
 			continue

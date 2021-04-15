@@ -57,8 +57,10 @@
 #define	HN_RXBUF_SIZE			(16 * 1024 * 1024)
 #define	HN_RXBUF_SIZE_COMPAT		(15 * 1024 * 1024)
 
-/* Claimed to be 12232B */
-#define	HN_MTU_MAX			(9 * 1024)
+#ifndef ETHER_ADDR_LEN
+#define	ETHER_ADDR_LEN			6
+#endif
+#define	HN_MTU_MAX			(65535 - ETHER_ADDR_LEN)
 #define	HN_MTU_MIN			60
 
 #define	HN_TXBR_SIZE			(128 * PAGESIZE)

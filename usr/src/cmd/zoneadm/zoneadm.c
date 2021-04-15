@@ -3950,9 +3950,9 @@ cleanup_zonepath(char *zonepath, boolean_t all)
 			 * migration.
 			 */
 	char		*std_entries[] = {"dev", "lastexited", "logs", "lu",
-			    "root", "SUNWattached.xml", NULL};
-			/* (MAXPATHLEN * 5) is for the 5 std_entries dirs */
-	char		cmdbuf[sizeof (RMCOMMAND) + (MAXPATHLEN * 5) + 64];
+			    "root", "etc", "SUNWattached.xml", NULL};
+			/* (MAXPATHLEN * 6) is for the 6 std_entries dirs */
+	char		cmdbuf[sizeof (RMCOMMAND) + (MAXPATHLEN * 6) + 64];
 
 	/*
 	 * We shouldn't need these checks but lets be paranoid since we

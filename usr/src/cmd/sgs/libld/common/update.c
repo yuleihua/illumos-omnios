@@ -58,7 +58,7 @@ sym_hash_compare(Sym_s_list * s1, Sym_s_list * s2)
  * we need to examine the symbols the indices reference. It is safe, because
  * the linker is single threaded.
  */
-Sym *dynsort_compare_syms;
+static Sym *dynsort_compare_syms;
 
 static int
 dynsort_compare(const void *idx1, const void *idx2)
@@ -702,9 +702,11 @@ update_osym(Ofl_desc *ofl)
 			enter_in_symtab = symtab &&
 			    (!(ofl->ofl_flags & FLG_OF_REDLSYM) ||
 			    sdp->sd_move);
-			enter_in_ldynsym = ldynsym && sdp->sd_name &&
+			enter_in_ldynsym = ldynsym &&
+			    ((sym->st_name != 0) || (type == STT_FILE)) &&
 			    ldynsym_symtype[type] &&
 			    !(ofl->ofl_flags & FLG_OF_REDLSYM);
+
 			_symshndx = NULL;
 
 			if (enter_in_symtab) {

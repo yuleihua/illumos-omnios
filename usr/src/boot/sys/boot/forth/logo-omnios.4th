@@ -2,7 +2,7 @@
 \ Copyright (c) 2003 Aleksander Fafula <alex@fafula.com>
 \ Copyright (c) 2006-2015 Devin Teske <dteske@FreeBSD.org>
 \ Copyright 2017 Dominik Hassler <hadfl@cpan.org>
-\ Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+\ Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 \ All rights reserved.
 \
 \ Redistribution and use in source and binary forms, with or without
@@ -26,11 +26,11 @@
 \ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 \ SUCH DAMAGE.
 
-variable PNGLogo
-0 PNGLogo !
-
 51 logoX !
 2 logoY !
+
+variable pngdebug
+0 pngdebug !
 
 : logo+ ( x y c-addr/u -- x y' )
 	2swap 2dup at-xy 2swap	\ position the cursor
@@ -39,17 +39,14 @@ variable PNGLogo
 	1+			\ increase y for next time we're called
 ;
 
-: menupos ( y -- )	\ Adjust menu position
-	dup 14 +	\ timeout is 14 lines below menu start
-	n2s s" loader_menu_timeout_y" setenv
-	n2s s" loader_menu_y" setenv
+: illumos_logo ( -- )
+	pngdebug @
+	0 0 0 0		\ bottom right, no scaling
+	s" /boot/illumos-small.png"
+	fb-putimage drop
 ;
 
-: ooce        0  30  20   0   0	s" /boot/ooce.png" fb-putimage ;
-: dragon      0 530  30   0   0	s" /boot/dragon.png" fb-putimage ;
-: illumos_png 0   0   0   0   0	s" /boot/illumos-small.png" fb-putimage ;
-
-: asciidragon ( x y -- x y' )
+: asciifenix ( x y -- x y' )
 	s"     @[30;1m.:   ..                 " logo+
 	s"    .o,  .o.                 "        logo+
 	s"    :d.  ld.   .'            "        logo+
@@ -75,26 +72,33 @@ variable PNGLogo
 	s"             :ddddddl..cddo'@[m "     logo+
 ;
 
+: graphfenix ( x y -- x y )
+	s" term-putimage" sfind if
+		>r
+		2dup pngdebug @ -rot	( x y -- x y d x y )
+		0 26			\ end on row 26, keep aspect ratio
+	else
+		['] fb-putimage >r
+		pngdebug @
+		530 30 0 0
+	then
+	s" /boot/fenix.png"
+	r> execute
+	\ Fall-back to the ASCII version
+	invert if asciifenix then
+;
+
 : logo ( x y -- )
 	framebuffer? if
 		s" loader_font" set_font
-		clear
-		at-bl
-		ooce if
-			dragon drop
-			illumos_png drop
-			1 PNGLogo !
-			13 menupos
-			2drop
-			exit
-		then
+		clear at-bl
+		50 1 graphfenix 2drop
+		illumos_logo
+	else
+		asciifenix
 	then
 
-	0 PNGLogo !
-	11 menupos
-	asciidragon
 	at-bl
-
 	2drop
 ;
 

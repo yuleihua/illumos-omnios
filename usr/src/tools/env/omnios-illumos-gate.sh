@@ -5,22 +5,22 @@
 # Enable the non-DEBUG build
 NIGHTLY_OPTIONS=${NIGHTLY_OPTIONS/F/}
 
-export PERL_VERSION=5.30
+export PERL_VERSION=5.32
 export PERL_PKGVERS=
 export PERL_VARIANT=-thread-multi
 export BUILDPERL32='#'
 
-export JAVA_ROOT=/usr/jdk/openjdk1.8.0
+export JAVA_ROOT=/usr/jdk/openjdk11.0
 export JAVA_HOME=$JAVA_ROOT
-export BLD_JAVA_7='#'
-export BLD_JAVA_8=
+export BLD_JAVA_11=
 
 export BUILDPY2=
 export BUILDPY3=
 export BUILDPY2TOOLS=
 export BUILDPY3TOOLS=
-export PYTHON3_VERSION=3.7
-export PYTHON3_PKGVERS=-37
+export PYTHON3_VERSION=3.9
+export PYTHON3_PKGVERS=-39
+export PYTHON3_SUFFIX=
 export TOOLS_PYTHON=/usr/bin/python$PYTHON3_VERSION
 
 export ON_CLOSED_BINS=/opt/onbld/closed

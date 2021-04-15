@@ -11,10 +11,10 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *	- Redistributions of source code must retain the above copyright
+ * 	- Redistributions of source code must retain the above copyright
  *	  notice, this list of conditions and the following disclaimer.
  *
- *	- Redistributions in binary form must reproduce the above copyright
+ * 	- Redistributions in binary form must reproduce the above copyright
  *	  notice, this list of conditions and the following disclaimer in
  *	  the documentation and/or other materials provided with the
  *	  distribution.
@@ -38,6 +38,7 @@
  */
 /* Copyright (c) 2007, The Storage Networking Industry Association. */
 /* Copyright (c) 1996, 1997 PDC, Network Appliance. All Rights Reserved */
+/* Copyright 2017 Nexenta Systems, Inc. All rights reserved. */
 
 #include <sys/types.h>
 #include <sys/param.h>
@@ -45,6 +46,7 @@
 #include <sys/fs/zfs.h>
 #include <sys/mtio.h>
 #include <sys/time.h>
+#include <syslog.h>
 #include <unistd.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -74,12 +76,12 @@ static void ndmpd_zfs_close_one_fd(ndmpd_zfs_args_t *, int);
 static int ndmpd_zfs_header_write(ndmpd_session_t *);
 static int ndmpd_zfs_header_read(ndmpd_zfs_args_t *);
 
-static void *ndmpd_zfs_backup_send_read(void *);
-static void *ndmpd_zfs_backup_tape_write(void *);
+static int ndmpd_zfs_backup_send_read(ndmpd_zfs_args_t *);
+static int ndmpd_zfs_backup_tape_write(ndmpd_zfs_args_t *);
 
 static int ndmpd_zfs_restore(ndmpd_zfs_args_t *);
-static void *ndmpd_zfs_restore_tape_read(void *);
-static void *ndmpd_zfs_restore_recv_write(void *);
+static int ndmpd_zfs_restore_tape_read(ndmpd_zfs_args_t *);
+static int ndmpd_zfs_restore_recv_write(ndmpd_zfs_args_t *);
 
 static int ndmpd_zfs_reader_writer(ndmpd_zfs_args_t *, int **, int **);
 
@@ -143,8 +145,8 @@ static int ndmpd_zfs_backup(ndmpd_zfs_args_t *);
  *
  * Examples:
  *
- *	0.0.n/0.bob.p
- *	0.0.u/1.bob.p/0.jane.d
+ * 	0.0.n/0.bob.p
+ * 	0.0.u/1.bob.p/0.jane.d
  *
  * Note: NDMPD_ZFS_SUBPROP_MAX is calculated based on ZFS_MAXPROPLEN
  */
@@ -162,10 +164,10 @@ static int ndmpd_zfs_backup(ndmpd_zfs_args_t *);
  */
 
 #define	NDMPD_ZFS_LOG_ZERR(ndmpd_zfs_args, ...) {			\
-	NDMP_LOG(LOG_ERR, __VA_ARGS__);					\
-	NDMP_LOG(LOG_ERR, "%s--%s",					\
-	    libzfs_error_action((ndmpd_zfs_args)->nz_zlibh),		\
-	    libzfs_error_description((ndmpd_zfs_args)->nz_zlibh));	\
+	syslog(LOG_ERR, __VA_ARGS__);					\
+	syslog(LOG_ERR, "%s--%s",					\
+	    libzfs_error_action((ndmpd_zfs_args)->nz_zlibh),           	\
+	    libzfs_error_description((ndmpd_zfs_args)->nz_zlibh));     	\
 	ndmpd_zfs_zerr_dma_log((ndmpd_zfs_args));			\
 }
 
@@ -178,17 +180,17 @@ ndmpd_zfs_init(ndmpd_session_t *session)
 	bzero(ndmpd_zfs_args, sizeof (*ndmpd_zfs_args));
 
 	if ((version < NDMPV3) || (version > NDMPV4)) {
-		NDMP_LOG(LOG_ERR, "Unknown or unsupported version %d", version);
+		syslog(LOG_ERR, "Unknown or unsupported version %d", version);
 		return (-1);
 	}
 
 	if ((ndmpd_zfs_args->nz_zlibh = libzfs_init()) == NULL) {
-		NDMP_LOG(LOG_ERR, "libzfs init error [%d]", errno);
+		syslog(LOG_ERR, "libzfs init error [%d]", errno);
 		return (-1);
 	}
 
 	if (ndmpd_zfs_open_fds(ndmpd_zfs_args) < 0) {
-		NDMP_LOG(LOG_ERR, "open_fds() failure(): %d\n", errno);
+		syslog(LOG_ERR, "open_fds() failure(): %d\n", errno);
 		return (-1);
 	}
 
@@ -267,7 +269,7 @@ ndmpd_zfs_open_fds(ndmpd_zfs_args_t *ndmpd_zfs_args)
 
 	err = pipe(ndmpd_zfs_args->nz_pipe_fd);
 	if (err)
-		NDMP_LOG(LOG_ERR, "pipe(2) failed: %s:\n", strerror(errno));
+		syslog(LOG_ERR, "pipe(2) failed: %s:\n", strerror(errno));
 
 	return (err);
 }
@@ -307,7 +309,7 @@ ndmpd_zfs_close_fds(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	if (ndmpd_zfs_args->nz_pipe_fd[pipe_end] != -1) {
 		if (pipe(fds) != 0) {
 			(void) mutex_unlock(&ndmpd_zfs_fd_lock);
-			NDMP_LOG(LOG_ERR, "pipe(2) failed: %s:\n",
+			syslog(LOG_ERR, "pipe(2) failed: %s:\n",
 			    strerror(errno));
 			return;
 		}
@@ -341,7 +343,8 @@ ndmpd_zfs_header_write(ndmpd_session_t *session)
 
 	buf = ndmp_malloc(bufsize);
 	if (buf == NULL) {
-		NDMP_LOG(LOG_DEBUG, "buf NULL");
+		syslog(LOG_ERR,
+		    "buf NULL in ndmpd_zfs_header_write errno (%m)");
 		return (-1);
 	}
 
@@ -354,14 +357,14 @@ ndmpd_zfs_header_write(ndmpd_session_t *session)
 	bzero(buf, bufsize);
 	(void) memcpy(buf, tape_header, sizeof (ndmpd_zfs_header_t));
 
-	NDMP_LOG(LOG_DEBUG, "header (major, minor, length): %u %u %u",
+	syslog(LOG_DEBUG, "header (major, minor, length): %u %u %u",
 	    NDMPD_ZFS_MAJOR_VERSION,
 	    NDMPD_ZFS_MINOR_VERSION,
 	    bufsize);
 
 	if (MOD_WRITE(ndmpd_zfs_params, buf, bufsize) != 0) {
 		free(buf);
-		NDMP_LOG(LOG_ERR, "MOD_WRITE error");
+		syslog(LOG_ERR, "MOD_WRITE error");
 		return (-1);
 	}
 
@@ -384,7 +387,7 @@ ndmpd_zfs_header_read(ndmpd_zfs_args_t *ndmpd_zfs_args)
 
 	buf = ndmp_malloc(bufsize);
 	if (buf == NULL) {
-		NDMP_LOG(LOG_DEBUG, "buf NULL");
+		syslog(LOG_ERR, "buf NULL in ndmpd_zfs_header_read errno (%m)");
 		return (-1);
 	}
 
@@ -397,7 +400,7 @@ ndmpd_zfs_header_read(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	err = MOD_READ(ndmpd_zfs_params, buf, bufsize);
 
 	if (err != 0) {
-		NDMP_LOG(LOG_ERR, "MOD_READ error: %d", err);
+		syslog(LOG_ERR, "MOD_READ error: %d", err);
 		free(buf);
 		return (-1);
 	}
@@ -436,7 +439,7 @@ ndmpd_zfs_header_read(ndmpd_zfs_args_t *ndmpd_zfs_args)
 		}
 	}
 
-	NDMP_LOG(LOG_DEBUG, "tape header: %s; %u %u; %u ",
+	syslog(LOG_DEBUG, "tape header: %s; %u %u; %u ",
 	    tape_header->nzh_magic,
 	    LE_32(tape_header->nzh_major),
 	    LE_32(tape_header->nzh_minor),
@@ -449,7 +452,7 @@ ndmpd_zfs_header_read(ndmpd_zfs_args_t *ndmpd_zfs_args)
 
 _err:
 
-	NDMP_LOG(LOG_ERR, "tape header: %s; %u %u; %u ",
+	syslog(LOG_ERR, "tape header: %s; %u %u; %u ",
 	    tape_header->nzh_magic,
 	    LE_32(tape_header->nzh_major),
 	    LE_32(tape_header->nzh_minor),
@@ -472,6 +475,7 @@ ndmpd_zfs_backup_starter(void *arg)
 
 	if (ndmpd_zfs_snapshot_prepare(ndmpd_zfs_args) != 0) {
 		err = -1;
+		syslog(LOG_ERR, "Failed to prepare snapshot");
 		goto _done;
 	}
 
@@ -479,7 +483,7 @@ ndmpd_zfs_backup_starter(void *arg)
 
 	cleanup_err = ndmpd_zfs_snapshot_cleanup(ndmpd_zfs_args, err);
 
-	NDMP_LOG(LOG_DEBUG,
+	syslog(LOG_DEBUG,
 	    "data bytes_total(including header):%llu",
 	    session->ns_data.dd_module.dm_stats.ms_bytes_processed);
 
@@ -567,7 +571,7 @@ ndmpd_zfs_backup(ndmpd_zfs_args_t *ndmpd_zfs_args)
 		    ndmpd_zfs_args->nz_dataset,
 		    session->ns_data.dd_data_addr.addr_type,
 		    ndmpd_zfs_args->nz_dataset, EINTR);
-		NDMP_LOG(LOG_DEBUG, "Backing up \"%s\" aborted.",
+		syslog(LOG_INFO, "Backing up \"%s\" aborted.",
 		    ndmpd_zfs_args->nz_dataset);
 
 		(void) ndmpd_zfs_post_backup(ndmpd_zfs_args);
@@ -583,10 +587,10 @@ ndmpd_zfs_backup(ndmpd_zfs_args_t *ndmpd_zfs_args)
 			err = -1;
 
 		if (err == 0)  {
-			NDMP_LOG(LOG_DEBUG, "Backing up \"%s\" finished.",
+			syslog(LOG_DEBUG, "Backing up \"%s\" finished.",
 			    ndmpd_zfs_args->nz_dataset);
 		} else {
-			NDMP_LOG(LOG_DEBUG, "An error occurred while backing up"
+			syslog(LOG_ERR, "An error occurred while backing up"
 			    " \"%s\"", ndmpd_zfs_args->nz_dataset);
 		}
 	}
@@ -599,18 +603,17 @@ ndmpd_zfs_backup(ndmpd_zfs_args_t *ndmpd_zfs_args)
  *
  * This routine executes zfs_send() to create the backup data stream.
  * The value of ZFS_MODE determines the type of zfs_send():
- *	dataset ('d'): Only the dataset specified (i.e., top level) is backed up
- *	recursive ('r'): The dataset and its child file systems are backed up
- *	package ('p'): Same as 'r', except all intermediate snapshots are also
+ * 	dataset ('d'): Only the dataset specified (i.e., top level) is backed up
+ * 	recursive ('r'): The dataset and its child file systems are backed up
+ * 	package ('p'): Same as 'r', except all intermediate snapshots are also
  *			backed up
  *
  * Volumes do not have descednants, so 'd' and 'r' produce equivalent results.
  */
 
-static void *
-ndmpd_zfs_backup_send_read(void *ptr)
+static int
+ndmpd_zfs_backup_send_read(ndmpd_zfs_args_t *ndmpd_zfs_args)
 {
-	ndmpd_zfs_args_t *ndmpd_zfs_args = ptr;
 	ndmpd_session_t *session = (ndmpd_session_t *)
 	    (ndmpd_zfs_params->mp_daemon_cookie);
 	sendflags_t flags = { 0 };
@@ -624,7 +627,7 @@ ndmpd_zfs_backup_send_read(void *ptr)
 	if (!zhp) {
 		if (!session->ns_data.dd_abort)
 			NDMPD_ZFS_LOG_ZERR(ndmpd_zfs_args, "zfs_open");
-		return ((void *)(uintptr_t)-1);
+		return (-1);
 	}
 
 	switch (ndmpd_zfs_args->nz_zfs_mode) {
@@ -639,17 +642,17 @@ ndmpd_zfs_backup_send_read(void *ptr)
 		flags.replicate = B_TRUE;
 		break;
 	default:
-		NDMP_LOG(LOG_ERR, "unknown zfs_mode: %c",
+		syslog(LOG_ERR, "unknown zfs_mode: %c",
 		    ndmpd_zfs_args->nz_zfs_mode);
 		zfs_close(zhp);
-		return ((void *)(uintptr_t)-1);
+		return (-1);
 	}
 
 	if (ndmpd_zfs_is_incremental(ndmpd_zfs_args)) {
 		if (ndmpd_zfs_args->nz_fromsnap[0] == '\0') {
-			NDMP_LOG(LOG_ERR, "no fromsnap");
+			syslog(LOG_ERR, "no fromsnap");
 			zfs_close(zhp);
-			return ((void *)(uintptr_t)-1);
+			return (-1);
 		}
 		fromsnap = ndmpd_zfs_args->nz_fromsnap;
 	}
@@ -662,7 +665,7 @@ ndmpd_zfs_backup_send_read(void *ptr)
 
 	zfs_close(zhp);
 
-	return ((void *)(uintptr_t)err);
+	return (err);
 }
 
 /*
@@ -673,10 +676,9 @@ ndmpd_zfs_backup_send_read(void *ptr)
  * ndmpd_zfs_args->nz_bufsize).
  */
 
-static void *
-ndmpd_zfs_backup_tape_write(void *ptr)
+static int
+ndmpd_zfs_backup_tape_write(ndmpd_zfs_args_t *ndmpd_zfs_args)
 {
-	ndmpd_zfs_args_t *ndmpd_zfs_args = ptr;
 	ndmpd_session_t *session = (ndmpd_session_t *)
 	    (ndmpd_zfs_params->mp_daemon_cookie);
 	int bufsize = ndmpd_zfs_args->nz_bufsize;
@@ -686,8 +688,9 @@ ndmpd_zfs_backup_tape_write(void *ptr)
 
 	buf = ndmp_malloc(bufsize);
 	if (buf == NULL) {
-		NDMP_LOG(LOG_DEBUG, "buf NULL");
-		return ((void *)(uintptr_t)-1);
+		syslog(LOG_ERR,
+		    "buf NULL in ndmpd_zfs_backup_tape_write errno (%m)");
+		return (-1);
 	}
 
 	bytes_totalp =
@@ -700,30 +703,29 @@ ndmpd_zfs_backup_tape_write(void *ptr)
 		    bufsize);
 
 		if (count == 0) /* EOF */ {
-			NDMP_LOG(LOG_DEBUG,
+			syslog(LOG_DEBUG,
 			    "zfs_send stream size: %llu bytes; "
 			    "full backup size (including header): %llu",
 			    *bytes_totalp - bufsize, *bytes_totalp);
 			free(buf);
 
-			return ((void *)(uintptr_t)
-			    ndmpd_zfs_addenv_backup_size(ndmpd_zfs_args,
+			return (ndmpd_zfs_addenv_backup_size(ndmpd_zfs_args,
 			    *bytes_totalp));
 		}
 
 		if (count == -1) {
-			NDMP_LOG(LOG_DEBUG, "pipe read error (errno %d)",
+			syslog(LOG_ERR, "pipe read error (errno %d)",
 			    errno);
 			free(buf);
-			return ((void *)(uintptr_t)-1);
+			return (-1);
 		}
 		NS_ADD(rdisk, count);
 
 		if (MOD_WRITE(ndmpd_zfs_params, buf, count) != 0) {
 			(void) ndmpd_zfs_abort((void *) ndmpd_zfs_args);
-			NDMP_LOG(LOG_ERR, "MOD_WRITE error");
+			syslog(LOG_ERR, "MOD_WRITE error");
 			free(buf);
-			return ((void *)(uintptr_t)-1);
+			return (-1);
 		}
 
 		*bytes_totalp += count;
@@ -744,11 +746,11 @@ ndmpd_zfs_addenv_backup_size(ndmpd_zfs_args_t *ndmpd_zfs_args,
 	err = MOD_ADDENV(ndmpd_zfs_params, "ZFS_BACKUP_SIZE", zfs_backup_size);
 
 	if (err) {
-		NDMP_LOG(LOG_ERR, "Failed to add ZFS_BACKUP_SIZE env");
+		syslog(LOG_ERR, "Failed to add ZFS_BACKUP_SIZE env");
 		return (-1);
 	}
 
-	NDMP_LOG(LOG_DEBUG, "Added ZFS_BACKUP_SIZE env: %s", zfs_backup_size);
+	syslog(LOG_DEBUG, "Added ZFS_BACKUP_SIZE env: %s", zfs_backup_size);
 
 	return (0);
 }
@@ -801,7 +803,7 @@ ndmpd_zfs_restore(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	}
 
 	if (session->ns_data.dd_abort) {
-		NDMP_LOG(LOG_DEBUG, "Restoring to \"%s\" aborted.",
+		syslog(LOG_INFO, "Restoring to \"%s\" aborted.",
 		    ndmpd_zfs_args->nz_dataset);
 		ndmpd_audit_restore(session->ns_connection,
 		    ndmpd_zfs_args->nz_dataset,
@@ -819,10 +821,10 @@ ndmpd_zfs_restore(ndmpd_zfs_args_t *ndmpd_zfs_args)
 			err = -1;
 
 		if (err == 0) {
-			NDMP_LOG(LOG_DEBUG, "Restoring to \"%s\" finished",
+			syslog(LOG_DEBUG, "Restoring to \"%s\" finished",
 			    ndmpd_zfs_args->nz_dataset);
 		} else {
-			NDMP_LOG(LOG_DEBUG, "An error occurred while restoring"
+			syslog(LOG_ERR, "An error occurred while restoring"
 			    " to \"%s\"", ndmpd_zfs_args->nz_dataset);
 		}
 	}
@@ -830,10 +832,9 @@ ndmpd_zfs_restore(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	return (err);
 }
 
-static void *
-ndmpd_zfs_restore_tape_read(void *ptr)
+static int
+ndmpd_zfs_restore_tape_read(ndmpd_zfs_args_t *ndmpd_zfs_args)
 {
-	ndmpd_zfs_args_t *ndmpd_zfs_args = ptr;
 	ndmpd_session_t *session = (ndmpd_session_t *)
 	    (ndmpd_zfs_params->mp_daemon_cookie);
 	int bufsize = ndmpd_zfs_args->nz_bufsize;
@@ -846,8 +847,9 @@ ndmpd_zfs_restore_tape_read(void *ptr)
 
 	buf = ndmp_malloc(bufsize);
 	if (buf == NULL) {
-		NDMP_LOG(LOG_DEBUG, "buf NULL");
-		return ((void *)(uintptr_t)-1);
+		syslog(LOG_ERR,
+		    "buf NULL in ndmpd_zfs_restore_tape_read errno (%m)");
+		return (-1);
 	}
 
 	bytes_totalp = &ndmpd_zfs_args->nz_nlp->nlp_bytes_total;
@@ -862,29 +864,29 @@ ndmpd_zfs_restore_tape_read(void *ptr)
 		err = MOD_READ(ndmpd_zfs_params, buf, bytes);
 
 		if (err != 0) {
-			NDMP_LOG(LOG_ERR, "MOD_READ error: %d; returning -1",
+			syslog(LOG_ERR, "MOD_READ error: %d; returning -1",
 			    err);
 			free(buf);
-			return ((void *)(uintptr_t)-1);
+			return (-1);
 		}
 
 		count = write(ndmpd_zfs_args->nz_pipe_fd[PIPE_TAPE], buf,
 		    bytes);
 
 		if (count != bytes) {
-			NDMP_LOG(LOG_ERR, "count (%d) != bytes (%d)",
+			syslog(LOG_ERR, "count (%d) != bytes (%d)",
 			    count, bytes);
 
 			if (count == -1) {
-				NDMP_LOG(LOG_ERR, "pipe write error: errno: %d",
+				syslog(LOG_ERR, "pipe write error: errno: %d",
 				    errno);
 
 				if (session->ns_data.dd_abort)
-					NDMP_LOG(LOG_DEBUG, "abort set");
+					syslog(LOG_DEBUG, "abort set");
 			}
 
 			free(buf);
-			return ((void *)(uintptr_t)-1);
+			return (-1);
 		}
 
 		NS_ADD(wdisk, count);
@@ -893,7 +895,7 @@ ndmpd_zfs_restore_tape_read(void *ptr)
 	}
 
 	free(buf);
-	return (NULL);
+	return (0);
 }
 
 /*
@@ -902,10 +904,9 @@ ndmpd_zfs_restore_tape_read(void *ptr)
  * This routine executes zfs_receive() to restore the backup.
  */
 
-static void *
-ndmpd_zfs_restore_recv_write(void *ptr)
+static int
+ndmpd_zfs_restore_recv_write(ndmpd_zfs_args_t *ndmpd_zfs_args)
 {
-	ndmpd_zfs_args_t *ndmpd_zfs_args = ptr;
 	ndmpd_session_t *session = (ndmpd_session_t *)
 	    (ndmpd_zfs_params->mp_daemon_cookie);
 	recvflags_t flags;
@@ -915,7 +916,7 @@ ndmpd_zfs_restore_recv_write(void *ptr)
 
 	flags.nomount = B_TRUE;
 
-	NDMP_LOG(LOG_DEBUG, "nz_zfs_force: %d\n", ndmpd_zfs_args->nz_zfs_force);
+	syslog(LOG_DEBUG, "nz_zfs_force: %d\n", ndmpd_zfs_args->nz_zfs_force);
 
 	if (ndmpd_zfs_args->nz_zfs_force)
 		flags.force = B_TRUE;
@@ -926,7 +927,7 @@ ndmpd_zfs_restore_recv_write(void *ptr)
 	if (err && !session->ns_data.dd_abort)
 		NDMPD_ZFS_LOG_ZERR(ndmpd_zfs_args, "zfs_receive: %d", err);
 
-	return ((void *)(uintptr_t)err);
+	return (err);
 }
 
 /*
@@ -942,17 +943,19 @@ ndmpd_zfs_reader_writer(ndmpd_zfs_args_t *ndmpd_zfs_args,
 	funct_t sendrecv_func;
 	funct_t tape_func;
 	int sendrecv_err;
-	int tape_err;
+	int tape_err = -1;
 
 	switch (ndmpd_zfs_params->mp_operation) {
 	case NDMP_DATA_OP_BACKUP:
-		sendrecv_func = ndmpd_zfs_backup_send_read;
-		tape_func = ndmpd_zfs_backup_tape_write;
+		sendrecv_func = (funct_t)ndmpd_zfs_backup_send_read;
+		tape_func = (funct_t)ndmpd_zfs_backup_tape_write;
 		break;
 	case NDMP_DATA_OP_RECOVER:
-		sendrecv_func = ndmpd_zfs_restore_recv_write;
-		tape_func = ndmpd_zfs_restore_tape_read;
+		sendrecv_func = (funct_t)ndmpd_zfs_restore_recv_write;
+		tape_func = (funct_t)ndmpd_zfs_restore_tape_read;
 		break;
+	default:
+		return (-1);
 	}
 
 	sendrecv_err = pthread_create(&ndmpd_zfs_args->nz_sendrecv_thread,
@@ -972,7 +975,7 @@ ndmpd_zfs_reader_writer(ndmpd_zfs_args_t *ndmpd_zfs_args,
 			 */
 
 			(void) close(ndmpd_zfs_args->nz_pipe_fd[PIPE_TAPE]);
-			NDMP_LOG(LOG_ERR, "Could not start tape thread; "
+			syslog(LOG_ERR, "Could not start tape thread; "
 			    "aborting z-op");
 		}
 
@@ -1009,7 +1012,7 @@ ndmpd_zfs_abort(void *arg)
 	else
 		(void) strlcpy(str, "recover", 8);
 
-	NDMP_LOG(LOG_ERR, "ndmpd_zfs_abort() called...aborting %s operation",
+	syslog(LOG_ERR, "ndmpd_zfs_abort() called...aborting %s operation",
 	    str);
 
 	ndmpd_zfs_close_fds(ndmpd_zfs_args);
@@ -1046,7 +1049,7 @@ ndmpd_zfs_pre_backup(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	    ndmpd_zfs_args->nz_dataset);
 
 	if (err != 0) {
-		NDMP_LOG(LOG_DEBUG, "Pre-backup plug-in: %m");
+		syslog(LOG_ERR, "Pre-backup plug-in failed errno (%m)");
 		(void) ndmpd_zfs_post_backup(ndmpd_zfs_args);
 	}
 
@@ -1065,7 +1068,7 @@ ndmpd_zfs_post_backup(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	err = ndmp_pl->np_post_backup(ndmp_pl, nctxp, err);
 
 	if (err == -1)
-		NDMP_LOG(LOG_DEBUG, "Post-backup plug-in: %m");
+		syslog(LOG_ERR, "Post-backup plug-in failed errno (%m)");
 
 	return (err);
 }
@@ -1086,14 +1089,14 @@ ndmpd_zfs_pre_restore(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	    ZFS_MAX_DATASET_NAME_LEN);
 
 	if (err != 0) {
-		NDMP_LOG(LOG_DEBUG, "error getting bkup path: %d", err);
+		syslog(LOG_ERR, "error getting bkup path: %d", err);
 		return (-1);
 	}
 
 	err = ndmpd_zfs_restore_getpath(ndmpd_zfs_args);
 
 	if (err != 0) {
-		NDMP_LOG(LOG_DEBUG, "error getting restore path: %d", err);
+		syslog(LOG_ERR, "error getting restore path: %d", err);
 		return (-1);
 	}
 
@@ -1105,7 +1108,7 @@ ndmpd_zfs_pre_restore(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	    ndmpd_zfs_args->nz_dataset);
 
 	if (err != 0) {
-		NDMP_LOG(LOG_DEBUG, "Pre-restore plug-in: %m");
+		syslog(LOG_ERR, "Pre-restore plug-in failed errno (%m)");
 		return (-1);
 	}
 
@@ -1124,7 +1127,7 @@ ndmpd_zfs_post_restore(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	err = ndmp_pl->np_post_restore(ndmp_pl, nctxp, err);
 
 	if (err == -1)
-		NDMP_LOG(LOG_DEBUG, "Post-restore plug-in: %m");
+		syslog(LOG_ERR, "Post-restore plug-in failed errno (%m)");
 
 	return (err);
 }
@@ -1200,12 +1203,12 @@ ndmpd_zfs_backup_pathvalid(ndmpd_zfs_args_t *ndmpd_zfs_args)
 		zfs_close(zhp);
 
 		if (err) {
-			NDMP_LOG(LOG_DEBUG,
+			syslog(LOG_ERR,
 			    "ndmpd_zfs_snapshot_prop_get failed");
 			return (-1);
 		}
 
-		if (propstr && ndmpd_zfs_snapshot_ndmpd_generated(propstr)) {
+		if (strlen(propstr) > 0 && ndmpd_zfs_snapshot_ndmpd_generated(propstr)) {
 			ndmpd_zfs_dma_log(ndmpd_zfs_args, NDMP_LOG_ERROR,
 			    "cannot use an ndmpd-generated snapshot\n");
 			return (B_FALSE);
@@ -1333,7 +1336,7 @@ ndmpd_zfs_restore_pathvalid(ndmpd_zfs_args_t *ndmpd_zfs_args)
 		}
 	}
 
-	NDMP_LOG(LOG_DEBUG, "restore path: %s\n", ndmpd_zfs_args->nz_dataset);
+	syslog(LOG_DEBUG, "restore path: %s\n", ndmpd_zfs_args->nz_dataset);
 
 	return (B_TRUE);
 }
@@ -1366,7 +1369,7 @@ ndmpd_zfs_restore_getpath(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	namep_v3 = (mem_ndmp_name_v3_t *)MOD_GETNAME(ndmpd_zfs_params, 0);
 
 	if (namep_v3 == NULL) {
-		NDMP_LOG(LOG_DEBUG, "Can't get Nlist[0]");
+		syslog(LOG_DEBUG, "Can't get Nlist[0]");
 		return (-1);
 	}
 
@@ -1457,7 +1460,7 @@ ndmpd_zfs_getenv_zfs_mode(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	envp = MOD_GETENV(ndmpd_zfs_params, "ZFS_MODE");
 
 	if (envp == NULL) {
-		NDMP_LOG(LOG_DEBUG, "env(ZFS_MODE) not specified, "
+		syslog(LOG_DEBUG, "env(ZFS_MODE) not specified, "
 		    "defaulting to recursive");
 		ndmpd_zfs_args->nz_zfs_mode = 'r';
 		return (0);
@@ -1476,7 +1479,7 @@ ndmpd_zfs_getenv_zfs_mode(ndmpd_zfs_args_t *ndmpd_zfs_args)
 		return (-1);
 	}
 
-	NDMP_LOG(LOG_DEBUG, "env(ZFS_MODE): \"%c\"",
+	syslog(LOG_DEBUG, "env(ZFS_MODE): \"%c\"",
 	    ndmpd_zfs_args->nz_zfs_mode);
 
 	return (0);
@@ -1502,7 +1505,7 @@ ndmpd_zfs_getenv_zfs_force(ndmpd_zfs_args_t *ndmpd_zfs_args)
 
 	if (strcasecmp(override, "yes") == 0) {
 		ndmpd_zfs_args->nz_zfs_force = B_TRUE;
-		NDMP_LOG(LOG_NOTICE,
+		syslog(LOG_NOTICE,
 		    "SMF property zfs-force-override set to 'yes', "
 		    "overriding ZFS_FORCE");
 		return (0);
@@ -1510,7 +1513,7 @@ ndmpd_zfs_getenv_zfs_force(ndmpd_zfs_args_t *ndmpd_zfs_args)
 
 	if (strcasecmp(override, "no") == 0) {
 		ndmpd_zfs_args->nz_zfs_force = B_FALSE;
-		NDMP_LOG(LOG_NOTICE,
+		syslog(LOG_NOTICE,
 		    "SMF property zfs-force-override set to 'no', "
 		    "overriding ZFS_FORCE");
 		return (0);
@@ -1525,7 +1528,7 @@ ndmpd_zfs_getenv_zfs_force(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	envp_force = MOD_GETENV(ndmpd_zfs_params, "ZFS_FORCE");
 
 	if (envp_force == NULL) {
-		NDMP_LOG(LOG_DEBUG,
+		syslog(LOG_DEBUG,
 		    "env(ZFS_FORCE) not specified, defaulting to FALSE");
 		ndmpd_zfs_args->nz_zfs_force = B_FALSE;
 		return (0);
@@ -1538,7 +1541,7 @@ ndmpd_zfs_getenv_zfs_force(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	if (strchr("tTyY", *envp_force))
 		ndmpd_zfs_args->nz_zfs_force = B_TRUE;
 
-	NDMP_LOG(LOG_DEBUG, "env(ZFS_FORCE): \"%s\"", envp_force);
+	syslog(LOG_DEBUG, "env(ZFS_FORCE): \"%s\"", envp_force);
 
 	return (0);
 }
@@ -1551,7 +1554,7 @@ ndmpd_zfs_getenv_level(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	envp = MOD_GETENV(ndmpd_zfs_params, "LEVEL");
 
 	if (envp == NULL) {
-		NDMP_LOG(LOG_DEBUG, "env(LEVEL) not specified, "
+		syslog(LOG_DEBUG, "env(LEVEL) not specified, "
 		    "defaulting to 0");
 		ndmpd_zfs_args->nz_level = 0;
 		return (0);
@@ -1571,7 +1574,7 @@ ndmpd_zfs_getenv_level(ndmpd_zfs_args_t *ndmpd_zfs_args)
 
 	ndmpd_zfs_args->nz_level = atoi(envp);
 
-	NDMP_LOG(LOG_DEBUG, "env(LEVEL): \"%d\"",
+	syslog(LOG_DEBUG, "env(LEVEL): \"%d\"",
 	    ndmpd_zfs_args->nz_level);
 
 	return (0);
@@ -1585,7 +1588,7 @@ ndmpd_zfs_getenv_update(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	envp_update = MOD_GETENV(ndmpd_zfs_params, "UPDATE");
 
 	if (envp_update == NULL) {
-		NDMP_LOG(LOG_DEBUG,
+		syslog(LOG_DEBUG,
 		    "env(UPDATE) not specified, defaulting to TRUE");
 		ndmpd_zfs_args->nz_update = B_TRUE;
 		return (0);
@@ -1598,7 +1601,7 @@ ndmpd_zfs_getenv_update(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	if (strchr("tTyY", *envp_update))
 		ndmpd_zfs_args->nz_update = B_TRUE;
 
-	NDMP_LOG(LOG_DEBUG, "env(UPDATE): \"%s\"", envp_update);
+	syslog(LOG_DEBUG, "env(UPDATE): \"%s\"", envp_update);
 
 	return (0);
 }
@@ -1611,7 +1614,7 @@ ndmpd_zfs_getenv_dmp_name(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	envp = MOD_GETENV(ndmpd_zfs_params, "DMP_NAME");
 
 	if (envp == NULL) {
-		NDMP_LOG(LOG_DEBUG,
+		syslog(LOG_DEBUG,
 		    "env(DMP_NAME) not specified, defaulting to 'level'");
 		(void) strlcpy(ndmpd_zfs_args->nz_dmp_name, "level",
 		    NDMPD_ZFS_DMP_NAME_MAX);
@@ -1624,7 +1627,7 @@ ndmpd_zfs_getenv_dmp_name(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	(void) strlcpy(ndmpd_zfs_args->nz_dmp_name, envp,
 	    NDMPD_ZFS_DMP_NAME_MAX);
 
-	NDMP_LOG(LOG_DEBUG, "env(DMP_NAME): \"%s\"", envp);
+	syslog(LOG_DEBUG, "env(DMP_NAME): \"%s\"", envp);
 
 	return (0);
 }
@@ -1637,11 +1640,11 @@ ndmpd_zfs_getenv_zfs_backup_size(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	zfs_backup_size = MOD_GETENV(ndmpd_zfs_params, "ZFS_BACKUP_SIZE");
 
 	if (zfs_backup_size == NULL) {
-		NDMP_LOG(LOG_ERR, "ZFS_BACKUP_SIZE env is NULL");
+		syslog(LOG_ERR, "ZFS_BACKUP_SIZE env is NULL");
 		return (-1);
 	}
 
-	NDMP_LOG(LOG_DEBUG, "ZFS_BACKUP_SIZE: %s\n", zfs_backup_size);
+	syslog(LOG_DEBUG, "ZFS_BACKUP_SIZE: %s\n", zfs_backup_size);
 
 	(void) sscanf(zfs_backup_size, "%llu",
 	    &ndmpd_zfs_args->nz_zfs_backup_size);
@@ -1683,7 +1686,7 @@ ndmpd_zfs_dmp_name_valid(ndmpd_zfs_args_t *ndmpd_zfs_args, char *dmp_name)
 		}
 	}
 
-	NDMP_LOG(LOG_DEBUG, "DMP_NAME is valid: %s\n", dmp_name);
+	syslog(LOG_DEBUG, "DMP_NAME is valid: %s\n", dmp_name);
 	return (B_TRUE);
 }
 
@@ -1716,7 +1719,7 @@ ndmpd_zfs_snapshot_prepare(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	int zfs_err = 0;
 
 	if (session->ns_data.dd_abort) {
-		NDMP_LOG(LOG_DEBUG, "Backing up \"%s\" aborted.",
+		syslog(LOG_DEBUG, "Backing up \"%s\" aborted.",
 		    ndmpd_zfs_args->nz_dataset);
 		return (-1);
 	}
@@ -1736,7 +1739,7 @@ ndmpd_zfs_snapshot_prepare(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	}
 
 	if (ndmpd_zfs_snapshot_prop_add(ndmpd_zfs_args)) {
-		NDMP_LOG(LOG_DEBUG,
+		syslog(LOG_DEBUG,
 		    "ndmpd_zfs_snapshot_prop_add error\n");
 
 		if (ndmpd_zfs_args->nz_ndmpd_snap) {
@@ -1794,7 +1797,7 @@ ndmpd_zfs_snapshot_cleanup(ndmpd_zfs_args_t *ndmpd_zfs_args, int err)
 		    "%s", ndmpd_zfs_args->nz_snapname);
 
 		if (ndmpd_zfs_snapshot_find(ndmpd_zfs_args, &snapdata)) {
-			NDMP_LOG(LOG_DEBUG, "ndmpd_zfs_snapshot_find error\n");
+			syslog(LOG_ERR, "ndmpd_zfs_snapshot_find error\n");
 			goto _remove_tmp_snap;
 		}
 
@@ -1804,7 +1807,7 @@ ndmpd_zfs_snapshot_cleanup(ndmpd_zfs_args_t *ndmpd_zfs_args, int err)
 
 			if (ndmpd_zfs_snapshot_unuse(ndmpd_zfs_args,
 			    ndmpd_generated, &snapdata) != 0) {
-				NDMP_LOG(LOG_DEBUG,
+				syslog(LOG_ERR,
 				    "ndmpd_zfs_snapshot_unuse error\n");
 				goto _remove_tmp_snap;
 			}
@@ -1828,7 +1831,7 @@ _remove_tmp_snap:
 
 	if (ndmpd_zfs_snapshot_unuse(ndmpd_zfs_args,
 	    ndmpd_zfs_args->nz_ndmpd_snap, &snapdata) != 0) {
-		NDMP_LOG(LOG_DEBUG, "ndmpd_zfs_snapshot_unuse error\n");
+		syslog(LOG_ERR, "ndmpd_zfs_snapshot_unuse error\n");
 		return (-1);
 	}
 
@@ -1845,7 +1848,7 @@ ndmpd_zfs_snapshot_create(ndmpd_zfs_args_t *ndmpd_zfs_args)
 
 	if (ndmpd_zfs_snapname_create(ndmpd_zfs_args,
 	    ndmpd_zfs_args->nz_snapname, ZFS_MAX_DATASET_NAME_LEN - 1) < 0) {
-		NDMP_LOG(LOG_ERR, "Error (%d) creating snapshot name for %s",
+		syslog(LOG_ERR, "Error (%d) creating snapshot name for %s",
 		    errno, ndmpd_zfs_args->nz_dataset);
 		return (-1);
 	}
@@ -1855,12 +1858,12 @@ ndmpd_zfs_snapshot_create(ndmpd_zfs_args_t *ndmpd_zfs_args)
 
 	if (snapshot_create(ndmpd_zfs_args->nz_dataset,
 	    ndmpd_zfs_args->nz_snapname, recursive, B_FALSE) != 0) {
-		NDMP_LOG(LOG_ERR, "could not create snapshot %s@%s",
+		syslog(LOG_ERR, "could not create snapshot %s@%s",
 		    ndmpd_zfs_args->nz_dataset, ndmpd_zfs_args->nz_snapname);
 		return (-1);
 	}
 
-	NDMP_LOG(LOG_DEBUG, "created snapshot %s@%s",
+	syslog(LOG_DEBUG, "created snapshot %s@%s",
 	    ndmpd_zfs_args->nz_dataset, ndmpd_zfs_args->nz_snapname);
 
 	return (0);
@@ -1896,7 +1899,7 @@ ndmpd_zfs_snapshot_unuse(ndmpd_zfs_args_t *ndmpd_zfs_args,
 		    snapdata_p->nzs_snapname, recursive, B_FALSE, &zfs_err);
 
 		if (err) {
-			NDMP_LOG(LOG_ERR, "snapshot_destroy: %s@%s;"
+			syslog(LOG_ERR, "snapshot_destroy: %s@%s;"
 			    " err: %d; zfs_err: %d",
 			    ndmpd_zfs_args->nz_dataset,
 			    snapdata_p->nzs_snapname, err, zfs_err);
@@ -1979,7 +1982,7 @@ ndmpd_zfs_snapshot_prop_find(zfs_handle_t *zhp, void *arg)
 	int err = 0;
 
 	if (snapdata_p->nzs_snapname[0] != '\0') {
-		NDMP_LOG(LOG_DEBUG, "no need to get prop for snapshot %s",
+		syslog(LOG_DEBUG, "no need to get prop for snapshot %s",
 		    (char *)zfs_get_name(zhp));
 		goto _done;
 	}
@@ -1987,12 +1990,12 @@ ndmpd_zfs_snapshot_prop_find(zfs_handle_t *zhp, void *arg)
 	err = ndmpd_zfs_snapshot_prop_get(zhp, propstr);
 
 	if (err) {
-		NDMP_LOG(LOG_DEBUG, "ndmpd_zfs_snapshot_prop_get failed");
+		syslog(LOG_DEBUG, "ndmpd_zfs_snapshot_prop_get failed");
 		goto _done;
 	}
 
 	if (propstr[0] == '\0') {
-		NDMP_LOG(LOG_DEBUG, "snapshot %s: propr not set",
+		syslog(LOG_DEBUG, "snapshot %s: propr not set",
 		    (char *)zfs_get_name(zhp));
 		goto _done;
 	}
@@ -2002,7 +2005,7 @@ ndmpd_zfs_snapshot_prop_find(zfs_handle_t *zhp, void *arg)
 
 	if (!strstr((const char *)propstr,
 	    (const char *)findprop_plus_slash)) {
-		NDMP_LOG(LOG_DEBUG, "snapshot %s: property %s (%s not found)",
+		syslog(LOG_DEBUG, "snapshot %s: property %s (%s not found)",
 		    (char *)zfs_get_name(zhp), propstr,
 		    snapdata_p->nzs_findprop);
 		goto _done;
@@ -2010,10 +2013,10 @@ ndmpd_zfs_snapshot_prop_find(zfs_handle_t *zhp, void *arg)
 
 	if (!ndmpd_zfs_prop_version_check(propstr,
 	    &snapdata_p->nzs_prop_major, &snapdata_p->nzs_prop_minor)) {
-		NDMP_LOG(LOG_DEBUG, "snapshot %s: property %s (%s found)",
+		syslog(LOG_DEBUG, "snapshot %s: property %s (%s found)",
 		    (char *)zfs_get_name(zhp),  propstr,
 		    snapdata_p->nzs_findprop);
-		NDMP_LOG(LOG_DEBUG, "did not pass version check");
+		syslog(LOG_DEBUG, "did not pass version check");
 		goto _done;
 	}
 
@@ -2026,7 +2029,7 @@ ndmpd_zfs_snapshot_prop_find(zfs_handle_t *zhp, void *arg)
 		(void) strlcpy(snapdata_p->nzs_snapprop, propstr,
 		    ZFS_MAXPROPLEN);
 
-		NDMP_LOG(LOG_DEBUG, "found match: %s [%s]\n",
+		syslog(LOG_DEBUG, "found match: %s [%s]\n",
 		    snapdata_p->nzs_snapname, snapdata_p->nzs_snapprop);
 	}
 
@@ -2062,7 +2065,7 @@ ndmpd_zfs_snapshot_prop_get(zfs_handle_t *zhp, char *propstr)
 		if (err == ENOENT)
 			return (0);
 
-		NDMP_LOG(LOG_DEBUG, "nvlist_lookup_nvlist error: %d\n", err);
+		syslog(LOG_ERR, "nvlist_lookup_nvlist error: %d\n", err);
 
 		return (-1);
 	}
@@ -2073,7 +2076,7 @@ ndmpd_zfs_snapshot_prop_get(zfs_handle_t *zhp, char *propstr)
 		if (err == ENOENT)
 			return (0);
 
-		NDMP_LOG(LOG_DEBUG, "nvlist_lookup_string error: %d\n", err);
+		syslog(LOG_ERR, "nvlist_lookup_string error: %d\n", err);
 
 		return (-1);
 	}
@@ -2114,7 +2117,7 @@ ndmpd_zfs_snapshot_prop_add(ndmpd_zfs_args_t *ndmpd_zfs_args)
 	bzero(propstr, ZFS_MAXPROPLEN);
 
 	if (ndmpd_zfs_snapshot_prop_get(zhp, propstr)) {
-		NDMP_LOG(LOG_DEBUG, "error getting property");
+		syslog(LOG_ERR, "error getting property");
 		zfs_close(zhp);
 		return (-1);
 	}
@@ -2129,7 +2132,7 @@ ndmpd_zfs_snapshot_prop_add(ndmpd_zfs_args_t *ndmpd_zfs_args)
 		if (err) {
 			NDMPD_ZFS_LOG_ZERR(ndmpd_zfs_args, "zfs_prop_set: %d",
 			    err);
-			NDMP_LOG(LOG_ERR, "error setting property %s",
+			syslog(LOG_ERR, "error setting property %s",
 			    propstr);
 			zfs_close(zhp);
 			return (-1);
@@ -2166,7 +2169,7 @@ ndmpd_zfs_snapshot_prop_create(ndmpd_zfs_args_t *ndmpd_zfs_args,
 	}
 
 	if (strstr((const char *)propstr, (const char *)subprop)) {
-		NDMP_LOG(LOG_DEBUG, "Did not add entry %s as it already exists",
+		syslog(LOG_DEBUG, "Did not add entry %s as it already exists",
 		    subprop);
 		*set = B_FALSE;
 		return (0);
@@ -2255,7 +2258,7 @@ ndmpd_zfs_snapshot_prop_remove(ndmpd_zfs_args_t *ndmpd_zfs_args,
 		if (err) {
 			NDMPD_ZFS_LOG_ZERR(ndmpd_zfs_args, "zfs_prop_set: %d",
 			    err);
-			NDMP_LOG(LOG_ERR, "error setting property %s", newprop);
+			syslog(LOG_ERR, "error setting property %s", newprop);
 			return (-1);
 		}
 
@@ -2300,7 +2303,7 @@ ndmpd_zfs_snapshot_prop_remove(ndmpd_zfs_args_t *ndmpd_zfs_args,
 
 	if (err) {
 		NDMPD_ZFS_LOG_ZERR(ndmpd_zfs_args, "zfs_prop_set: %d", err);
-		NDMP_LOG(LOG_ERR, "error modifying property %s", newprop);
+		syslog(LOG_ERR, "error modifying property %s", newprop);
 		return (-1);
 	}
 
@@ -2313,17 +2316,17 @@ ndmpd_zfs_prop_version_check(char *propstr, uint32_t *major, uint32_t *minor)
 	(void) sscanf(propstr, "%u.%u.%*c%*s", major, minor);
 
 	if (*major > NDMPD_ZFS_PROP_MAJOR_VERSION) {
-		NDMP_LOG(LOG_ERR, "unsupported prop major (%u > %u)",
+		syslog(LOG_ERR, "unsupported prop major (%u > %u)",
 		    *major, NDMPD_ZFS_PROP_MAJOR_VERSION);
 		return (B_FALSE);
 	}
 
 	if (*minor > NDMPD_ZFS_PROP_MINOR_VERSION) {
-		NDMP_LOG(LOG_ERR, "later prop minor (%u > %u)",
+		syslog(LOG_ERR, "later prop minor (%u > %u)",
 		    *minor, NDMPD_ZFS_PROP_MINOR_VERSION);
 	}
 
-	NDMP_LOG(LOG_DEBUG, "passed version check: "
+	syslog(LOG_DEBUG, "passed version check: "
 	    "supported prop major (%u <= %u); (snapprop minor: %u [%u])",
 	    *major, NDMPD_ZFS_PROP_MAJOR_VERSION,
 	    *minor, NDMPD_ZFS_PROP_MINOR_VERSION);
@@ -2351,7 +2354,7 @@ ndmpd_zfs_snapname_create(ndmpd_zfs_args_t *ndmpd_zfs_args,
 	    tp.tv_usec);
 
 	if (err > namelen) {
-		NDMP_LOG(LOG_ERR, "name of snapshot [%s...] would exceed %d",
+		syslog(LOG_ERR, "name of snapshot [%s...] would exceed %d",
 		    snapname, namelen);
 		return (-1);
 	}
@@ -2436,8 +2439,8 @@ ndmpd_zfs_dma_log(ndmpd_zfs_args_t *ndmpd_zfs_args, ndmp_log_type log_type,
 	MOD_LOGV3(ndmpd_zfs_params, log_type, buf);
 
 	if ((log_type) == NDMP_LOG_ERROR) {
-		NDMP_LOG(LOG_ERR, buf);
+		syslog(LOG_ERR, buf);
 	} else {
-		NDMP_LOG(LOG_NOTICE, buf);
+		syslog(LOG_NOTICE, buf);
 	}
 }

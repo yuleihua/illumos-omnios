@@ -39,6 +39,7 @@
  *
  * Copyright 2015 Pluribus Networks Inc.
  * Copyright 2019 Joyent, Inc.
+ * Copyright 2020 Oxide Computer Company
  */
 
 #include <sys/cdefs.h>
@@ -47,7 +48,11 @@ __FBSDID("$FreeBSD$");
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/ioctl.h>
+#ifdef	__FreeBSD__
+#include <sys/linker.h>
+#endif
 #include <sys/mman.h>
+#include <sys/module.h>
 #include <sys/_iovec.h>
 #include <sys/cpuset.h>
 
@@ -66,9 +71,6 @@ __FBSDID("$FreeBSD$");
 
 #include <machine/vmm.h>
 #include <machine/vmm_dev.h>
-#ifndef	__FreeBSD__
-#include <sys/vmm_impl.h>
-#endif
 
 #include "vmmapi.h"
 
@@ -156,7 +158,11 @@ vm_device_open(const char *name)
 int
 vm_create(const char *name)
 {
-
+#ifdef __FreeBSD__
+	/* Try to load vmm(4) module before creating a guest. */
+	if (modfind("vmm") < 0)
+		kldload("vmm");
+#endif
 	return (CREATE((char *)name));
 }
 
@@ -305,19 +311,6 @@ vm_mmap_memseg(struct vmctx *ctx, vm_paddr_t gpa, int segid, vm_ooffset_t off,
 	}
 
 	error = ioctl(ctx->fd, VM_MMAP_MEMSEG, &memmap);
-	return (error);
-}
-
-int
-vm_munmap_memseg(struct vmctx *ctx, vm_paddr_t gpa, size_t len)
-{
-	struct vm_munmap munmap;
-	int error;
-
-	munmap.gpa = gpa;
-	munmap.len = len;
-
-	error = ioctl(ctx->fd, VM_MUNMAP_MEMSEG, &munmap);
 	return (error);
 }
 
@@ -779,17 +772,16 @@ vm_get_register_set(struct vmctx *ctx, int vcpu, unsigned int count,
 }
 
 int
-vm_run(struct vmctx *ctx, int vcpu, struct vm_exit *vmexit)
+vm_run(struct vmctx *ctx, int vcpu, const struct vm_entry *vm_entry,
+    struct vm_exit *vm_exit)
 {
-	int error;
-	struct vm_run vmrun;
+	struct vm_entry entry;
 
-	bzero(&vmrun, sizeof(vmrun));
-	vmrun.cpuid = vcpu;
+	bcopy(vm_entry, &entry, sizeof (entry));
+	entry.cpuid = vcpu;
+	entry.exit_data = vm_exit;
 
-	error = ioctl(ctx->fd, VM_RUN, &vmrun);
-	bcopy(&vmrun.vm_exit, vmexit, sizeof(struct vm_exit));
-	return (error);
+	return (ioctl(ctx->fd, VM_RUN, &entry));
 }
 
 int
@@ -823,6 +815,25 @@ vm_inject_exception(struct vmctx *ctx, int vcpu, int vector, int errcode_valid,
 
 	return (ioctl(ctx->fd, VM_INJECT_EXCEPTION, &exc));
 }
+
+#ifndef __FreeBSD__
+void
+vm_inject_fault(struct vmctx *ctx, int vcpu, int vector, int errcode_valid,
+    int errcode)
+{
+	int error;
+	struct vm_exception exc;
+
+	exc.cpuid = vcpu;
+	exc.vector = vector;
+	exc.error_code = errcode;
+	exc.error_code_valid = errcode_valid;
+	exc.restart_instruction = 1;
+	error = ioctl(ctx->fd, VM_INJECT_EXCEPTION, &exc);
+
+	assert(error == 0);
+}
+#endif /* __FreeBSD__ */
 
 int
 vm_apicid2vcpu(struct vmctx *ctx, int apicid)
@@ -911,6 +922,25 @@ vm_ioapic_pincount(struct vmctx *ctx, int *pincount)
 }
 
 int
+vm_readwrite_kernemu_device(struct vmctx *ctx, int vcpu, vm_paddr_t gpa,
+    bool write, int size, uint64_t *value)
+{
+	struct vm_readwrite_kernemu_device irp = {
+		.vcpuid = vcpu,
+		.access_width = fls(size) - 1,
+		.gpa = gpa,
+		.value = write ? *value : ~0ul,
+	};
+	long cmd = (write ? VM_SET_KERNEMU_DEV : VM_GET_KERNEMU_DEV);
+	int rc;
+
+	rc = ioctl(ctx->fd, cmd, &irp);
+	if (rc == 0 && !write)
+		*value = irp.value;
+	return (rc);
+}
+
+int
 vm_isa_assert_irq(struct vmctx *ctx, int atpic_irq, int ioapic_irq)
 {
 	struct vm_isa_irq isa_irq;
@@ -970,16 +1000,15 @@ vm_inject_nmi(struct vmctx *ctx, int vcpu)
 	return (ioctl(ctx->fd, VM_INJECT_NMI, &vmnmi));
 }
 
-static struct {
-	const char	*name;
-	int		type;
-} capstrmap[] = {
-	{ "hlt_exit",		VM_CAP_HALT_EXIT },
-	{ "mtrap_exit",		VM_CAP_MTRAP_EXIT },
-	{ "pause_exit",		VM_CAP_PAUSE_EXIT },
-	{ "unrestricted_guest",	VM_CAP_UNRESTRICTED_GUEST },
-	{ "enable_invpcid",	VM_CAP_ENABLE_INVPCID },
-	{ 0 }
+static const char *capstrmap[] = {
+	[VM_CAP_HALT_EXIT]  = "hlt_exit",
+	[VM_CAP_MTRAP_EXIT] = "mtrap_exit",
+	[VM_CAP_PAUSE_EXIT] = "pause_exit",
+#ifdef __FreeBSD__
+	[VM_CAP_UNRESTRICTED_GUEST] = "unrestricted_guest",
+#endif
+	[VM_CAP_ENABLE_INVPCID] = "enable_invpcid",
+	[VM_CAP_BPT_EXIT] = "bpt_exit",
 };
 
 int
@@ -987,9 +1016,9 @@ vm_capability_name2type(const char *capname)
 {
 	int i;
 
-	for (i = 0; capstrmap[i].name != NULL && capname != NULL; i++) {
-		if (strcmp(capstrmap[i].name, capname) == 0)
-			return (capstrmap[i].type);
+	for (i = 0; i < nitems(capstrmap); i++) {
+		if (strcmp(capstrmap[i], capname) == 0)
+			return (i);
 	}
 
 	return (-1);
@@ -998,12 +1027,8 @@ vm_capability_name2type(const char *capname)
 const char *
 vm_capability_type2name(int type)
 {
-	int i;
-
-	for (i = 0; capstrmap[i].name != NULL; i++) {
-		if (capstrmap[i].type == type)
-			return (capstrmap[i].name);
-	}
+	if (type >= 0 && type < nitems(capstrmap))
+		return (capstrmap[type]);
 
 	return (NULL);
 }
@@ -1137,7 +1162,22 @@ vm_get_pptdev_limits(struct vmctx *ctx, int bus, int slot, int func,
 
 	return (error);
 }
+
+int
+vm_disable_pptdev_msix(struct vmctx *ctx, int bus, int slot, int func)
+{
+	struct vm_pptdev ppt;
+
+	bzero(&ppt, sizeof(ppt));
+	ppt.bus = bus;
+	ppt.slot = slot;
+	ppt.func = func;
+
+	return ioctl(ctx->fd, VM_PPTDEV_DISABLE_MSIX, &ppt);
+}
+
 #else /* __FreeBSD__ */
+
 int
 vm_assign_pptdev(struct vmctx *ctx, int pptfd)
 {
@@ -1213,6 +1253,15 @@ vm_get_pptdev_limits(struct vmctx *ctx, int pptfd, int *msi_limit,
 	*msix_limit = pptlimits.msix_limit;
 	return (error);
 }
+
+int
+vm_disable_pptdev_msix(struct vmctx *ctx, int pptfd)
+{
+	struct vm_pptdev pptdev;
+
+	pptdev.pptfd = pptfd;
+	return (ioctl(ctx->fd, VM_PPTDEV_DISABLE_MSIX, &pptdev));
+}
 #endif /* __FreeBSD__ */
 
 uint64_t *
@@ -1277,6 +1326,18 @@ vm_set_x2apic_state(struct vmctx *ctx, int vcpu, enum x2apic_state state)
 	return (error);
 }
 
+#ifndef __FreeBSD__
+int
+vcpu_reset(struct vmctx *vmctx, int vcpu)
+{
+	struct vm_vcpu_reset vvr;
+
+	vvr.vcpuid = vcpu;
+	vvr.kind = VRK_RESET;
+
+	return (ioctl(vmctx->fd, VM_RESET_CPU, &vvr));
+}
+#else /* __FreeBSD__ */
 /*
  * From Intel Vol 3a:
  * Table 9-1. IA-32 Processor States Following Power-up, Reset or INIT
@@ -1433,6 +1494,7 @@ vcpu_reset(struct vmctx *vmctx, int vcpu)
 done:
 	return (error);
 }
+#endif /* __FreeBSD__ */
 
 int
 vm_get_gpa_pmap(struct vmctx *ctx, uint64_t gpa, uint64_t *pte, int *num)
@@ -1801,9 +1863,56 @@ vm_get_device_fd(struct vmctx *ctx)
 
 #ifndef __FreeBSD__
 int
+vm_pmtmr_set_location(struct vmctx *ctx, uint16_t ioport)
+{
+	return (ioctl(ctx->fd, VM_PMTMR_LOCATE, ioport));
+}
+
+int
 vm_wrlock_cycle(struct vmctx *ctx)
 {
 	if (ioctl(ctx->fd, VM_WRLOCK_CYCLE, 0) != 0) {
+		return (errno);
+	}
+	return (0);
+}
+
+int
+vm_get_run_state(struct vmctx *ctx, int vcpu, enum vcpu_run_state *state,
+    uint8_t *sipi_vector)
+{
+	struct vm_run_state data;
+
+	data.vcpuid = vcpu;
+	if (ioctl(ctx->fd, VM_GET_RUN_STATE, &data) != 0) {
+		return (errno);
+	}
+
+	*state = data.state;
+	*sipi_vector = data.sipi_vector;
+	return (0);
+}
+
+int
+vm_set_run_state(struct vmctx *ctx, int vcpu, enum vcpu_run_state state,
+    uint8_t sipi_vector)
+{
+	struct vm_run_state data;
+
+	data.vcpuid = vcpu;
+	data.state = state;
+	data.sipi_vector = sipi_vector;
+	if (ioctl(ctx->fd, VM_SET_RUN_STATE, &data) != 0) {
+		return (errno);
+	}
+
+	return (0);
+}
+
+int
+vm_arc_resv(struct vmctx *ctx, size_t len)
+{
+	if (ioctl(ctx->fd, VM_ARC_RESV, (uint64_t)len) != 0) {
 		return (errno);
 	}
 	return (0);
@@ -1818,16 +1927,18 @@ vm_get_ioctls(size_t *len)
 	/* keep in sync with machine/vmm_dev.h */
 	static const cap_ioctl_t vm_ioctl_cmds[] = { VM_RUN, VM_SUSPEND, VM_REINIT,
 	    VM_ALLOC_MEMSEG, VM_GET_MEMSEG, VM_MMAP_MEMSEG, VM_MMAP_MEMSEG,
-	    VM_MMAP_GETNEXT, VM_MUNMAP_MEMSEG, VM_SET_REGISTER, VM_GET_REGISTER,
+	    VM_MMAP_GETNEXT, VM_SET_REGISTER, VM_GET_REGISTER,
 	    VM_SET_SEGMENT_DESCRIPTOR, VM_GET_SEGMENT_DESCRIPTOR,
 	    VM_SET_REGISTER_SET, VM_GET_REGISTER_SET,
+	    VM_SET_KERNEMU_DEV, VM_GET_KERNEMU_DEV,
 	    VM_INJECT_EXCEPTION, VM_LAPIC_IRQ, VM_LAPIC_LOCAL_IRQ,
 	    VM_LAPIC_MSI, VM_IOAPIC_ASSERT_IRQ, VM_IOAPIC_DEASSERT_IRQ,
 	    VM_IOAPIC_PULSE_IRQ, VM_IOAPIC_PINCOUNT, VM_ISA_ASSERT_IRQ,
 	    VM_ISA_DEASSERT_IRQ, VM_ISA_PULSE_IRQ, VM_ISA_SET_IRQ_TRIGGER,
 	    VM_SET_CAPABILITY, VM_GET_CAPABILITY, VM_BIND_PPTDEV,
 	    VM_UNBIND_PPTDEV, VM_MAP_PPTDEV_MMIO, VM_PPTDEV_MSI,
-	    VM_PPTDEV_MSIX, VM_INJECT_NMI, VM_STATS, VM_STAT_DESC,
+	    VM_PPTDEV_MSIX, VM_PPTDEV_DISABLE_MSIX,
+	    VM_INJECT_NMI, VM_STATS, VM_STAT_DESC,
 	    VM_SET_X2APIC_STATE, VM_GET_X2APIC_STATE,
 	    VM_GET_HPET_CAPABILITIES, VM_GET_GPA_PMAP, VM_GLA2GPA,
 	    VM_GLA2GPA_NOFAULT,

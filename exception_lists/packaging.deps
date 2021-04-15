@@ -20,10 +20,13 @@ pkg:/library/expat
 pkg:/library/glib2
 pkg:/library/libxml2
 pkg:/library/libxslt
+pkg:/library/ncurses
 pkg:/library/nspr
 pkg:/library/nspr/header-nspr
 pkg:/library/perl-5/xml-parser
 pkg:/library/security/openssl
+pkg:/library/security/openssl-10
+pkg:/library/security/openssl-11
 pkg:/library/security/trousers
 pkg:/library/zlib
 pkg:/ooce/runtime/expect
@@ -32,6 +35,7 @@ pkg:/print/cups
 pkg:/print/filter/ghostscript
 pkg:/release/name
 pkg:/runtime/java
+pkg:/runtime/java/openjdk11
 pkg:/runtime/java/openjdk8
 pkg:/runtime/java/runtime64
 pkg:/security/sudo

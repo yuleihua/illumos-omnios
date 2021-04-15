@@ -1,5 +1,5 @@
 \ Copyright (c) 2006-2015 Devin Teske <dteske@FreeBSD.org>
-\ Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+\ Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 \ All rights reserved.
 \
 \ Redistribution and use in source and binary forms, with or without
@@ -23,13 +23,13 @@
 \ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 \ SUCH DAMAGE.
 
-2 brandX ! 1 brandY ! \ Initialize brand placement defaults
+2 brandX ! 1 brandY ! \ Initialise brand placement defaults
 
 : brand+ ( x y c-addr/u -- x y' )
-	2swap 2dup at-xy 2swap \ position the cursor
-	[char] @ escc! \ replace @ with Esc
-	type \ print to the screen
-	1+ \ increase y for next time we're called
+	2swap 2dup at-xy 2swap	\ position the cursor
+	[char] @ escc!		\ replace @ with Esc
+	type			\ print to the screen
+	1+			\ increase y for next time we're called
 ;
 
 : asciitop ( x y -- x y' )
@@ -41,6 +41,21 @@
     s"                     | |  | ||(__   "                         brand+
     s"         @[30;1mcommunity@[0;33m   | |__| | ___)| "           brand+
     s"              @[30;1medition@[0;33m \____/ |____/@[m "        brand+
+;
+
+: graphtop ( x y -- x y )
+	pngdebug @
+	s" term-putimage" sfind if
+		>r
+		1 0 30 0	\ top left at (1,0), bottom right at (30,0)
+				\ the 0 preserves aspect ratio.
+	else
+		['] fb-putimage >r
+		30 20 0 0
+	then
+	s" /boot/ooce.png"
+	r> execute
+	invert if asciitop then	\ fall-back to ASCII version
 ;
 
 : ooceversion ( -- )
@@ -55,9 +70,8 @@
 ;
 
 : brand ( x y -- )
-	\ Show the ASCII logo if the PNG logo was not shown
-	PNGLogo @ 0= if asciitop then
-	2drop
+	framebuffer? if graphtop else asciitop then
 	ooceversion
+	2drop
 ;
 

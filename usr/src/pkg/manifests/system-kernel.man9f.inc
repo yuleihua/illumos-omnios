@@ -12,7 +12,7 @@
 #
 # Copyright 2017, Richard Lowe
 # Copyright 2014 Garrett D'Amore <garrett@damore.org>
-# Copyright 2016 Nexenta Systems, Inc.
+# Copyright 2020 Nexenta by DDN, Inc. All rights reserved.
 # Copyright 2016 Hans Rosenfeld <rosenfeld@grumpf.hope-2000.org>
 # Copyright 2019 Joyent, Inc.
 #
@@ -66,6 +66,7 @@ file path=usr/share/man/man9f/copyb.9f
 file path=usr/share/man/man9f/copyin.9f
 file path=usr/share/man/man9f/copymsg.9f
 file path=usr/share/man/man9f/copyout.9f
+file path=usr/share/man/man9f/credentials.9f
 file path=usr/share/man/man9f/csx_AccessConfigurationRegister.9f
 file path=usr/share/man/man9f/csx_CS_DDI_Info.9f
 file path=usr/share/man/man9f/csx_ConvertSize.9f
@@ -513,6 +514,7 @@ file path=usr/share/man/man9f/vmem_create.9f
 file path=usr/share/man/man9f/vmem_walk.9f
 link path=usr/share/man/man9f/AVL_NEXT.9f target=avl.9f
 link path=usr/share/man/man9f/AVL_PREV.9f target=avl.9f
+link path=usr/share/man/man9f/CRED.9f target=credentials.9f
 link path=usr/share/man/man9f/SIZEOF_PTR.9f target=STRUCT_DECL.9f
 link path=usr/share/man/man9f/SIZEOF_STRUCT.9f target=STRUCT_DECL.9f
 link path=usr/share/man/man9f/STRUCT_BUF.9f target=STRUCT_DECL.9f
@@ -647,6 +649,9 @@ link path=usr/share/man/man9f/avl_numnodes.9f target=avl.9f
 link path=usr/share/man/man9f/avl_remove.9f target=avl.9f
 link path=usr/share/man/man9f/avl_swap.9f target=avl.9f
 link path=usr/share/man/man9f/bcanputnext.9f target=canputnext.9f
+link path=usr/share/man/man9f/crdup.9f target=credentials.9f
+link path=usr/share/man/man9f/crfree.9f target=credentials.9f
+link path=usr/share/man/man9f/crget.9f target=credentials.9f
 link path=usr/share/man/man9f/crgetgid.9f target=ddi_cred.9f
 link path=usr/share/man/man9f/crgetgroups.9f target=ddi_cred.9f
 link path=usr/share/man/man9f/crgetngroups.9f target=ddi_cred.9f
@@ -656,6 +661,7 @@ link path=usr/share/man/man9f/crgetsgid.9f target=ddi_cred.9f
 link path=usr/share/man/man9f/crgetsuid.9f target=ddi_cred.9f
 link path=usr/share/man/man9f/crgetuid.9f target=ddi_cred.9f
 link path=usr/share/man/man9f/crgetzoneid.9f target=ddi_cred.9f
+link path=usr/share/man/man9f/crhold.9f target=credentials.9f
 link path=usr/share/man/man9f/csx_Get16.9f target=csx_Get8.9f
 link path=usr/share/man/man9f/csx_Get32.9f target=csx_Get8.9f
 link path=usr/share/man/man9f/csx_Get64.9f target=csx_Get8.9f
@@ -926,6 +932,7 @@ link path=usr/share/man/man9f/ddi_ufm_image_set_desc.9f target=ddi_ufm_image.9f
 link path=usr/share/man/man9f/ddi_ufm_image_set_misc.9f target=ddi_ufm_image.9f
 link path=usr/share/man/man9f/ddi_ufm_image_set_nslots.9f target=ddi_ufm_image.9f
 link path=usr/share/man/man9f/ddi_ufm_slot_set_attrs.9f target=ddi_ufm_slot.9f
+link path=usr/share/man/man9f/ddi_ufm_slot_set_imgsize.9f target=ddi_ufm_slot.9f
 link path=usr/share/man/man9f/ddi_ufm_slot_set_misc.9f target=ddi_ufm_slot.9f
 link path=usr/share/man/man9f/ddi_ufm_slot_set_version.9f target=ddi_ufm_slot.9f
 link path=usr/share/man/man9f/ddi_umem_free.9f target=ddi_umem_alloc.9f
@@ -968,6 +975,7 @@ link path=usr/share/man/man9f/id_space_extend.9f target=id_space.9f
 link path=usr/share/man/man9f/inl.9f target=inb.9f
 link path=usr/share/man/man9f/intro.9f target=Intro.9f
 link path=usr/share/man/man9f/inw.9f target=inb.9f
+link path=usr/share/man/man9f/kcred.9f target=credentials.9f
 link path=usr/share/man/man9f/kmem_cache_alloc.9f target=kmem_cache_create.9f
 link path=usr/share/man/man9f/kmem_cache_destroy.9f \
     target=kmem_cache_create.9f
@@ -1028,6 +1036,8 @@ link path=usr/share/man/man9f/list_tail.9f target=list_create.9f
 link path=usr/share/man/man9f/mac_fini_ops.9f target=mac_init_ops.9f
 link path=usr/share/man/man9f/mac_free.9f target=mac_alloc.9f
 link path=usr/share/man/man9f/mac_hcksum_set.9f target=mac_hcksum_get.9f
+link path=usr/share/man/man9f/mac_prop_info_set_default_fec.9f \
+    target=mac_prop_info.9f
 link path=usr/share/man/man9f/mac_prop_info_set_default_link_flowctrl.9f \
     target=mac_prop_info.9f
 link path=usr/share/man/man9f/mac_prop_info_set_default_str.9f \
@@ -1401,3 +1411,4 @@ link path=usr/share/man/man9f/vsprintf.9f target=sprintf.9f
 link path=usr/share/man/man9f/vzcmn_err.9f target=cmn_err.9f
 link path=usr/share/man/man9f/wr.9f target=WR.9f
 link path=usr/share/man/man9f/zcmn_err.9f target=cmn_err.9f
+link path=usr/share/man/man9f/zone_kcred.9f target=credentials.9f

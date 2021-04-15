@@ -65,26 +65,32 @@ __FBSDID("$FreeBSD$");
 #include "x86.h"
 
 SYSCTL_DECL(_hw_vmm);
-SYSCTL_NODE(_hw_vmm, OID_AUTO, topology, CTLFLAG_RD, 0, NULL);
+#ifdef __FreeBSD__
+static SYSCTL_NODE(_hw_vmm, OID_AUTO, topology, CTLFLAG_RD | CTLFLAG_MPSAFE, 0,
+    NULL);
+#endif
 
 #define	CPUID_VM_HIGH		0x40000000
 
 static const char bhyve_id[12] = "bhyve bhyve ";
 
+/* Number of times an unknown cpuid leaf was accessed */
 static uint64_t bhyve_xcpuids;
-SYSCTL_ULONG(_hw_vmm, OID_AUTO, bhyve_xcpuids, CTLFLAG_RW, &bhyve_xcpuids, 0,
-    "Number of times an unknown cpuid leaf was accessed");
 
 static int cpuid_leaf_b = 1;
-SYSCTL_INT(_hw_vmm_topology, OID_AUTO, cpuid_leaf_b, CTLFLAG_RDTUN,
-    &cpuid_leaf_b, 0, NULL);
+
+/*
+ * Force exposition of the invariant TSC capability, regardless of whether the
+ * host CPU reports having it.
+ */
+static int vmm_force_invariant_tsc = 0;
 
 /*
  * Round up to the next power of two, if necessary, and then take log2.
  * Returns -1 if argument is zero.
  */
 static __inline int
-log2(u_int x)
+log2(uint_t x)
 {
 
 	return (fls(x << (1 - powerof2(x))) - 1);
@@ -145,7 +151,7 @@ x86_emulate_cpuid(struct vm *vm, int vcpu_id, uint64_t *rax, uint64_t *rbx,
 			break;
 		case CPUID_8000_0008:
 			cpuid_count(func, param, regs);
-			if (vmm_is_amd()) {
+			if (vmm_is_svm()) {
 				/*
 				 * As on Intel (0000_0007:0, EDX), mask out
 				 * unsupported or unsafe AMD extended features
@@ -170,7 +176,8 @@ x86_emulate_cpuid(struct vm *vm, int vcpu_id, uint64_t *rax, uint64_t *rbx,
 				if (width < 0x4)
 					width = 0;
 				logical_cpus = MIN(0xFF, threads * cores - 1);
-				regs[2] = (width << AMDID_COREID_SIZE_SHIFT) | logical_cpus;
+				regs[2] = (width << AMDID_COREID_SIZE_SHIFT) |
+				    logical_cpus;
 			}
 			break;
 
@@ -224,6 +231,7 @@ x86_emulate_cpuid(struct vm *vm, int vcpu_id, uint64_t *rax, uint64_t *rbx,
 			break;
 
 		case CPUID_8000_0007:
+			cpuid_count(func, param, regs);
 			/*
 			 * AMD uses this leaf to advertise the processor's
 			 * power monitoring and RAS capabilities. These
@@ -237,29 +245,31 @@ x86_emulate_cpuid(struct vm *vm, int vcpu_id, uint64_t *rax, uint64_t *rbx,
 			regs[0] = 0;
 			regs[1] = 0;
 			regs[2] = 0;
-			regs[3] = 0;
 
 			/*
-			 * "Invariant TSC" can be advertised to the guest if:
-			 * - host TSC frequency is invariant
-			 * - host TSCs are synchronized across physical cpus
+			 * If the host system possesses an invariant TSC, then
+			 * it is safe to expose to the guest.
 			 *
-			 * XXX This still falls short because the vcpu
-			 * can observe the TSC moving backwards as it
-			 * migrates across physical cpus. But at least
-			 * it should discourage the guest from using the
-			 * TSC to keep track of time.
+			 * If there is measured skew between host TSCs, it will
+			 * be properly offset so guests do not observe any
+			 * change between CPU migrations.
 			 */
-#ifdef __FreeBSD__
-			/* XXXJOY: Wire up with our own TSC logic */
-			if (tsc_is_invariant && smp_tsc)
+			regs[3] &= AMDPM_TSC_INVARIANT;
+
+			/*
+			 * Since illumos avoids deep C-states on CPUs which do
+			 * not support an invariant TSC, it may be safe (and
+			 * desired) to unconditionally expose that capability to
+			 * the guest.
+			 */
+			if (vmm_force_invariant_tsc != 0) {
 				regs[3] |= AMDPM_TSC_INVARIANT;
-#endif /* __FreeBSD__ */
+			}
 			break;
 
 		case CPUID_8000_001D:
 			/* AMD Cache topology, like 0000_0004 for Intel. */
-			if (!vmm_is_amd())
+			if (!vmm_is_svm())
 				goto default_leaf;
 
 			/*
@@ -301,8 +311,11 @@ x86_emulate_cpuid(struct vm *vm, int vcpu_id, uint64_t *rax, uint64_t *rbx,
 			break;
 
 		case CPUID_8000_001E:
-			/* AMD Family 16h+ additional identifiers */
-			if (!vmm_is_amd() || CPUID_TO_FAMILY(cpu_id) < 0x16)
+			/*
+			 * AMD Family 16h+ and Hygon Family 18h additional
+			 * identifiers.
+			 */
+			if (!vmm_is_svm() || CPUID_TO_FAMILY(cpu_id) < 0x16)
 				goto default_leaf;
 
 			vm_get_topology(vm, &sockets, &cores, &threads,
@@ -325,7 +338,7 @@ x86_emulate_cpuid(struct vm *vm, int vcpu_id, uint64_t *rax, uint64_t *rbx,
 			error = vm_get_x2apic_state(vm, vcpu_id, &x2apic_state);
 			if (error) {
 				panic("x86_emulate_cpuid: error %d "
-				      "fetching x2apic state", error);
+				    "fetching x2apic state", error);
 			}
 
 			/*
@@ -366,7 +379,7 @@ x86_emulate_cpuid(struct vm *vm, int vcpu_id, uint64_t *rax, uint64_t *rbx,
 				    VM_REG_GUEST_CR4, &cr4);
 				if (error)
 					panic("x86_emulate_cpuid: error %d "
-					      "fetching %%cr4", error);
+					    "fetching %%cr4", error);
 				if (cr4 & CR4_XSAVE)
 					regs[2] |= CPUID2_OSXSAVE;
 			}
@@ -377,7 +390,7 @@ x86_emulate_cpuid(struct vm *vm, int vcpu_id, uint64_t *rax, uint64_t *rbx,
 			 */
 			regs[2] &= ~CPUID2_MON;
 
-                        /*
+			/*
 			 * Hide the performance and debug features.
 			 */
 			regs[2] &= ~CPUID2_PDCM;
@@ -579,6 +592,36 @@ x86_emulate_cpuid(struct vm *vm, int vcpu_id, uint64_t *rax, uint64_t *rbx,
 				}
 				break;
 			}
+			break;
+
+		case CPUID_0000_000F:
+		case CPUID_0000_0010:
+			/*
+			 * Do not report any Resource Director Technology
+			 * capabilities.  Exposing control of cache or memory
+			 * controller resource partitioning to the guest is not
+			 * at all sensible.
+			 *
+			 * This is already hidden at a high level by masking of
+			 * leaf 0x7.  Even still, a guest may look here for
+			 * detailed capability information.
+			 */
+			regs[0] = 0;
+			regs[1] = 0;
+			regs[2] = 0;
+			regs[3] = 0;
+			break;
+
+		case CPUID_0000_0015:
+			/*
+			 * Don't report CPU TSC/Crystal ratio and clock
+			 * values since guests may use these to derive the
+			 * local APIC frequency..
+			 */
+			regs[0] = 0;
+			regs[1] = 0;
+			regs[2] = 0;
+			regs[3] = 0;
 			break;
 
 		case 0x40000000:

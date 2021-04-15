@@ -32,6 +32,7 @@
 # Copyright 2020 Joyent, Inc.
 # Copyright 2019 RackTop Systems.
 # Copyright 2020 Oxide Computer Company
+# Copyright 2020 Peter Tribble
 #
 
 #
@@ -127,10 +128,6 @@ __GNUC64=		$(__GNUC)
 # uncomment things in the lower Makefiles to enable the feature.
 ENABLE_SMB_PRINTING=	$(POUND_SIGN)
 
-# CLOSED is the root of the tree that contains source which isn't released
-# as open source
-CLOSED=		$(SRC)/../closed
-
 # BUILD_TOOLS is the root of all tools including compilers.
 # ONBLD_TOOLS is the root of all the tools that are part of SUNWonbld.
 
@@ -139,14 +136,14 @@ ONBLD_TOOLS=		$(BUILD_TOOLS)/onbld
 
 # define runtime JAVA_HOME, primarily for cmd/pools/poold
 #JAVA_HOME=	/usr/java
-JAVA_HOME=	/usr/jdk/openjdk1.8.0
+JAVA_HOME=	/usr/jdk/openjdk11.0
 # define buildtime JAVA_ROOT
 #JAVA_ROOT=	/usr/java
-JAVA_ROOT=	/usr/jdk/openjdk1.8.0
-# Build uses java8 by default.  Pass one the variables below set to empty
+JAVA_ROOT=	/usr/jdk/openjdk11.0
+# Build uses java8 by default.  Pass the variable below set to empty
 # string in the environment to override.
-BLD_JAVA_6=	$(POUND_SIGN)
-BLD_JAVA_7=	$(POUND_SIGN)
+# Use java11 by default in OmniOS.
+BLD_JAVA_11=
 
 # OmniOS has 64bit Perl only. Disable building of 32bit Perl modules
 BUILDPERL32=	$(POUND_SIGN)
@@ -206,9 +203,7 @@ BISON=		/usr/bin/bison
 CPP=		/usr/lib/cpp
 ANSI_CPP=	$(GNUC_ROOT)/bin/cpp
 JAVAC=		$(JAVA_ROOT)/bin/javac
-JAVAH=		$(JAVA_ROOT)/bin/javah
 JAVADOC=	$(JAVA_ROOT)/bin/javadoc
-RMIC=		$(JAVA_ROOT)/bin/rmic
 JAR=		$(JAVA_ROOT)/bin/jar
 CTFCONVERT=	$(ONBLD_TOOLS)/bin/$(MACH)/ctfconvert
 CTFDIFF=	$(ONBLD_TOOLS)/bin/$(MACH)/ctfdiff
@@ -220,7 +215,7 @@ GENOFFSETS=	$(ONBLD_TOOLS)/bin/genoffsets
 XREF=		$(ONBLD_TOOLS)/bin/xref
 FIND=		/usr/bin/find
 PERL=		/usr/bin/perl
-PERL_VERSION=	5.30
+PERL_VERSION=	5.32
 PERL_PKGVERS=
 PERL_MACH=	i86pc
 $(SPARC_BLD)PERL_MACH=	sun4
@@ -231,9 +226,9 @@ PYTHON_VERSION=	2.7
 PYTHON_PKGVERS=	-27
 PYTHON_SUFFIX=
 PYTHON=		/usr/bin/python$(PYTHON_VERSION)
-PYTHON3_VERSION=	3.7
-PYTHON3_PKGVERS=	-37
-PYTHON3_SUFFIX=		m
+PYTHON3_VERSION=	3.9
+PYTHON3_PKGVERS=	-39
+PYTHON3_SUFFIX=
 PYTHON3=		/usr/bin/python$(PYTHON3_VERSION)
 $(BUILDPY3TOOLS)TOOLS_PYTHON=		$(PYTHON3)
 $(BUILDPY2TOOLS)TOOLS_PYTHON=		$(PYTHON)
@@ -254,6 +249,7 @@ TIC=		$(ONBLD_TOOLS)/bin/$(MACH)/tic
 ZIC=		$(ONBLD_TOOLS)/bin/$(MACH)/zic
 OPENSSL=	/usr/bin/openssl
 CPCGEN=		$(ONBLD_TOOLS)/bin/$(MACH)/cpcgen
+GENICONVTBL=	$(ONBLD_TOOLS)/bin/$(MACH)/geniconvtbl
 
 DEFAULT_CONSOLE_COLOR=					\
 	-DDEFAULT_ANSI_FOREGROUND=ANSI_COLOR_WHITE	\
@@ -424,6 +420,45 @@ CCNOAGGRESSIVELOOPS= \
 	-_gcc7=-fno-aggressive-loop-optimizations \
 	-_gcc8=-fno-aggressive-loop-optimizations \
 	-_gcc9=-fno-aggressive-loop-optimizations
+
+#
+# Options to control which version of stack-protector we enable. This
+# gives us a bit of flexibility and is unfortunately necessary as some
+# modules do not function correctly with our defaults (qede).
+#
+#  o STACKPROTECT_              Sets the appropriate version for the compiler
+#  o STACKPROTECT_strong        Sets us to use strong on all of the
+#                               compilers it supports. This is the same
+#                               as the default.
+#
+#  o STACKPROTECT_none          Disables the stack protector.
+#
+#  o STACKPROTECT_all           Enables it for everything.
+#
+#  o STACKPROTECT_basic         Enables the basic stack protector.
+#
+# -fstack-protector-strong is not available in gcc4 which is why we
+# have per-compiler versions below. These are not added to the default
+# global CFLAGS at this time as it's being incrementally enabled
+# throughout the build.
+#
+STACKPROTECT_           = -_gcc4=-fstack-protector
+STACKPROTECT_           += -_gcc7=-fstack-protector-strong
+STACKPROTECT_           += -_gcc8=-fstack-protector-strong
+STACKPROTECT_           += -_gcc9=-fstack-protector-strong
+
+STACKPROTECT_strong     = $(STACKPROTECT_)
+STACKPROTECT_none       =
+STACKPROTECT_all        = -_gcc=-fstack-protector-all
+STACKPROTECT_basic      = -_gcc=-fstack-protector
+
+STACKPROTECT_LD_	= -lssp_ns
+STACKPROTECT_LD_none	=
+STACKPROTECT_LD_all	= $(STACKPROTECT_LD_)
+STACKPROTECT_LD_basic	= $(STACKPROTECT_LD_)
+
+CCSTACKPROTECT= $(STACKPROTECT_$(STACKPROTECT))
+LDSTACKPROTECT= $(STACKPROTECT_LD_$(STACKPROTECT))
 
 # One optimization the compiler might perform is to turn this:
 #	#pragma weak foo
@@ -692,7 +727,8 @@ CPPFLAGS.native=$(ENVCPPFLAGS1) $(ENVCPPFLAGS2) $(ENVCPPFLAGS3) \
 		$(ENVCPPFLAGS4) -I$(NATIVE_ADJUNCT)/include
 CPPFLAGS=	$(CPPFLAGS.first) $(CPPFLAGS.master)
 AS_CPPFLAGS=	$(CPPFLAGS.first) $(CPPFLAGS.master)
-JAVAFLAGS=	-source 1.6 -target 1.6 -Xlint:deprecation,-options
+JAVAFLAGS=	-source 7 -target 7 -Xlint:deprecation,-options
+$(BLD_JAVA_11)JAVAFLAGS=	-source 7 -target 7 -Xlint:-options
 
 #
 # For source message catalogue
@@ -992,39 +1028,40 @@ LINT64=			$(NATIVELINT64)
 # Pass -Y flag to cpp (method of which is release-dependent)
 CCYFLAG=		-Y I,
 
-BDIRECT=	-Bdirect
-BDYNAMIC=	-Bdynamic
-BLOCAL=		-Blocal
-BNODIRECT=	-Bnodirect
-BREDUCE=	-Breduce
-BSTATIC=	-Bstatic
+BDIRECT=	-Wl,-Bdirect
+BDYNAMIC=	-Wl,-Bdynamic
+BLOCAL=		-Wl,-Blocal
+BNODIRECT=	-Wl,-Bnodirect
+BREDUCE=	-Wl,-Breduce
+BSTATIC=	-Wl,-Bstatic
+BSYMBOLIC=	-Wl,-Bsymbolic
 
-ZDEFS=		-zdefs
-ZDIRECT=	-zdirect
-ZIGNORE=	-zignore
-ZINITFIRST=	-zinitfirst
-ZINTERPOSE=	-zinterpose
-ZLAZYLOAD=	-zlazyload
-ZLOADFLTR=	-zloadfltr
-ZMULDEFS=	-zmuldefs
-ZNODEFAULTLIB=	-znodefaultlib
-ZNODEFS=	-znodefs
-ZNODELETE=	-znodelete
-ZNODLOPEN=	-znodlopen
-ZNODUMP=	-znodump
-ZNOLAZYLOAD=	-znolazyload
-ZNOLDYNSYM=	-znoldynsym
-ZNORELOC=	-znoreloc
-ZNOVERSION=	-znoversion
-ZRECORD=	-zrecord
-ZREDLOCSYM=	-zredlocsym
-ZTEXT=		-ztext
-ZVERBOSE=	-zverbose
-ZASSERTDEFLIB=	-zassert-deflib
-ZGUIDANCE=	-zguidance
-ZFATALWARNINGS=	-zfatal-warnings
+ZDEFS=		-Wl,-zdefs
+ZDIRECT=	-Wl,-zdirect
+ZIGNORE=	-Wl,-zignore
+ZINITFIRST=	-Wl,-zinitfirst
+ZINTERPOSE=	-Wl,-zinterpose
+ZLAZYLOAD=	-Wl,-zlazyload
+ZLOADFLTR=	-Wl,-zloadfltr
+ZMULDEFS=	-Wl,-zmuldefs
+ZNODEFAULTLIB=	-Wl,-znodefaultlib
+ZNODEFS=	-Wl,-znodefs
+ZNODELETE=	-Wl,-znodelete
+ZNODLOPEN=	-Wl,-znodlopen
+ZNODUMP=	-Wl,-znodump
+ZNOLAZYLOAD=	-Wl,-znolazyload
+ZNOLDYNSYM=	-Wl,-znoldynsym
+ZNORELOC=	-Wl,-znoreloc
+ZNOVERSION=	-Wl,-znoversion
+ZRECORD=	-Wl,-zrecord
+ZREDLOCSYM=	-Wl,-zredlocsym
+ZTEXT=		-Wl,-ztext
+ZVERBOSE=	-Wl,-zverbose
+ZASSERTDEFLIB=	-Wl,-zassert-deflib
+ZGUIDANCE=	-Wl,-zguidance
+ZFATALWARNINGS=	-Wl,-zfatal-warnings
 
-GSHARED=	-G
+GSHARED=	-shared
 CCMT=		-mt
 
 # Handle different PIC models on different ISAs
@@ -1069,6 +1106,7 @@ CTFCVTFLAGS=		-L VERSION
 CTFMRGFLAGS=
 
 CTFCONVERT_O		= $(CTFCONVERT) $(CTFCVTFLAGS) $@
+CTFCONVERT_BIN		= $(CTFCONVERT) $(CTFCVTFLAGS) $@
 
 # Rules (normally from make.rules) and macros which are used for post
 # processing files. Normally, these do stripping of the comment section
@@ -1134,9 +1172,10 @@ UTS_LABEL=	$(RELEASE)
 # bootbanner_expand_template() for more details about the template string
 # format.
 #
+THISYEAR :sh= date +%Y
 BOOTBANNER1=	OmniOS r$(ONNV_BUILDNUM) Version ^v ^w-bit
 BOOTBANNER2=	Copyright (c) 2012-2017 OmniTI Computer Consulting, Inc.
-BOOTBANNER3=	Copyright (c) 2017-2020 OmniOS Community Edition (OmniOSce) Association.
+BOOTBANNER3=	Copyright (c) 2017-$(THISYEAR) OmniOS Community Edition (OmniOSce) Association.
 BOOTBANNER4=
 BOOTBANNER5=
 

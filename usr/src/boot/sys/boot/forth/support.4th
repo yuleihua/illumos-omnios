@@ -1,5 +1,5 @@
 \ Copyright (c) 1999 Daniel C. Sobral <dcs@FreeBSD.org>
-\ Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
+\ Copyright 2020 OmniOS Community Edition (OmniOSce) Association.
 \ All rights reserved.
 \
 \ Redistribution and use in source and binary forms, with or without
@@ -192,6 +192,25 @@ create last_module_option sizeof module.next allot 0 last_module_option !
   0 0
 ;
 
+: strspn { addr len addr1 len1 | paddr plen -- addr' len' }
+  begin
+    len
+  while
+    addr1 to paddr
+    len1 to plen
+    begin
+       plen
+    while
+       addr c@ paddr c@ = if addr len exit then
+       paddr 1+ to paddr
+       plen 1- to plen
+    repeat
+    addr 1 + to addr
+    len 1 - to len
+  repeat
+  0 0
+;
+
 : s' \ same as s", allows " in the string
   [char] ' parse
   state @ if postpone sliteral then
@@ -226,45 +245,51 @@ create last_module_option sizeof module.next allot 0 last_module_option !
 	then
 ;
 
-\ Returns TRUE if the framebuffer is active, FALSE otherwise
-: framebuffer? ( -- flag )
-	\ Use the screen-height variable as a proxy for framebuffer
-	s" screen-height" getenv?
-;
+\ execute xt for each device listed in console variable.
+\ this allows us to have device specific output for logos, menu frames etc
+: console-iterate { xt | caddr clen taddr tlen -- }
+	\ get current console and save it
+	s" console" getenv
+	['] strdup catch if 2drop exit then
+	to clen to caddr
 
-\ Set the screen resolution based on an environment variable.
-\ If the framebuffer is not active or the variable is not set, do nothing
-: set_resolution ( addr len -- )
-	framebuffer? if
-		getenv dup -1 = if
-			\ variable not set
-			drop
+	clen to tlen
+	caddr to taddr
+	begin
+		tlen
+	while
+		taddr tlen s" , " strspn
+		\ we need to handle 3 cases for addr len pairs on stack:
+		\ addr len are 0 0 - there was no comma nor space
+		\ addr len are x 0 - the first char is either comma or space
+		\ addr len are x y.
+		2dup + 0= if
+			\ there was no comma nor space.
+			2drop
+			taddr tlen s" console" setenv
+			xt execute
+			0 to tlen
+		else dup 0= if
+			2drop
 		else
-			2dup
-			s" off" compare 0= if
-				1 framebuffer
+			dup                     ( taddr' tlen' tlen' )
+			tlen swap - dup
+			0= if			\ sequence of comma and space?
+				drop
 			else
-				s" set" 2 framebuffer
+				taddr swap s" console" setenv
+				xt execute
 			then
+			to tlen
+			to taddr
+		then then
+		tlen 0> if			\ step over separator
+			tlen 1- to tlen
+			taddr 1+ to taddr
 		then
-	else
-		2drop
-	then
-;
-
-\ Set the screen font based on an environment variable.
-\ If the framebuffer is not active or the variable is not set, do nothing
-: set_font ( addr len -- )
-	framebuffer? if
-		getenv dup -1 = if
-			\ variable not set
-			drop
-		else
-			s" screen-font" setenv
-		then
-	else
-		2drop
-	then
+	repeat
+	caddr clen s" console" setenv		\ restore console setup
+	caddr free drop
 ;
 
 \ Test if booted in an EFI environment
@@ -318,6 +343,49 @@ create last_module_option sizeof module.next allot 0 last_module_option !
 		swap drop 0>
 	else drop false then
 	or \ previous boolean ( or ) boot_multicons
+;
+
+: framebuffer? ( -- t )
+	s" console" getenv
+	s" text" compare 0<> if
+		FALSE exit
+	then
+	s" screen-width" getenv?
+;
+
+\ Set the screen resolution based on an environment variable.
+\ If the framebuffer is not active or the variable is not set, do nothing
+: set_resolution ( addr len -- )
+	framebuffer? if
+		getenv dup -1 = if
+			\ variable not set
+			drop
+		else
+			2dup
+			s" off" compare 0= if
+				1 framebuffer
+			else
+				s" set" 2 framebuffer
+			then
+		then
+	else
+		2drop
+	then
+;
+
+\ Set the screen font based on an environment variable.
+\ If the framebuffer is not active or the variable is not set, do nothing
+: set_font ( addr len -- )
+	framebuffer? if
+		getenv dup -1 = if
+			\ variable not set
+			drop
+		else
+			s" screen-font" setenv
+		then
+	else
+		2drop
+	then
 ;
 
 \ Private definitions
